@@ -1,6 +1,6 @@
 package PeersimSimulator.peersim.SDN.Nodes;
 
-import PeersimSimulator.peersim.SDN.Links.Log;
+import PeersimSimulator.peersim.SDN.Util.Log;
 import PeersimSimulator.peersim.SDN.Nodes.Events.OffloadInstructions;
 import PeersimSimulator.peersim.SDN.Nodes.Events.SpringEvents.ActionReadyEvent;
 import PeersimSimulator.peersim.SDN.Nodes.Events.WorkerInfo;
@@ -87,7 +87,7 @@ public class Controller implements CDProtocol, EDProtocol, ApplicationListener<A
             int targetNode = a.nodeId();
             int noTasks = a.noTasks();
 
-            Log.info("ACTION: SRC<" + this.getId() + "> to TARGET:<" +targetNode + "> offload (" + noTasks + ")");
+            Log.info("|CTR| SEND ACTION: SRC<" + this.getId() + "> to TARGET:<" +targetNode + "> offload (" + noTasks + ")");
 
             ((Transport)selectedWorker.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                     send(
@@ -117,7 +117,7 @@ public class Controller implements CDProtocol, EDProtocol, ApplicationListener<A
         if(!active) return;
         // Recieve Update from Node.
         if(event instanceof WorkerInfo){
-            WorkerInfo wi = (WorkerInfo) event;
+            WorkerInfo wi = (WorkerInfo) event; // TODO include the task being processed as part of queue?
 
             updateNode(wi);
         }

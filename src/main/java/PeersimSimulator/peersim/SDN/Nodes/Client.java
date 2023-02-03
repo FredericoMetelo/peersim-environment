@@ -1,6 +1,6 @@
 package PeersimSimulator.peersim.SDN.Nodes;
 
-import PeersimSimulator.peersim.SDN.Links.Log;
+import PeersimSimulator.peersim.SDN.Util.Log;
 import PeersimSimulator.peersim.SDN.Nodes.Events.NewTaskEvent;
 import PeersimSimulator.peersim.SDN.Nodes.Events.TaskConcludedEvent;
 import PeersimSimulator.peersim.SDN.Tasks.Task;
@@ -74,6 +74,7 @@ public class Client implements CDProtocol, EDProtocol {
                 if (!target.isUp()) return; // This happens task progress is lost.
                 Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
                 Task task = new Task(BYTE_SIZE, NO_INSTR, wi.getId());
+                tasksAwaiting.add(new TaskInfo(task.getId(), tick));
                 Log.info("|CLT| TASK SENT to Node:<" + wi.getId() + ">");
                 ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                         send(
@@ -104,7 +105,8 @@ public class Client implements CDProtocol, EDProtocol {
                     return;
                 }
             }
-            System.out.print("Error this should nto happen task ended without having id in awaiting tasks.");
+                System.out.print("Error this should nto happen task ended without having id in awaiting tasks.");
+
         }
     }
 
@@ -128,8 +130,26 @@ public class Client implements CDProtocol, EDProtocol {
     public void setId(int id) {
         this.id = id;
     }
+
+    @Override
+    public String toString() {
+        return "Client{" +
+
+                ", tasksAwaiting=" + tasksAwaiting.size() +
+                ", averageLatency=" + averageLatency +
+                ", noResults=" + noResults +
+                ", tick=" + tick +
+                ", id=" + id +
+                '}';
+    }
+
     private class TaskInfo{
         protected String id;
         protected int timeSent;
+
+        public TaskInfo(String id, int timeSent) {
+            this.id = id;
+            this.timeSent = timeSent;
+        }
     }
 }

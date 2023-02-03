@@ -1,7 +1,6 @@
 package PeersimSimulator.peersim.SDN.Nodes;
 
-import PeersimSimulator.peersim.SDN.Links.Log;
-import PeersimSimulator.peersim.SDN.Nodes.Events.*;
+import PeersimSimulator.peersim.SDN.Util.Log;
 import PeersimSimulator.peersim.SDN.Nodes.Events.*;
 import PeersimSimulator.peersim.SDN.Tasks.Task;
 import java.util.*;
@@ -76,7 +75,7 @@ public class Worker implements CDProtocol, EDProtocol {
         // TODO in future have multiple classes of nodes?
         pid = Configuration.getPid(prefix + "."+PAR_NAME);
         QUEUE_SIZE_MAX = 10;
-        CPU_FREQ = 10e6;
+        CPU_FREQ = 1e7;
         CPU_NO_CORES = 4;
         TRANSMISSION_POWER = 20f;
         processingPower = Math.floor(CPU_NO_CORES * CPU_FREQ);
@@ -114,7 +113,7 @@ public class Worker implements CDProtocol, EDProtocol {
         */
 
         double remain = processingPower;
-        while (remain > 0){
+        while (remain > 0 && !idle()){
             if(current == null || current.done()){
                 changed = selectNextTask();
                 if(current == null){
@@ -155,13 +154,13 @@ public class Worker implements CDProtocol, EDProtocol {
             if(!controller.isUp()) return;
 
             // Controller controllerProtocol = (Controller) controller.getProtocol(Controller.getPid());
-            Log.info("|WRK| WORKER-INFO SEND: SRC<"+ this.getId() + "> Qi<" +this.queue.size()+ "> Wi <" + this.receivedRequests.size() + ">");
+            Log.info("|WRK| WORKER-INFO SEND: SRC<"+ this.getId() + "> Qi<" +getQueueSize()+ "> Wi <" + this.receivedRequests.size() + "> Working: <"  + !(current == null) + ">");
 
             ((Transport)controller.getProtocol(FastConfig.getTransport(Controller.getPid()))).
                     send(
                             node,
                             controller,
-                            new WorkerInfo(this.id, this.queue.size(), this.receivedRequests.size()),
+                            new WorkerInfo(this.id, getQueueSize(), this.receivedRequests.size()),
                             Controller.getPid()
                     );
             this.changed = false;
@@ -169,7 +168,6 @@ public class Worker implements CDProtocol, EDProtocol {
 
         // TODO optimize with boolean changed
     }
-
 
 
 
@@ -186,22 +184,35 @@ public class Worker implements CDProtocol, EDProtocol {
                 Log.info("|WRK| Offloaded Tasks arrived at wrong node...");
                 return;
             }
-            List<Task> offloadedTasks = ev.getTaskList();
+            List<Task> offloadedTasks = ev.getTaskList().stream().peek((t)->t.setNodeId(this.id)).toList();
             Log.info("|WRK| TASK OFFLOAD RECIEVE: SRC<"+ ev.getSrcNode() + "> TARGET<"+this.getId()+"> NO_TASKS<" +offloadedTasks.size()+ ">");
             this.receivedRequests.addAll(offloadedTasks);
             this.changed = true;
 
         }else if(event instanceof OffloadInstructions ev){
             // Offload Tasks Event Executes Offloading of data
-            int noToOffload = ev.getNoTasks();
+            int noToOffload;
+            if(ev.getNoTasks() <= this.receivedRequests.size())
+                noToOffload = ev.getNoTasks();
+            else{
+                // Guarantee that we don't try to send more tasks than we actually can.
+                Log.err("Tried to offload more tasks than are available.");
+                noToOffload = 0; // TODO not shure what to do here.
+                // noToOffload = receivedRequests.size();
+            }
             int targetNode = ev.getTargetNode();
-            // Guarantee that we don't try to send more tasks than we actually can.
-            // TODO see how to cap this value on the DNN itself.
-            if(noToOffload > receivedRequests.size()) noToOffload = receivedRequests.size();
+
             List<Task> moveTasks = new ArrayList<>(noToOffload);
             Log.info("|WRK| TASK OFFLOAD SEND: SRC<"+ this.id + "> TARGET<" + targetNode + "> NO_TASKS<" + noToOffload+ ">");
+            int end = this.receivedRequests.size();
             for(int i = 0; i < noToOffload; i++){
-                moveTasks.set(i, this.receivedRequests.remove(i));
+                int index = end - 1 - i;
+                moveTasks.add(i, this.receivedRequests.remove(index));
+            }
+            end = this.receivedRequests.size();
+            for(int j = 0; j < end; j ++){
+                // Add whats left of the received requests to the queue.
+                this.queue.add(this.receivedRequests.remove(0));
             }
             // Send list to node
             int linkableID = FastConfig.getLinkable(pid);
@@ -246,6 +257,9 @@ public class Worker implements CDProtocol, EDProtocol {
     public boolean isActive() {
         return active;
     }
+    public int getQueueSize(){
+        return this.queue.size() + ((current == null || current.done()) ? 0 : 1);
+    }
 
     public void setActive(boolean active) {
         this.active = active;
@@ -262,7 +276,9 @@ public class Worker implements CDProtocol, EDProtocol {
     public static int getPid(){
         return pid;
     }
-
+    private boolean idle() {
+        return this.queue.isEmpty() && this.receivedRequests.isEmpty(); //  && (this.current == null || this.current.done())
+    }
     //======================================================================================================
     // Private Methods
     //======================================================================================================
@@ -294,5 +310,11 @@ public class Worker implements CDProtocol, EDProtocol {
         queue = new LinkedList<>(); // Assuming no concurrency within node. If we want to handle multiple requests confirm trx safe.
         receivedRequests = new LinkedList<>();
         current  = null;
+    }
+
+    @Override
+    public String toString(){
+        String curr = (current != null)? current.getId() : "NULL";
+        return "Worker ID<" + this.getId() + "> | Q: " + getQueueSize() +" W: " + this.receivedRequests.size() + " Current: " + curr;
     }
 }
