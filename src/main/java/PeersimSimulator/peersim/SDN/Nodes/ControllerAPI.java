@@ -21,14 +21,16 @@ public class ControllerAPI  implements Control {
     @GetMapping("/state")
     public EnvState getState(){
         Controller c = (Controller) Network.get(0).getProtocol(Controller.getPid());
+        while(!c.isStable()) Thread.onSpinWait(); // await the 100 ticks.
         return c.getState();
     }
 
     @PostMapping("/action")
-    public boolean postAction(@RequestBody Action a){
+    public double postAction(@RequestBody Action a){
         Controller c = (Controller) Network.get(0).getProtocol(Controller.getPid());
         return c.sendAction(a);
     }
+
 
     @Override
     public boolean execute() {

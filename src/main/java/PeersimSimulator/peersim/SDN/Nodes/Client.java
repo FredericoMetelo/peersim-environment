@@ -13,13 +13,18 @@ import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.edsim.EDProtocol;
 import PeersimSimulator.peersim.transport.Transport;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 public class Client implements CDProtocol, EDProtocol {
 
-    private static final double BYTE_SIZE = 500e6;
-    private static final double NO_INSTR = 200e6;
+    public static final double BYTE_SIZE = 500; // Mbytes
+    public static final double NO_INSTR = 200e6;
+
+    public static final int CPI = 1;
+
     private static final String PAR_NAME = "name";
     private static int pid;
 
@@ -36,8 +41,11 @@ public class Client implements CDProtocol, EDProtocol {
     List<TaskInfo> tasksAwaiting;
     private float averageLatency;
     private int noResults;
-    private int tick;
 
+    private List<Long> nextArrival;
+    private static final double taskArrivalRate = 0.10;
+    // 0.10 % chance of new task being sent to worker per time tick.
+    // Assuming poisson process therefore no change!
     private int id;
 
     public Client(String prefix) { // TODO queue size isn't doing much...
@@ -45,7 +53,7 @@ public class Client implements CDProtocol, EDProtocol {
         this.tasksAwaiting = new LinkedList<>();
         averageLatency = 0;
         noResults = 0;
-        tick = 0;
+        nextArrival = null;
         active = false;
     }
 
@@ -62,19 +70,21 @@ public class Client implements CDProtocol, EDProtocol {
     @Override
     public void nextCycle(Node node, int protocolID) {
         if(!active) return;
-        tick++;
         // For each Node keeps a poisson distribution. Sends new request based on said distribution.
         // Sends Task to said node.
         // TODO Eventually use a poisson distribution
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
+
+        if(nextArrival == null) initTaskManagement(linkable.degree());
+
         for(int i = 1; i < linkable.degree(); i++) {
-            if (CommonState.r.nextDouble() < 1.0 || tick == 1) {
+            if (nextArrival.get(i) <= CommonState.getTime()) {
                 Node target = linkable.getNeighbor(i);
                 if (!target.isUp()) return; // This happens task progress is lost.
                 Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
                 Task task = new Task(BYTE_SIZE, NO_INSTR, wi.getId());
-                tasksAwaiting.add(new TaskInfo(task.getId(), tick));
+                tasksAwaiting.add(new TaskInfo(task.getId(), CommonState.getTime()));
                 Log.info("|CLT| TASK SENT to Node:<" + wi.getId() + ">");
                 ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                         send(
@@ -83,6 +93,8 @@ public class Client implements CDProtocol, EDProtocol {
                                 new NewTaskEvent(task),
                                 Worker.getPid()
                         );
+
+                nextArrival.set(i, CommonState.getTime() + selectNextTime());
             }
         }
 
@@ -95,11 +107,11 @@ public class Client implements CDProtocol, EDProtocol {
         if(!active) return;
         // Recieve answer from task sent.
         if(event instanceof TaskConcludedEvent ev){
-            int endTick = tick;
+            long endTick = CommonState.getTime();
             for(int i = 0; i < tasksAwaiting.size(); i++){
                 if(tasksAwaiting.get(i).id.equals(ev.getTaskId())){
                     TaskInfo t = tasksAwaiting.remove(i);
-                    int timeTaken = endTick - t.timeSent;
+                    long timeTaken = endTick - t.timeSent;
                     averageLatency = (averageLatency*noResults + timeTaken) / (++noResults);
                     Log.info("|CLT| TASK CONCLUDED: TaskId<" + ev.getTaskId() + "> NodeId:<" +t.id + ">");
                     return;
@@ -114,11 +126,31 @@ public class Client implements CDProtocol, EDProtocol {
         return pid;
     }
 
+    public long selectNextTime(){
+        /*
+            Based on the formula from: https://preshing.com/20111007/how-to-generate-random-timings-for-a-poisson-process/
+            From CDF of exponential function we have: 1 - e^{-lambda * x}. This is the probability no events occur on the
+             first x time units. Then we invert that to go from probability to time and sample a probability with uniform
+             RV.
+
+             Note: The task arrival rate of this poisson process is lambda.
+         */
+        return (long) (-Math.log(CommonState.r.nextDouble()) / taskArrivalRate);
+    }
+    private void initTaskManagement(int degree) {
+        nextArrival = new ArrayList<Long>(degree);
+        for (int i = 0; i < degree; i++) {
+            nextArrival.add(selectNextTime());
+        }
+    }
+
     public boolean isActive() {
         return active;
     }
 
-
+    public static double getTaskArrivalRate() {
+        return taskArrivalRate;
+    }
 
     public void setActive(boolean active) {
         this.active = active;
@@ -138,16 +170,16 @@ public class Client implements CDProtocol, EDProtocol {
                 ", tasksAwaiting=" + tasksAwaiting.size() +
                 ", averageLatency=" + averageLatency +
                 ", noResults=" + noResults +
-                ", tick=" + tick +
+                ", tick=" + CommonState.getTime() +
                 ", id=" + id +
                 '}';
     }
 
     private class TaskInfo{
         protected String id;
-        protected int timeSent;
+        protected long timeSent;
 
-        public TaskInfo(String id, int timeSent) {
+        public TaskInfo(String id, long timeSent) {
             this.id = id;
             this.timeSent = timeSent;
         }

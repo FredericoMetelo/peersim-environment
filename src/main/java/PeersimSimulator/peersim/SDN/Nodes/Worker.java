@@ -26,10 +26,8 @@ public class Worker implements CDProtocol, EDProtocol {
      */
     public final double CPU_FREQ;
     public final int CPU_NO_CORES;
-    /**
-     * Transmission power in decibel-miliwatts (dBm)
-     */
-     public final float TRANSMISSION_POWER;
+
+    public static final int Q_MAX = 10;
 
     //======================================================================================================
     // Variables
@@ -77,7 +75,6 @@ public class Worker implements CDProtocol, EDProtocol {
         QUEUE_SIZE_MAX = 10;
         CPU_FREQ = 1e7;
         CPU_NO_CORES = 4;
-        TRANSMISSION_POWER = 20f;
         processingPower = Math.floor(CPU_NO_CORES * CPU_FREQ);
         //======== Init Datastructures ===========//
         queue = new LinkedList<>(); // Assuming no concurrency within node. If we want to handle multiple requests confirm trx safe.
@@ -160,16 +157,32 @@ public class Worker implements CDProtocol, EDProtocol {
                     send(
                             node,
                             controller,
-                            new WorkerInfo(this.id, getQueueSize(), this.receivedRequests.size()),
+                            new WorkerInfo(this.id, getQueueSize(), this.receivedRequests.size(), averageTaskSize(), processingPower),
                             Controller.getPid()
                     );
             this.changed = false;
         }
 
-        // TODO optimize with boolean changed
+
     }
 
-
+    /**
+     * This method computes the average task size.
+     * @return the average number of instructions of the tasks in a node.
+     */
+    private double averageTaskSize() {
+        double acc = this.current == null ? 0 : this.current.getTotalInstructions() - this.current.getProgress();
+        double noTasks = this.current == null ? 0 : 1;
+        for (Task t: queue) {
+            acc += t.getTotalInstructions();
+            noTasks++;
+        }
+        for (Task t: receivedRequests){
+            acc += t.getTotalInstructions();
+            noTasks++;
+        }
+        return (noTasks== 0) ? 0 : acc/noTasks; // note: rounds down
+    }
 
 
     @Override
@@ -279,6 +292,15 @@ public class Worker implements CDProtocol, EDProtocol {
     private boolean idle() {
         return this.queue.isEmpty() && this.receivedRequests.isEmpty(); //  && (this.current == null || this.current.done())
     }
+
+    public double getProcessingPower() {
+        return processingPower;
+    }
+
+    public void setProcessingPower(double processingPower) {
+        this.processingPower = processingPower;
+    }
+
     //======================================================================================================
     // Private Methods
     //======================================================================================================
@@ -305,6 +327,8 @@ public class Worker implements CDProtocol, EDProtocol {
         current = null;
         return this.changed;
     }
+
+
 
     private void resetQueue(){
         queue = new LinkedList<>(); // Assuming no concurrency within node. If we want to handle multiple requests confirm trx safe.

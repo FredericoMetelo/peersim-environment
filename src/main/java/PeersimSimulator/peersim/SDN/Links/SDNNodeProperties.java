@@ -1,5 +1,6 @@
 package PeersimSimulator.peersim.SDN.Links;
 
+import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.core.Protocol;
 
 public class SDNNodeProperties implements Protocol {
@@ -10,9 +11,15 @@ public class SDNNodeProperties implements Protocol {
     /** 2d coordinates components. */
     private double x, y;
 
+    private static final String PAR_NAME = "name";
+
+    private static int pid;
+
     private double bandwidth;
     private double pathLossConstant;
     private double pathLossExponent;
+
+    private double transmission_power;
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
@@ -20,10 +27,13 @@ public class SDNNodeProperties implements Protocol {
 
     public SDNNodeProperties(String prefix) {
         /* Un-initialized coordinates defaults to -1. */
-        x = y = -1;
-        bandwidth = 2e6; // 2Mhz
-        pathLossConstant = 1e-3;
+        pid = Configuration.getPid(prefix+ "."+PAR_NAME);
+        x = y = -1; // meters
+        bandwidth = 2; // 2Mhz
+        pathLossConstant = 0.001;
         pathLossExponent = 4;
+        transmission_power = 20;// 20 dbm
+
     }
 
     public Object clone() {
@@ -59,6 +69,14 @@ public class SDNNodeProperties implements Protocol {
         this.pathLossExponent = pathLossExponent;
     }
 
+    public double getTransmission_power() {
+        return transmission_power;
+    }
+
+    public void setTransmission_power(double transmission_power) {
+        this.transmission_power = transmission_power;
+    }
+
     public double getX() {
         return x;
     }
@@ -75,4 +93,7 @@ public class SDNNodeProperties implements Protocol {
         this.y = y;
     }
 
+    public static int getPid() {
+        return pid;
+    }
 }

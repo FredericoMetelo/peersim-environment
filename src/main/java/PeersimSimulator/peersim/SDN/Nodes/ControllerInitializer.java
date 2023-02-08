@@ -54,6 +54,7 @@ public class ControllerInitializer implements Control {
         // Initialize the controller (Node 0).
         ((Controller) Network.get(0).getProtocol(pid)).setActive(true);
         ((Controller) Network.get(0).getProtocol(pid)).setId(0);
+        ((Controller) Network.get(0).getProtocol(pid)).initializeWorkerInfo(Network.get(0), Controller.getPid());
 
         return false;
     }

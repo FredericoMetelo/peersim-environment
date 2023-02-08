@@ -4,7 +4,7 @@ SIZE 10
 
 # parameters of periodic execution
 CYCLES 1000
-CYCLE SIZE*10
+CYCLE SIZE*1
 
 # parameters of message transfer
 # delay values here are relative to cycle length, in percentage,
@@ -57,6 +57,7 @@ protocol.wrk.transport tr
 
 #--------Define Topology Protocols
 protocol.props PeersimSimulator.peersim.SDN.Links.SDNNodeProperties
+protocol.props.name props
 
 
 #=============Define Initialization
