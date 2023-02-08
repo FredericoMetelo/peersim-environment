@@ -10,7 +10,7 @@ from gym.spaces import MultiDiscrete, Dict, Discrete, Box
 import numpy as np
 from gym.core import RenderFrame, ActType, ObsType
 
-from src.Gymnasium import PeersimThread
+from src.Gymnasium.PeersimThread import PeersimThread
 
 
 class PeersimEnv(gym.Env):
@@ -60,32 +60,40 @@ class PeersimEnv(gym.Env):
         # mvn spring-boot:run -Dspring-boot.run.arguments=configs/config-SDN.txt
         # Run the actual environment.
         # with subprocess as s:
-        self.x = PeersimThread(f'Run{self.__run_counter}')
-        self.x.start()
+        self.simulator = PeersimThread(name='Run0')
+        self.simulator.start()
 
     def step(self, action: ActType):
         # A step will advance the simulation in 100 ticks
         # Send action.
-        requests.post()
-
+        payload = {"nodeId": action["target_node"], "noTasks": action["offload_amount"]}
+        headers_action = {"content-type": "application/json",  "Accept": "application/json", "Connection": "keep-alive"}
+        action_url = self.url_api + self.url_action_path
+        r = requests.post(action_url, json=payload, headers=headers_action)
+        reward_for_action = float(r.content)
+        print(reward_for_action)
         # Retrieve Observation
-        requests.get()
-
-        # Retrieve Reward
-        requests.get()
-
-        return
+        space_url = self.url_api + self.url_state_path
+        headers_state = {"Accept": "application/json", "Connection": "keep-alive"}
+        s = requests.get(space_url, headers=headers_state)
+        print(s.content)
+        return s.content, reward_for_action, False, False, None
 
     def render(self):
         pass
 
     def __run_peersim(self):
         self.__run_counter += 1
-        self.x.run()
+        self.simulator.run()
 
     def reset(self, **kwargs):
-        self.x.stop()
+        self.simulator.stop()
         self.__run_peersim()
         pass
 
-
+    def see_types(self):
+        # TODO delete this.
+        print("Example of action.")
+        print(self.action_space.sample())
+        print("Example of space.")
+        print(self.observation_space.sample())
