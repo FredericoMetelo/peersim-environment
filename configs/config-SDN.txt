@@ -94,3 +94,28 @@ include.init sch Net0 Net1 InitWrk InitClt InitCtrl
 
 #=============Define Observers
 # TODO
+====Define Protocols
+#--------Define Link Protocol
+protocol.lnk PeersimSimulator.peersim.core.IdleProtocol
+
+#--------Define Transport Protocol
+protocol.urt UniformRandomTransport
+protocol.urt.mindelay (CYCLE*MINDELAY)/100
+protocol.urt.maxdelay (CYCLE*MAXDELAY)/100
+
+protocol.tr UnreliableTransport
+protocol.tr.transport urt
+protocol.tr.drop DROP
+
+#--------Define Node Protocols
+protocol.clt PeersimSimulator.peersim.SDN.Nodes.Client
+protocol.clt.linkable lnk
+protocol.clt.name clt
+protocol.clt.step CYCLE
+protocol.clt.transport tr
+
+protocol.ctrl PeersimSimulator.peersim.SDN.Nodes.Controller
+protocol.ctrl.linkable lnk
+protocol.ctrl.name ctrl
+protocol.ctrl.step CYCLE
+protocol.ctrl.transport tr

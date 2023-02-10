@@ -50,13 +50,13 @@ To do that run the provided script that will add the dependencies to a local pri
 **Linux**
 
 ```
-./install-mvn-external-dependencies.sh
+./Setup/install-mvn-external-dependencies.sh
 ```
 
 **Windows**
 
 ```
-.\install-mvn-external-dependencies.ps1
+.\Setup/install-mvn-external-dependencies.ps1
 ```
 
 ### Compiling the Simulator
