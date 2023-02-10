@@ -1,0 +1,10 @@
+name: PeersimGym
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - py4j
+  - gym
+  - tensorflow==2.3.0
+  - keras
+prefix: /home/fm/anaconda3/envs/PeersimGym
