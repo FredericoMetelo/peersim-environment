@@ -31,11 +31,27 @@ two endpoints:
 
 # Quickstart
 ## Executiong the Simulator
+Running the environment is simple. You need to setup your anaconda environment first, afterwards you just need to create a object 
+`PeersimEnv("config_file.txt")` in pyhton this will start the server with the configurations you specify on a configuration file, more details on this later in this guide.
+
 ### Setup the anaconda environment
 I provide a .yml to automatically install the necessary dependencies, see `Setup/PeersimGym.yml`. To create an environment from this specification run:
 
 ```
 conda env create -f Setup/PeersimGym.yml
+```
+
+After creating the environment you need to activate it. This step may need to be repeated everytime you open the project
+(No need to create the environment again, just activate it).
+
+```
+conda activate PeersimGym
+```
+### Using the environment
+To start the simulation all you need to do is create a PeersimEnv object in your python code. This environment can then be used 
+like a regular Gym environment, an example on that can be found [here](https://gymnasium.farama.org/)
+``` 
+Note: Still have to set up the gym.make part of it...
 ```
 
 ## Setup the simulator
@@ -50,13 +66,13 @@ To do that run the provided script that will add the dependencies to a local pri
 **Linux**
 
 ```
-./Setup/install-mvn-external-dependencies.sh
+./install-mvn-external-dependencies.sh
 ```
 
 **Windows**
 
 ```
-.\Setup/install-mvn-external-dependencies.ps1
+.\install-mvn-external-dependencies.ps1
 ```
 
 ### Compiling the Simulator

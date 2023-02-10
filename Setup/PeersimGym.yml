@@ -1,6 +1,8 @@
 name: PeersimGym
 channels:
+  - anaconda
   - defaults
+  - conda-forge
 dependencies:
   - python=3.8
   - py4j
