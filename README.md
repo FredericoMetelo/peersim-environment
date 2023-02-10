@@ -31,14 +31,43 @@ two endpoints:
 
 # Quickstart
 ## Executiong the Simulator
+### Setup the anaconda environment
+I provide a .yml to automatically install the necessary dependencies, see `Setup/PeersimGym.yml`. To create an environment from this specification run:
+
+```
+conda env create -f Setup/PeersimGym.yml
+```
 
 ## Setup the simulator
-I should note that I provide a jar with everything needed to run the project in 
-
+I provide a jar with everything needed to run the project in `target/peersim-srv-0.0.1-SNAPSHOT.jar`. The following sections
+are only to compile any changes made over the version provided in this repository. 
 ### Maven Dependencies
-The project utilises some private jar's that come packaged with the Peersim project. This dependencies need to be added to rebuild the project with maven.
+**Setup Maven**
+First install maven itself, if you don't have already. To install it follow the instructions in https://maven.apache.org/install.html
+After having maven installed. Add the private dependencies that come packaged with the Peersim project to maven.
+To do that run the provided script that will add the dependencies to a local private repository:
+
+**Linux**
+
+```
+./install-mvn-external-dependencies.sh
+```
+
+**Windows**
+
+```
+.\install-mvn-external-dependencies.ps1
+```
 
 ### Compiling the Simulator
+To compile the simulator use the following command:
+
+```
+mvn clean -Dmaven.test.skip package
+```
+
+This will package a jar with all necessary dependencies to run the simulator. The jar can be found on the `target/peersim-srv-0.0.1-SNAPSHOT.jar`
+directory/folder.
 
 ## Configuring the Simulator
 
