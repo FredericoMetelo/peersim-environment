@@ -44,7 +44,7 @@ The MDP is defined as a tuple <S, A, P, R> where:
     - The Utility U(s, a) is given by: $U(s, a) = r_u * log(1 + w^l + w^o)$ and represents the amount of tasks ”solved” by taking the action $a$ on state $s$. $r_u$ is a utility reward.
     - The Delay function has three components given by: $D(s, a) = X_d\frac{t^w + t^c + t^e}{w^l + w^o}$
       - $t^w$, average time a task will be sitting in the queue of the fog node $n^l$. The expression to compute $t^w$
-      is $t^w = \frac{Q^l}{\mu^l}* \mathbb(1)(w^l \neq 0) + (\frac{Q^l}{\mu^l} + \frac{Q^o}{\mu^o})* \mathbb(1)(w^l \neq 0)$
+      is $t^w = \frac{Q^l}{\mu^l}* \mathbb{1}(w^l \neq 0) + (\frac{Q^l}{\mu^l} + \frac{Q^o}{\mu^o})* \mathbb{1}(w^o \neq 0)$
       - d
       - d
     - b
