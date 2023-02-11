@@ -1,8 +1,8 @@
 # Peersim-Env
 
-This repository contains the implementation of Peersim-env. This is composed of two parts,
-a server that allows interaction with the simultion of the peersim environment, and a Gym environment class in python to
-communicate with the gym environment.
+This repository contains the implementation of Peersim-env. This is composed of two parts. A Gym environment python class, and
+a server that wraps the simultion of the peersim environment in a REST API allowing the passing of information to the python Gym environment.
+
 
 ### The Simulation Server
 
@@ -17,26 +17,64 @@ We utilize [Peersim](https://peersim.sourceforge.net/) to simulate a network wit
 - Controller Node: The controller nodes keep information of the status of each node and recieve the offload instructions from the outside to pass 
   them to the relevant worker node. The worker node to be offloaded to is selected on a round robin style across all nodes.
 
+### MDP 
+To be applied to Reinforcement Learning the problem needed to be specified as an Markov Decision Process. Utilize the MDP definition 
+for a Load Distribution Problem in a Network with a central controller node following closely the definition of MDP the authors at "[Managing Fog Networks using Reinforcement
+Learning Based Load Balancing Algorithm](https://ieeexplore.ieee.org/document/8885745)" give.
+
+The MDP is defined as a tuple <S, A, P, R> where:
+- **State Space, S**: S is the set of all possible states, this states are tuples $s = (n^l, w, Q)$. 
+  - $n^l$ is the index of the node that is currently being evaluated for offloading. $n^l \in N \land 1 \leq n^l \leq N$
+  - W, as the authors define, is the number of tasks to be allocated per unit of time. I consider this to be the average number of
+    tasks being processed per unit of time in the node $n^l$. This value is  $w \in N ∧ 1 \leq w \leq W_{max}$
+  - Q represents the current state of all node queues, how many tasks each has. $Q = {(Q1, ..., QN)|Qi \in 0,...,Q_{max\_size}}$
+- **Action Space, A**: A is the set of all possible actions to be taken for the node currently being evaluated. The
+  An action is a pair of the form $a = (n^o, w^o)$.
+  - $n^o$ is the index of a node neighbour to the node currently being evaluated. $n^o \in N ∧ 1 \leq n^o \leq N$
+    n^o will also never be a node that has bigger queue length than the current node. `TODO Guarantee this n^o property!!!`
+  - $w^o$ is the number of tasks being offloaded to a neighbouring node.
+
+  And after executing the action we will process locally $w^l$ tasks.
+
+- **Transition Function, P**: This is the unknown transition function.
+- **Reward Function, R**: The objective is to obtain an optimal offloading so that we maximize a utility function,
+  U(s, a) and minimize the processing delay, D(s, a) and the overload probability, O(s, a). Therefore the reward
+  for action a in state s is given by:
+  $$ R(s, a) = U(s, a) − (D(s, a) + O(s, a)) $$
+    - The Utility U(s, a) is given by: $U(s, a) = r_u * log(1 + w^l + w^o)$ and represents the amount of tasks ”solved” by taking the action a on state s. ru is a utility reward, the authors do not elaborate on what
+      this utility reward is so I assume it’s an arbitrary value.
+    - The Delay function is given by: $D(s, a) = X_d\frac{t^w + t^c + t^e}{w^l + w^o}$
+      - a
+      - d
+      - d
+    - b
 ### The Network Topology
 In the network used in the paper, the nodes all can access each other directly and are distributed in a 100x100m area.
 
-### Spring Server
+### REST API
 To allow receiving instructions from the model in python we wrap the simulator in a simple REST API built on top of a Spring Server. The API has provides
 two endpoints:
 
-- GET: http://localhost:8080/state - This endpoint will return the state olf the simulation at request time. 
+- GET: http://localhost:8080/state - This endpoint will return the state of the simulation at request time. 
 - POST: http://localhost:8080/action -  This endpoint will send the offloading action specified in the body of the request to the simulator.
   and send the reward of taking the action in the response.
 
 
 # Quickstart
-## Executiong the Simulator
+This section will focus on two things. How to setup and utilize the environment, and how to build a new version of the simulation.
+## Utilizing the Environment
 ### Setup the anaconda environment
-I provide a .yml to automatically install the necessary dependencies, see `Setup/PeersimGym.yml`. To create an environment from this specification run:
+I provide a yml file to automatically install the necessary dependencies, see `Setup/PeersimGym.yml`. To create an environment from this specification run:
 
 ```
 conda env create -f Setup/PeersimGym.yml
 ```
+
+### Using the Environment
+```
+TODO add code example here after it is finished...
+```
+
 
 ## Setup the simulator
 I provide a jar with everything needed to run the project in `target/peersim-srv-0.0.1-SNAPSHOT.jar`. The following sections
