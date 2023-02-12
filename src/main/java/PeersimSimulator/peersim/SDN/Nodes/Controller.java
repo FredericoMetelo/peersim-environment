@@ -22,15 +22,30 @@ import java.util.List;
 public class Controller implements CDProtocol, EDProtocol {
     private static final String PAR_NAME = "name";
 
-    private static final int UTILITY_REWARD = 1;
+    private final int UTILITY_REWARD;
+    private final static String PAR_UTILITY_REWARD = "r_u";
 
-    private static final int DELAY_WEIGHT = 1;
+    private final int DELAY_WEIGHT;
+    private final static String PAR_DELAY_WEIGHT = "X_d";
 
-    private static final int OVERLOAD_WEIGHT = 150;
 
+    private final int OVERLOAD_WEIGHT;
+    private final static String PAR_OVERLOAD_WEIGHT = "X_o";
+
+    /**
+     * The Normalized Thermal Noise power is measured in dBm/Hz. From "https://noisewave.com/faq.pdf"
+     *
+     * > Noise Figure is defined as the ratio of the signal-to-noise power at the input to the signal-to-noise power
+     * > at the output of a device, in other words the degradation of the signal-to-noise ratio as the signal passes
+     * > through the device. Since the input noise level is usually thermal noise from the source the convention is
+     * > to adopt a reference temperature of 290º K. The noise figure becomes the ratio of the total noise
+     * > power output to that portion of the noise power output due to noise at input when the source is 290º
+     * > K. ...
+     * The thermal noise power  at 290º K is following the same sources is constant and equal to -174 dBm/Hz
+     */
+    public final static int NORMALIZED_THERMAL_NOISE_POWER = 174;
 
     private static final int CONTROLLER_ID = 0;
-    public static final int NORMALIZED_THERMAL_NOISE_POWER = 174;
     private static int pid;
 
     /**
@@ -49,6 +64,12 @@ public class Controller implements CDProtocol, EDProtocol {
         workerInfo = new ArrayList<>();
         active = false;
         stop = true;
+
+        // Read Constants
+        DELAY_WEIGHT = Configuration.getInt( prefix + "." + PAR_DELAY_WEIGHT, 1) ;
+        OVERLOAD_WEIGHT = Configuration.getInt( prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
+        UTILITY_REWARD = Configuration.getInt( prefix + "." + PAR_UTILITY_REWARD, 1);
+
     }
 
     @Override
@@ -183,6 +204,9 @@ public class Controller implements CDProtocol, EDProtocol {
     }
     public double evaluateState(Node n, Node t, double w_l, double w_o, double Q_l, double Q_o, double miu_l, double miu_o, double Q_expected_l, double Q_expected_o) {
         Log.dbg("Acquire Reward");
+
+        Client clt = this.getClient();
+
         // Immediate Utility
         double U = UTILITY_REWARD * Math.log(1 + w_l + w_o );
 
@@ -193,15 +217,15 @@ public class Controller implements CDProtocol, EDProtocol {
         SDNNodeProperties propsNode =  (SDNNodeProperties) n.getProtocol(SDNNodeProperties.getPid());
         SDNNodeProperties propsTarget =  (SDNNodeProperties) t.getProtocol(SDNNodeProperties.getPid());
         double d_i_j = Math.sqrt(Math.pow(propsNode.getY() - propsTarget.getY(), 2) + Math.pow(propsNode.getX() - propsTarget.getX(), 2));
-        double r_i_j = propsNode.getBandwidth() * Math.log(1 +
-                ( propsTarget.getPathLossConstant() * Math.pow(d_i_j, propsNode.getPathLossExponent()) * propsNode.getTransmission_power() ) / ( propsNode.getBandwidth() * NORMALIZED_THERMAL_NOISE_POWER) );
+        double r_i_j = propsNode.getBANDWIDTH() * Math.log(1 +
+                ( propsTarget.getPATH_LOSS_CONSTANT() * Math.pow(d_i_j, propsNode.getPATH_LOSS_EXPONENT()) * propsNode.getTRANSMISSION_POWER() ) / ( propsNode.getBANDWIDTH() * NORMALIZED_THERMAL_NOISE_POWER) );
 
 
-        double t_c = 2 * w_o * Client.BYTE_SIZE / r_i_j; // TODO Works only when all tasks have the same size,
+        double t_c = 2 * w_o * clt.BYTE_SIZE / r_i_j; // TODO Works only when all tasks have the same size,
                                                          // TODO change to have average byte size, send info in the WorkerInfo.
 
 
-        double t_e = Client.NO_INSTR * Client.CPI * (w_l / ((Worker) n.getProtocol(Worker.getPid())).CPU_FREQ  + w_o / ((Worker) t.getProtocol(Worker.getPid())).CPU_FREQ);
+        double t_e = clt.NO_INSTR * clt.CPI * (w_l / ((Worker) n.getProtocol(Worker.getPid())).CPU_FREQ  + w_o / ((Worker) t.getProtocol(Worker.getPid())).CPU_FREQ);
 
         double D = (w_l == 0 && w_o == 0) ?  0 :  DELAY_WEIGHT * (t_w + t_c + t_e)/(w_l + w_o);
         // If no transaction is being done and there is nothing to process locally then there is no delay. And can't divide by 0.
@@ -212,8 +236,8 @@ public class Controller implements CDProtocol, EDProtocol {
         Worker workerNode = (Worker) n.getProtocol(Worker.getPid());
         Worker workerTarget = (Worker) t.getProtocol(Worker.getPid());
 
-        double Q_prime_l = Math.min(Math.max(0, Q_expected_l - workerNode.getProcessingPower()) + w_l, Worker.Q_MAX); // This should technically be available in the WorkerInfo btw...
-        double Q_prime_o = Math.min(Math.max(0, Q_expected_o - workerTarget.getProcessingPower()) + w_o, Worker.Q_MAX);
+        double Q_prime_l = Math.min(Math.max(0, Q_expected_l - workerNode.getProcessingPower()) + w_l, workerNode.Q_MAX); // This should technically be available in the WorkerInfo btw...
+        double Q_prime_o = Math.min(Math.max(0, Q_expected_o - workerTarget.getProcessingPower()) + w_o, workerTarget.Q_MAX);
 
         double pOverload_l = Math.max(0, Client.getTaskArrivalRate() - Q_prime_l);
         double pOverload_o = Math.max(0, Client.getTaskArrivalRate() - Q_prime_o);
@@ -260,6 +284,10 @@ public class Controller implements CDProtocol, EDProtocol {
 
     public List<Integer> getQ(){
         return this.workerInfo.stream().map(WorkerInfo::getQueueSize).toList();
+    }
+
+    public Client getClient(){
+        return (Client) Network.get(0).getProtocol(Client.getPid());
     }
 
     //======================================================================================================

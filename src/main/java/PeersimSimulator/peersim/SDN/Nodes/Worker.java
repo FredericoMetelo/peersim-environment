@@ -19,16 +19,16 @@ public class Worker implements CDProtocol, EDProtocol {
     //======================================================================================================
     private static final String PAR_NAME = "name";
 
-    public final int QUEUE_SIZE_MAX; // TODO make this definable from the configs.
 
     /**
      * Represents the frequency of the CPUs on this machine.
      */
     public final double CPU_FREQ;
+    private static final String PAR_CPU_FREQ = "FREQ";
     public final int CPU_NO_CORES;
-
-    public static final int Q_MAX = 10;
-
+    private static final String PAR_CPU_NO_CORES = "NO_CORES";
+    public final int Q_MAX;
+    private static final String PAR_Q_MAX = "Q_MAX";
     //======================================================================================================
     // Variables
     //======================================================================================================
@@ -72,9 +72,10 @@ public class Worker implements CDProtocol, EDProtocol {
         // TODO make this definable from the configs.
         // TODO in future have multiple classes of nodes?
         pid = Configuration.getPid(prefix + "."+PAR_NAME);
-        QUEUE_SIZE_MAX = 10;
-        CPU_FREQ = 1e7;
-        CPU_NO_CORES = 4;
+        CPU_FREQ = Configuration.getDouble( prefix + "." + PAR_CPU_FREQ, 1e7);
+        CPU_NO_CORES = Configuration.getInt( prefix + "." + PAR_CPU_NO_CORES, 4);
+        Q_MAX = Configuration.getInt(prefix + "." + PAR_Q_MAX , 10);
+
         processingPower = Math.floor(CPU_NO_CORES * CPU_FREQ);
         //======== Init Datastructures ===========//
         queue = new LinkedList<>(); // Assuming no concurrency within node. If we want to handle multiple requests confirm trx safe.
@@ -199,7 +200,17 @@ public class Worker implements CDProtocol, EDProtocol {
             }
             List<Task> offloadedTasks = ev.getTaskList().stream().peek((t)->t.setNodeId(this.id)).toList();
             Log.info("|WRK| TASK OFFLOAD RECIEVE: SRC<"+ ev.getSrcNode() + "> TARGET<"+this.getId()+"> NO_TASKS<" +offloadedTasks.size()+ ">");
-            this.receivedRequests.addAll(offloadedTasks);
+            if(this.queue.size() + offloadedTasks.size() >= Q_MAX) {
+                for (int i = 0; i < offloadedTasks.size(); i++) {
+                    this.queue.add(offloadedTasks.get(i));
+                    if(this.queue.size() >= Q_MAX) // This section of the method was done late, review this!!!!
+                        break;
+                }
+                Log.err("Dropping Tasks Node "+this.getId()+" is Overloaded!");
+
+            }else {
+                this.receivedRequests.addAll(offloadedTasks);
+            }
             this.changed = true;
 
         }else if(event instanceof OffloadInstructions ev){
@@ -256,6 +267,11 @@ public class Worker implements CDProtocol, EDProtocol {
             // Recieve Task from Client
             if(this.id != ev.getTask().getNodeId()){
                 System.out.println("Task arrived at wrong node.");
+                return;
+            }
+            if(this.queue.size() >= Q_MAX) // This section of the method was done late, review this!!!!
+            {
+                System.out.println("Dropping Tasks, Node "+this.getId()+" is overloaded!");
                 return;
             }
             Log.info("|WRK| NEW TASK RECIEVE: ID<"+this.getId()+">TASK_ID<" + ev.getTask().getId() +">");

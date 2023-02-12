@@ -20,10 +20,15 @@ import java.util.Random;
 
 public class Client implements CDProtocol, EDProtocol {
 
-    public static final double BYTE_SIZE = 500; // Mbytes
-    public static final double NO_INSTR = 200e6;
+    private static final String PAR_BYTE_SIZE = "T";
+    public final double BYTE_SIZE; // Mbytes
 
-    public static final int CPI = 1;
+    private static final String PAR_NO_INSTR = "I";
+
+    public final double NO_INSTR;
+
+    private static final String PAR_CPI = "CPI";
+    public final int CPI;
 
     private static final String PAR_NAME = "name";
     private static int pid;
@@ -55,6 +60,11 @@ public class Client implements CDProtocol, EDProtocol {
         noResults = 0;
         nextArrival = null;
         active = false;
+
+        // Read Constants
+        CPI = Configuration.getInt( prefix + "." + PAR_CPI, 1) ;
+        BYTE_SIZE = Configuration.getInt( prefix + "." + PAR_BYTE_SIZE, 500);
+        NO_INSTR = Configuration.getDouble( prefix + "." + PAR_NO_INSTR, 200e6);
     }
 
     @Override

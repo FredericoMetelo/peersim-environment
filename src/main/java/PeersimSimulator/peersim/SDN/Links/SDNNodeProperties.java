@@ -15,11 +15,18 @@ public class SDNNodeProperties implements Protocol {
 
     private static int pid;
 
-    private double bandwidth;
-    private double pathLossConstant;
-    private double pathLossExponent;
+    private final double BANDWIDTH;
+    private static final String PAR_BANDWIDTH = "B";
 
-    private double transmission_power;
+    private final double PATH_LOSS_CONSTANT;
+    private static final String PAR_PATH_LOSS_CONSTANT = "Beta1";
+
+    private final double PATH_LOSS_EXPONENT;
+    private static final String PAR_PATH_LOSS_EXPONENT = "Beta2";
+
+    private final double TRANSMISSION_POWER;
+    private static final String PAR_TRANSMISSION_POWER = "P_ti";
+
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
@@ -29,10 +36,10 @@ public class SDNNodeProperties implements Protocol {
         /* Un-initialized coordinates defaults to -1. */
         pid = Configuration.getPid(prefix+ "."+PAR_NAME);
         x = y = -1; // meters
-        bandwidth = 2; // 2Mhz
-        pathLossConstant = 0.001;
-        pathLossExponent = 4;
-        transmission_power = 20;// 20 dbm
+        BANDWIDTH = Configuration.getDouble( prefix + "." + PAR_BANDWIDTH, 2); // 2Mhz
+        PATH_LOSS_CONSTANT = Configuration.getDouble( prefix + "." + PAR_PATH_LOSS_CONSTANT, 0.001);
+        PATH_LOSS_EXPONENT = Configuration.getDouble( prefix + "." + PAR_PATH_LOSS_EXPONENT, 4);
+        TRANSMISSION_POWER = Configuration.getDouble( prefix + "." + PAR_TRANSMISSION_POWER, 20);// 20 dbm
 
     }
 
@@ -45,37 +52,25 @@ public class SDNNodeProperties implements Protocol {
         return inp;
     }
 
-    public double getBandwidth() {
-        return bandwidth;
+    public double getBANDWIDTH() {
+        return BANDWIDTH;
     }
 
-    public void setBandwidth(double bandwidth) {
-        this.bandwidth = bandwidth;
+
+    public double getPATH_LOSS_CONSTANT() {
+        return PATH_LOSS_CONSTANT;
     }
 
-    public double getPathLossConstant() {
-        return pathLossConstant;
+
+    public double getPATH_LOSS_EXPONENT() {
+        return PATH_LOSS_EXPONENT;
     }
 
-    public void setPathLossConstant(double pathLossConstant) {
-        this.pathLossConstant = pathLossConstant;
+
+    public double getTRANSMISSION_POWER() {
+        return TRANSMISSION_POWER;
     }
 
-    public double getPathLossExponent() {
-        return pathLossExponent;
-    }
-
-    public void setPathLossExponent(double pathLossExponent) {
-        this.pathLossExponent = pathLossExponent;
-    }
-
-    public double getTransmission_power() {
-        return transmission_power;
-    }
-
-    public void setTransmission_power(double transmission_power) {
-        this.transmission_power = transmission_power;
-    }
 
     public double getX() {
         return x;

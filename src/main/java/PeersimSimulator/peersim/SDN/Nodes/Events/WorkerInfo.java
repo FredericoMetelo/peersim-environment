@@ -1,6 +1,7 @@
 package PeersimSimulator.peersim.SDN.Nodes.Events;
 
 import PeersimSimulator.peersim.SDN.Nodes.Client;
+import PeersimSimulator.peersim.core.Network;
 
 import java.util.List;
 
@@ -47,7 +48,8 @@ public class WorkerInfo {
      * @return the expected amount of tasks to be processed in that node in a unit of time.
      */
     public double getW() {
-        return (averageTaskSize == 0) ? 0 : nodeProcessingPower/(averageTaskSize * Client.CPI);
+        Client clt = (Client) Network.get(0).getProtocol(Client.getPid());
+        return (averageTaskSize == 0) ? 0 : nodeProcessingPower/(averageTaskSize * clt.CPI);
     }
 
     public void setW_i(int w_i) {
