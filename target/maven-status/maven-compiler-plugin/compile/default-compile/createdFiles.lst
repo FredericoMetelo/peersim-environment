@@ -105,6 +105,7 @@ PeersimSimulator/example/hot/InetCoordinates.class
 PeersimSimulator/peersim/edsim/CDScheduler.class
 PeersimSimulator/peersim/SDN/Nodes/Controller.class
 PeersimSimulator/peersim/util/FileNameGenerator.class
+PeersimSimulator/peersim/SDN/Nodes/ControllerAPI$Information.class
 PeersimSimulator/peersim/dynamics/StarNI.class
 PeersimSimulator/peersim/dynamics/WireScaleFreeBA.class
 PeersimSimulator/peersim/dynamics/WireRegRootedTree.class

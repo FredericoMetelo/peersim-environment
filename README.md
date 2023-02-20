@@ -107,6 +107,13 @@ After creating the environment you need to activate it. This step may need to be
 ```
 conda activate PeersimGym
 ```
+
+### Adding the environment module to Conda
+In a terminal go from project root to `src/peersim-gym`. We will have to add our local module to conda, to do that execute:
+```bash
+
+```
+
 ### Using the environment
 To start the simulation all you need to do is create a PeersimEnv object in your python code. This environment can then be used 
 like a regular Gym environment, an example on that can be found [here](https://gymnasium.farama.org/).
@@ -130,20 +137,20 @@ To do that run the provided script that will add the dependencies to a local pri
 
 **Linux**
 
-```
+```bash
 ./install-mvn-external-dependencies.sh
 ```
 
 **Windows**
 
-```
+```powershell
 .\install-mvn-external-dependencies.ps1
 ```
 
 ### Compiling the Simulator
 To compile the simulator use the following command:
 
-```
+```bash
 mvn clean -Dmaven.test.skip package
 ```
 
@@ -156,6 +163,41 @@ this project allow for configuration of the multiple parameters considered in th
 
 A list of possible configurations is as follows, add this lines anywhere in the configuration file:
 
+### Configuration of the Simulation
+Note: Entries without the format <protocol|init|control>.string_id.parameter_name are just constant values that help define other variables.
+
+- **Size of the Network** defines the number of nodes in the simulation,
+for 'SIZE' nodes there are 1 Controller Node, 1 Client Node and SIZE-1 Worker Nodes. The actual variable that sets the simulation size is
+'network.size'.
+  ```
+  SIZE 10
+  ...
+  network.size SIZE
+  ```
+  
+- **Number of times simulation is executed** The constant 'CYCLES' defines the total number of complete cycles (ticks in the simulation) until the simulation ends. We should note the actual variable that sets this value is 'simulation.endtime'
+The constant 'CYCLE' is used to define the number of ticks to reschedule the running of an event (IE client sending messages, worker ticking the clock once), I recommend leaving this value at one.
+  ```
+  CYCLES 1000
+  CYCLE 1
+  ...
+  simulation.endtime CYCLE*CYCLES
+  ...
+  protocol.wrk.step CYCLE
+  ...
+  
+  ```
+- **Bounds of the delay a message can have** Setting MINDELAY and MAXDELAY will allow messages to possibly be delayd when being delivered.
+The delay will be such that MINDELAY <= delay <= MAXDELAY (MAXDELAY == MINDELAY == 0 means no delay, also MINDELAY<=MAXDELAY).
+  ```
+  MINDELAY 0
+  MAXDELAY 0
+  ```
+- **Probability of a package/message being lost** Allows messages to be lost, the simulation for now assumes that the communications are reliable although possibly delayed therefore the environment is still not prepared to deal with this.
+  ```
+  DROP 0
+  ```
+  
 ### Configurations of the Controller
 - **Utility Reward, r_u**, a parameter of the reward function acts as a weight in the expression that computes the utility of a reward.
 This parameter recieves an int, the default value is 1.
@@ -196,17 +238,17 @@ This parameter recieves an int, the default value is 1.
     - In computing the reward function. Specifically, affects the delay function and represents the execution cost of the tasks.
     - It considered in computing the time it takes for a simulation to finish a task.
     ``` 
-    protocol.clt.NO_CORES 4
+    protocol.wrk.NO_CORES 4
     ```
 - **Frequency of Worker CPU**. This parameter is measured in instructions/second, and is used in two ways:
     - In computing the reward function. Specifically, affects the delay function and represents the execution cost of the tasks.
     - It considered in computing the time it takes for a simulation to finish a task.
     ``` 
-    protocol.clt.FREQ 1e7
+    protocol.wrk.FREQ 1e7
     ```
 - **Maximum Queue size, Q_MAX**. This parameter is used multiple times when computing the reward function, and is used as the threshold for a node to overload and start dropping tasks.
     ``` 
-    protocol.clt.Q_MAX 10
+    protocol.wrk.Q_MAX 10
     ```
   
 ### Configuration of the links between the nodes
@@ -226,3 +268,4 @@ This parameter recieves an int, the default value is 1.
     ``` 
     protocol.props.P_ti 20
     ```
+  

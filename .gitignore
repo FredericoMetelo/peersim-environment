@@ -1,5 +1,6 @@
 HELP.md
-target/
+!target/peersim-srv-0.0.1-SNAPSHOT.jar
+!target/peersim-srv-0.0.1-SNAPSHOT.jar.original
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

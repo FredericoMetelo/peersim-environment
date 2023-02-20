@@ -2,6 +2,7 @@ package PeersimSimulator.peersim.SDN.Nodes;
 
 import PeersimSimulator.peersim.SDN.Records.Action;
 import PeersimSimulator.peersim.SDN.Records.EnvState;
+import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Control;
 import PeersimSimulator.peersim.core.Network;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,10 +20,10 @@ public class ControllerAPI  implements Control {
     }
 
     @GetMapping("/state")
-    public EnvState getState(){
+    public Information getState(){
         Controller c = (Controller) Network.get(0).getProtocol(Controller.getPid());
         while(!c.isStable()) Thread.onSpinWait(); // await the 100 ticks.
-        return c.getState();
+        return new Information(c.getState(), CommonState.getEndTime() == CommonState.getTime());
     }
 
     @PostMapping("/action")
@@ -36,4 +37,6 @@ public class ControllerAPI  implements Control {
     public boolean execute() {
         return false;
     }
+
+    private record Information(EnvState state, boolean done){}
 }

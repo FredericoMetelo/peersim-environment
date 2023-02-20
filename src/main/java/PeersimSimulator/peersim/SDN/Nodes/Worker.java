@@ -76,6 +76,7 @@ public class Worker implements CDProtocol, EDProtocol {
         CPU_NO_CORES = Configuration.getInt( prefix + "." + PAR_CPU_NO_CORES, 4);
         Q_MAX = Configuration.getInt(prefix + "." + PAR_Q_MAX , 10);
 
+        printParams();
         processingPower = Math.floor(CPU_NO_CORES * CPU_FREQ);
         //======== Init Datastructures ===========//
         queue = new LinkedList<>(); // Assuming no concurrency within node. If we want to handle multiple requests confirm trx safe.
@@ -356,5 +357,10 @@ public class Worker implements CDProtocol, EDProtocol {
     public String toString(){
         String curr = (current != null)? current.getId() : "NULL";
         return "Worker ID<" + this.getId() + "> | Q: " + getQueueSize() +" W: " + this.receivedRequests.size() + " Current: " + curr;
+    }
+
+    private void printParams(){
+        //if(active)
+            Log.dbg("Worker Params: NO_CORES<" + this.CPU_NO_CORES + "> FREQ<" + this.CPU_FREQ+ "> Q_MAX<"+ this.Q_MAX+">" );
     }
 }

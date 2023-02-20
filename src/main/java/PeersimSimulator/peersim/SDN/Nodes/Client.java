@@ -60,11 +60,12 @@ public class Client implements CDProtocol, EDProtocol {
         noResults = 0;
         nextArrival = null;
         active = false;
-
         // Read Constants
         CPI = Configuration.getInt( prefix + "." + PAR_CPI, 1) ;
         BYTE_SIZE = Configuration.getInt( prefix + "." + PAR_BYTE_SIZE, 500);
         NO_INSTR = Configuration.getDouble( prefix + "." + PAR_NO_INSTR, 200e6);
+        printParams();
+
     }
 
     @Override
@@ -193,5 +194,10 @@ public class Client implements CDProtocol, EDProtocol {
             this.id = id;
             this.timeSent = timeSent;
         }
+    }
+
+    private void printParams(){
+        //if(active)
+            Log.dbg("Client Params: CPI<" + this.CPI + "> T<" + this.BYTE_SIZE+ "> I<"+ this.NO_INSTR+">" );
     }
 }

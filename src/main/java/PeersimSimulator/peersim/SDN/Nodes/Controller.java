@@ -64,11 +64,11 @@ public class Controller implements CDProtocol, EDProtocol {
         workerInfo = new ArrayList<>();
         active = false;
         stop = true;
-
         // Read Constants
         DELAY_WEIGHT = Configuration.getInt( prefix + "." + PAR_DELAY_WEIGHT, 1) ;
         OVERLOAD_WEIGHT = Configuration.getInt( prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
         UTILITY_REWARD = Configuration.getInt( prefix + "." + PAR_UTILITY_REWARD, 1);
+        printParams();
 
     }
 
@@ -324,6 +324,10 @@ public class Controller implements CDProtocol, EDProtocol {
         }
     }
 
+    private void printParams(){
+        //if(active)
+            Log.dbg("Controller Params: r_u<" + this.UTILITY_REWARD + "> X_d<" + this.DELAY_WEIGHT+ "> X_o<"+ this.OVERLOAD_WEIGHT+">" );
+    }
 
 
 }
