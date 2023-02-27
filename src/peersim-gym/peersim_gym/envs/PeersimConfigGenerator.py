@@ -1,3 +1,13 @@
+import sys
+import os
+
+import peersim_gym.envs as module
+import pkg_resources
+
+import os
+this_dir, this_filename = os.path.split(__file__)
+print(this_dir +  "    " + this_filename)
+
 PEERSIM_DEFAULTS = {
     "SIZE" : "10",
     "CYCLE": "1",
@@ -19,8 +29,9 @@ PEERSIM_DEFAULTS = {
     "protocol.props.Beta2": "4",
     "protocol.props.P_ti": "20"
 }
-BASE_FILE_PATH = "src/peersim-gym/peersim_gym/envs/config-SDN-BASE.txt"
-TARGET_FILE_PATH = "configs/config.txt"
+BASE_FILE_PATH = os.path.join(this_dir, "configs", "config-SDN-BASE.txt")
+TARGET_FILE_PATH = os.path.join(this_dir, "configs", "config.txt")
+
 def generate_config_file(config_dict):
     print("GENERATING CONFIG FILE")
     if config_dict is None:

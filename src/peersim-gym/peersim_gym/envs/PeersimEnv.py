@@ -38,7 +38,7 @@ class PeersimEnv(gym.Env):
             q_list = [max_Q_size for _ in range(number_nodes)]
         self.observation_space = Dict(
             {
-                "node": Discrete(number_nodes, start=1),
+                "n_i": Discrete(number_nodes, start=1),
                 "Q": MultiDiscrete(q_list),
                 "w": Box(high=max_w, low=0)
                 # The authors use a Natural number to represent this, value. I use a continuous value, because the way
@@ -57,7 +57,7 @@ class PeersimEnv(gym.Env):
             }
         )
 
-        # mvn spring-boot:run -Dspring-boot.run.arguments=configs/config-SDN.txt
+        # mvn spring-boot:run -Dspring-boot.run.arguments=configs/default-config.txt
         # Run the actual environment.
         # Prepare the Configuration file
 
@@ -82,9 +82,9 @@ class PeersimEnv(gym.Env):
             raise Exception(
                 "Invalid Type for the configs parameter. Needs to be None, a Dictionary or a String. Please see the project README.md")
         # with subprocess as s:
-
-        self.simulator = PeersimThread(name='Run0', configs=self.config_path)
-        self.simulator.run()
+        self.simulator = None
+        # self.simulator = PeersimThread(name='Run0', configs=self.config_path)
+        # self.simulator.run()
 
     def step(self, action: ActType):
         # A step will advance the simulation in 100 ticks
@@ -101,7 +101,7 @@ class PeersimEnv(gym.Env):
         s = requests.get(space_url, headers=headers_state).json()
         print(s)
 
-        return s["state"], reward_for_action, s["done"], False, None
+        return s.get("state"), reward_for_action, s.get("done"), False, None
 
     def render(self):
         pass
@@ -114,12 +114,18 @@ class PeersimEnv(gym.Env):
         self.simulator.stop()
 
     def reset(self, **kwargs):
-        self.simulator.stop()
+        if self.simulator != None:
+            self.simulator.stop()
+        else:
+            self.simulator = PeersimThread(name=f'Run{self.__run_counter}', configs=self.config_path)
         self.__run_peersim()
-        pass
+        time.sleep(3)  # Good Solution? No... But it is what it is.
+        space_url = self.url_api + self.url_state_path
+        headers_state = {"Accept": "application/json", "Connection": "keep-alive"}
+        s = requests.get(space_url, headers=headers_state).json()
+        return s.get('state'), None
 
-    def see_types(self):
-        # TODO delete this.
+    def __see_types(self):
         print("Example of action.")
         print(self.action_space.sample())
         print("Example of space.")

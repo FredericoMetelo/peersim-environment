@@ -6,24 +6,28 @@ import threading
 import ctypes
 import time
 import subprocess
+import os
 
-
-def run_peersim(config_path):
+def run_peersim(config_path, jar_path="Environment/peersim-srv-0.0.1-SNAPSHOT.jar"):
     # subprocess.call("pwd", cwd="/home/fm/Documents/Thesis/peersim-srv")
-    return subprocess.Popen(
-        ['/opt/maven/bin/mvn', 'spring-boot:run', f'-Dspring-boot.run.arguments={config_path}'],
-        cwd="/home/fm/Documents/Thesis/peersim-srv")
+    return subprocess.Popen(['java', '-jar', f'{jar_path}', f'{config_path}'], cwd="/")
 
 
 class PeersimThread(threading.Thread):
-    def __init__(self, name, configs):
+    def __init__(self, name, configs, jar_path=None):
         threading.Thread.__init__(self)
         self.peersim = None
         self.name = name
         self.config_path = configs
+        self.this_dir, self.this_filename = os.path.split(__file__)
+        if jar_path is None:
+            self.jar_path = os.path.join(self.this_dir, "Environment", "peersim-srv-0.0.1-SNAPSHOT.jar")
+        else:
+            self.jar_path = jar_path
+        # self.setDaemon(True)
 
     def run(self):
-        self.peersim = run_peersim(self.config_path)
+        self.peersim = run_peersim(self.config_path, jar_path=self.jar_path)
 
 
     def get_id(self):
