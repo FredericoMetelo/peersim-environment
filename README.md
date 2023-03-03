@@ -88,12 +88,12 @@ The MDP is defined as a tuple <S, A, P, R>, the explanaition the authors give to
       - $t^w$, average time a task will be sitting in the queue of the fog node $n^l$. The expression to compute $t^w$
       is $t^w = \frac{Q^l}{\mu^l}* \mathbb{1}(w^l \neq 0) + (\frac{Q^l}{\mu^l} + \frac{Q^o}{\mu^o})* \mathbb{1}(w^o \neq 0)$.
       where $\mu^i$ is the s the computing service rate of node $n^i$, I interpreted this as the service rates on queue theory, tasks processed/unit of time.
-      - t^c is the communication cost in time of offloading w^o tasks. The expression to compute is $t^c = \frac{2 * T * w^o}{r_{l,o}$, where
+      - $t^c$ is the communication cost in time of offloading $w^o$ tasks. The expression to compute is $t^c = \frac{2 * T * w^o}{r_{l,o}}$, where
       T is the data size of the tasks to be offloaded from $n^l$ to $n^o$, $r_{l,o}$ is the is the transmission service rate between the nodes, given by
-      $r_{l,o} = B*\log(1 + \frac{g_{i,j}*P_{t_x, i}{})$ in this expression B is the bandwidth of the channel between the nodes and $d_{i,j}$ is the distance of the nodes
+      $r_{l,o} = B*\log(1 + \frac{g_{i,j}*P_{t_x, i}}{B*N_0})$ in this expression B is the bandwidth of the channel between the nodes and $d_{i,j}$ is the distance of the nodes
       and $\Beta_1$ and $\Beta_2$ are the ath loss constant and path loss exponent, respectively, $P_{t_x,i}$ is the power of the nodes transciever, and $N_0$ is a constant
       representing the noise power spectral density.
-      - t^e is the last element of the Delay function and represents the execution cost of the tasks on the nodes they will be executed on.
+      - $t^e$ is the last element of the Delay function and represents the execution cost of the tasks on the nodes they will be executed on.
       The expression for this term is $t^e = \frac{I * CPI * w^l}{f^l} + \frac{I * CPI * w^l}{f^l}$, where I is the average number of instructions per task, 
       CPI is the average  number of cycles per instruction in the CPU of the nodes, and $f^i$ is the frequency of said CPUs,  we also consider that we may 
       be dealing with multi-core machines and in $f^i$ we also consider the number of cores on the CPU ($f^i = frequency * Number_of_cores$).
