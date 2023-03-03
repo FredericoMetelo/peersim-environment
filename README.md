@@ -8,20 +8,21 @@ a server that wraps the simultion of the peersim environment in a REST API allow
 &nbsp;1.3.[Network Topology](###NetworkTopology)<br>
 &nbsp;1.4.[REST API](###RESTAPI)<br>
 2.[Quickstart](#Quickstart)<br>
-&nbsp;2.1.1.[Setting Up](##SettingUp)<br>
-&nbsp;2.1.2.[External Tools](###ExternalTools)<br>
-&nbsp;2.1.3.[Setup Anaconda](###SetupAnaconda)<br>
-&nbsp;2.2.1.[Using The Environment](###UsingTheEnvironment)<br>
-&nbsp;2.2.2.[Configurations](##Configurations)<br>
-&nbsp;2.2.3.[Configuring The Simulation](###ConfiguringTheSimulation)<br>
-&nbsp;2.2.4.[Configuring The Controller](###ConfiguringTheController)<br>
-&nbsp;2.2.5.[Configuring The Client](###ConfiguringTheClient)<br>
-&nbsp;2.2.6.[Configuring The Workers](###ConfigurationOfTheWorker)<br>
-&nbsp;2.2.7.[Configuring The Links](###ConfigurationsOfTheLinks)<br>
-&nbsp;2.3.1.[Developing the Simulation](##DevelopingTheSimulation)<br>
-&nbsp;2.3.2.[Setup The Simulator](###SetupTheSimulator)<br>
-&nbsp;2.3.3.[Maven Dependencies](###MavenDependencies)<br>
-&nbsp;2.3.4.[Compiling The Simulator](###CompilingTheSimulator)<br>
+&nbsp;2.1.[Setting Up](##SettingUp)<br>
+&nbsp;2.1.1.[External Tools](###ExternalTools)<br>
+&nbsp;2.1.2.[Setup Anaconda](###SetupAnaconda)<br>
+&nbsp;2.2.[Utilizing the Environmnet](##Utilizing)<br>
+&nbsp;&nbsp;2.2.1.[Utilization Example](###UsingTheEnvironment)<br>
+&nbsp;&nbsp;2.2.2.[Configurations](##Configurations)<br>
+&nbsp;&nbsp;2.2.3.[Configuring The Simulation](###ConfiguringTheSimulation)<br>
+&nbsp;&nbsp;2.2.4.[Configuring The Controller](###ConfiguringTheController)<br>
+&nbsp;&nbsp;2.2.5.[Configuring The Client](###ConfiguringTheClient)<br>
+&nbsp;&nbsp;2.2.6.[Configuring The Workers](###ConfigurationOfTheWorker)<br>
+&nbsp;&nbsp;2.2.7.[Configuring The Links](###ConfigurationsOfTheLinks)<br>
+&nbsp;2.3.[Developing the Simulation](##Developing)<br>
+&nbsp;&nbsp;2.3.1.[Setup The Simulator](###SetupTheSimulator)<br>
+&nbsp;&nbsp;2.3.2.[Maven Dependencies](###MavenDependencies)<br>
+&nbsp;&nbsp;2.3.3.[Compiling The Simulator](###CompilingTheSimulator)<br>
 
 <a name="HowTheSimulationWorks"></a>
 ## How the Simltion Works
@@ -95,7 +96,9 @@ The MDP is defined as a tuple <S, A, P, R>, the explanaition the authors give to
       representing the noise power spectral density.
       - $t^e$ is the last element of the Delay function and represents the execution cost of the tasks on the nodes they will be executed on.
       The expression for this term is $t^e = \frac{I * CPI * w^l}{f^l} + \frac{I * CPI * w^l}{f^l}$, where I is the average number of instructions per task, 
-      CPI is the average  number of cycles per instruction in the CPU of the nodes, and $f^i$ is the frequency of said CPUs,  we also consider that we may 
+      CPI is the average  number of cycles per instruction in the 
+      - 
+      - CPU of the nodes, and $f^i$ is the frequency of said CPUs,  we also consider that we may 
       be dealing with multi-core machines and in $f^i$ we also consider the number of cores on the CPU ($f^i = frequency * Number_of_cores$).
 - The last element being considereed in the reward function is the probability of overloading of one of the nodes involved in the offloading. 
   The expression for this is $O(s,a) = \chi_o * \frac{w^l * P_{overload, l} + w^o * P_{overload, o}}{w^l + w^o}$, where $\chi_o$ is a cosntant factor representing the weight of overloading,
@@ -141,11 +144,35 @@ To install the Peersim Module we will have to add the local PeersimGym module to
 ```
 conda develop . -n PeersimGym
 ```
+<a name="Utilizing"></a>
+## Utilizing the Environment
 <a name="UsingTheEnvironment"></a>
-#### Using the environment
+#### Utilization Example
 To start the simulation all you need to do is create a PeersimEnv object in your python code. This environment can then be used 
 like a regular Gym environment. 
 ```python
+import peersim_gym.envs.PeersimEnv import PeersimEnv 
+
+# Note: Need to add the PeersimEnv module to environment for this version
+import gym
+# Two options to create the environment
+# Option 1:
+env = gym.make("peersim_gym/PeersimEnv-v0")
+env.env.init(configs=None) # TODO Untested
+# Option 2:
+env = PeersimEnv(configs=None) 
+# Default config, the guide to configuring the env is further on tutorial
+
+# Start the Environment, env.reset() launches the JVM environment and returns the
+# initial state
+state, info = env.reset() # note: info is None
+# Passing an action to the environment
+action = env.action_space.sample()
+observation, reward, terminated, truncated, info = env.step(action)
+
+# At the end of the simulation call the env.close() to guarantee the resources used 
+# by the environment are  freed
+env.close()
 
 ```
 It is possible to have a custom configuration for the Peersim Simulator. To configure the environment set the configs parameter on the Peersim Environment Constructor to wither the path of the file with the configs (See the `src/peersim-gym/peersim_gym/envs/configs/config-SDN-BASE.txt` for the base file, and the config file must always include the Simulation Definitions, which are not set on the base config file), or pass a dictionary with the key the config name and the value wanted (as a string).
@@ -189,6 +216,9 @@ Note: Entries without the format <protocol|init|control>.string_id.parameter_nam
   ```
   CYCLES 1000
   CYCLE 1
+  
+  # You only need to set CYCLE and CYCLES, not recomended to alter the settings 
+  # bellow directly. They are shown for informative purposes only.
   ...
   simulation.endtime CYCLE*CYCLES
   ...
@@ -277,8 +307,10 @@ Note: Entries without the format <protocol|init|control>.string_id.parameter_nam
     ``` 
     protocol.props.P_ti 20
     ```
+<a name="Developing"></a>
+# Developing the Simulation
 <a name="SetupTheSimulator"></a>
-## Setup the simulator
+### Setup the simulator
 I provide a jar with everything needed to run the project in `target/peersim-srv-0.0.1-SNAPSHOT.jar`. The following sections
 are only to compile any changes made over the version provided in this repository.
 

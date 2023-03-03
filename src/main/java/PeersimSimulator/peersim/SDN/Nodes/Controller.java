@@ -9,6 +9,7 @@ import PeersimSimulator.peersim.SDN.Records.EnvState;
 import PeersimSimulator.peersim.cdsim.CDProtocol;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
+import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
@@ -159,7 +160,7 @@ public class Controller implements CDProtocol, EDProtocol {
                 targetInfo.getQueueSize(),// initial Queue size plus the tasks that stayed.
                 initialInfo.getW(),
                 targetInfo.getW(),
-                initialInfo.getQueueSize() -  w_o,
+                initialInfo.getQueueSize() - w_o,
                 targetInfo.getQueueSize() + w_o// initial Queue size plus the tasks that stayed.
 
         );
@@ -279,7 +280,7 @@ public class Controller implements CDProtocol, EDProtocol {
     }
 
     public double notZero(double n){
-        return (n == 0)? n : 1;
+        return (n == 0)? 0 : 1;
     }
 
     public List<Integer> getQ(){
@@ -312,6 +313,9 @@ public class Controller implements CDProtocol, EDProtocol {
         workerInfo.add(newWi);
     }
     void initializeWorkerInfo(Node node, int protocolID) {
+        double default_task_size = Configuration.getDouble( "protocol.clt.I", 200e6);
+        double default_CPU_FREQ = Configuration.getDouble( "protocol.wrk.FREQ", 1e7);
+        int default_CPU_NO_CORES = Configuration.getInt( "protocol.wrk.NO_CORES", 4);
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
         for(int i = 0; i < linkable.degree(); i++){
@@ -319,7 +323,7 @@ public class Controller implements CDProtocol, EDProtocol {
             if (!target.isUp()) return; // This happens task progress is lost.
             Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
             workerInfo.add(
-                    new WorkerInfo(wi.getId(), 0, 0, 0, 0)
+                    new WorkerInfo(wi.getId(), 0, 0, default_task_size, Math.floor(default_CPU_NO_CORES*default_CPU_FREQ))
             );
         }
     }

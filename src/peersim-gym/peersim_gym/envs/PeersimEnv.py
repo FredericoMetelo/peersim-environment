@@ -113,6 +113,9 @@ class PeersimEnv(gym.Env):
     def close(self):
         self.simulator.stop()
 
+    def init(self, render_mode=None, number_nodes=10, max_Q_size=10, max_w=1, configs=None):
+        self.__init__(render_mode, number_nodes, max_Q_size, max_w, configs)
+
     def reset(self, **kwargs):
         if self.simulator != None:
             self.simulator.stop()
