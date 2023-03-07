@@ -94,9 +94,9 @@ public class Client implements CDProtocol, EDProtocol {
                 Node target = linkable.getNeighbor(i);
                 if (!target.isUp()) return; // This happens task progress is lost.
                 Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
-                Task task = new Task(BYTE_SIZE, NO_INSTR, wi.getId());
+                Task task = new Task(BYTE_SIZE, NO_INSTR, this.getId());
                 tasksAwaiting.add(new TaskInfo(task.getId(), CommonState.getTime()));
-                Log.info("|CLT| TASK SENT to Node:<" + wi.getId() + ">");
+                Log.info("|CLT| TASK SENT to Node:<" + wi.getId() + "> FROM < " + this.getId()+">");
                 ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                         send(
                                 node,

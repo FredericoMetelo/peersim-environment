@@ -124,7 +124,7 @@ public class Worker implements CDProtocol, EDProtocol {
                 int linkableID = FastConfig.getLinkable(protocolID);
                 Linkable linkable = (Linkable) node.getProtocol(linkableID);
                 // For convenience I'll have the Client in the first node, for now.
-                Node client = linkable.getNeighbor(0);
+                Node client = linkable.getNeighbor(current.getNodeId());
 
                 if(!client.isUp()) return; // This happens task progress is lost.
 

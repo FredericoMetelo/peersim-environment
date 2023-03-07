@@ -51,9 +51,14 @@ public class ClientInitializer  implements Control {
      * @return always false
      */
     public boolean execute() {
-        // Initialize the Client (Node 0).
-        ((Client) Network.get(0).getProtocol(pid)).setActive(true);
-        ((Client) Network.get(0).getProtocol(pid)).setId(0);
+        // Initialize the Clients
+        for(int i = 1; i < Network.size(); i++){
+            Client c = ((Client) Network.get(i).getProtocol(pid));
+            ;
+            c.setActive(true);
+            c.setId(i);
+            // Set other Variables like CPU speed and others here.
+        }
         return false;
     }
 }
