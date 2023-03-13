@@ -40,7 +40,7 @@ class PeersimThread(threading.Thread):
 
     def stop(self):
         thread_id = self.get_id()
-        self.peersim.terminate()
+        self.peersim.kill() # was terminate
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.py_object(SystemExit))
         if res > 1:
             ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)

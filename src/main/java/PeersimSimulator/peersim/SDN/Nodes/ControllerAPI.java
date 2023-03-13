@@ -32,6 +32,11 @@ public class ControllerAPI  implements Control {
         return c.sendAction(a);
     }
 
+    @GetMapping("/up")
+    public boolean isUp(){
+        Controller c = (Controller) Network.get(0).getProtocol(Controller.getPid());
+        return c.isUp();
+    }
 
     @Override
     public boolean execute() {

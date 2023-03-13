@@ -59,16 +59,18 @@ public class Controller implements CDProtocol, EDProtocol {
     List<WorkerInfo> workerInfo;
     private int id;
 
-    private volatile boolean stop;
+    private volatile boolean stop, up;
     public Controller(String prefix) {
         pid = Configuration.getPid(prefix+ "."+PAR_NAME);
         workerInfo = new ArrayList<>();
         active = false;
+        up = false;
         stop = true;
         // Read Constants
         DELAY_WEIGHT = Configuration.getInt( prefix + "." + PAR_DELAY_WEIGHT, 1) ;
         OVERLOAD_WEIGHT = Configuration.getInt( prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
         UTILITY_REWARD = Configuration.getInt( prefix + "." + PAR_UTILITY_REWARD, 1);
+        selectedNode = 1;
         printParams();
 
     }
@@ -89,6 +91,7 @@ public class Controller implements CDProtocol, EDProtocol {
         if(!active) return;
         if(workerInfo.isEmpty()) initializeWorkerInfo(node, Controller.getPid());
         stop = true;
+        up = true;
         awaitAction();
     }
 
@@ -110,7 +113,6 @@ public class Controller implements CDProtocol, EDProtocol {
         if (linkable.degree() > 0) {
 
 
-            selectedNode = (selectedNode + 1) % linkable.degree();
             Node selectedWorker = linkable.getNeighbor(selectedNode);
             Worker protocol = (Worker) selectedWorker.getProtocol(Worker.getPid());
 
@@ -134,7 +136,7 @@ public class Controller implements CDProtocol, EDProtocol {
             // allow progress
             stop = false;
 
-            // Compute Reward:
+            selectedNode = (selectedNode + 1) % linkable.degree();
 
 
             return reward;
@@ -277,6 +279,14 @@ public class Controller implements CDProtocol, EDProtocol {
 
     public boolean isStable() {
         return stop;
+    }
+
+    public boolean isUp() {
+        return up;
+    }
+
+    public void setUp(boolean up) {
+        this.up = up;
     }
 
     public double notZero(double n){

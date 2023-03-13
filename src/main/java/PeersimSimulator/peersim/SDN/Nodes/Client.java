@@ -118,7 +118,7 @@ public class Client implements CDProtocol, EDProtocol {
         if(!active) return;
         // Recieve answer from task sent.
         if(event instanceof TaskConcludedEvent ev){
-            long endTick = CommonState.getTime();
+             long endTick = CommonState.getTime();
             for(int i = 0; i < tasksAwaiting.size(); i++){
                 if(tasksAwaiting.get(i).id.equals(ev.getTaskId())){
                     TaskInfo t = tasksAwaiting.remove(i);
