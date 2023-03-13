@@ -223,9 +223,9 @@ public class Controller implements CDProtocol, EDProtocol {
         double r_i_j = propsNode.getBANDWIDTH() * Math.log(1 +
                 ( propsTarget.getPATH_LOSS_CONSTANT() * Math.pow(d_i_j, propsNode.getPATH_LOSS_EXPONENT()) * propsNode.getTRANSMISSION_POWER() ) / ( propsNode.getBANDWIDTH() * NORMALIZED_THERMAL_NOISE_POWER) );
 
-
-        double t_c = 2 * w_o * clt.BYTE_SIZE / r_i_j; // TODO Works only when all tasks have the same size,
-                                                         // TODO change to have average byte size, send info in the WorkerInfo.
+        double t_c = (d_i_j == 0) ? 0 : 2 * w_o * clt.BYTE_SIZE / r_i_j ; // This can be a NaN
+        // When the instruction to offload to itself is given then the cost of communication is 0. (aka d_i_j == 0)
+        // TODO kinda just hotfixed this. Perhaps looking further into this possibility is advised.
 
 
         double t_e = clt.NO_INSTR * clt.CPI * (w_l / ((Worker) n.getProtocol(Worker.getPid())).CPU_FREQ  + w_o / ((Worker) t.getProtocol(Worker.getPid())).CPU_FREQ);
