@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Random;
 
 public class Client implements CDProtocol, EDProtocol {
+    public static final int DEFAULT_TASK_SIZE = 500;
+    public static final double DEFAULT_NO_INSTR = 200e6;
 
     private static final String PAR_BYTE_SIZE = "T";
     public final double BYTE_SIZE; // Mbytes
@@ -62,8 +64,8 @@ public class Client implements CDProtocol, EDProtocol {
         active = false;
         // Read Constants
         CPI = Configuration.getInt( prefix + "." + PAR_CPI, 1) ;
-        BYTE_SIZE = Configuration.getInt( prefix + "." + PAR_BYTE_SIZE, 500);
-        NO_INSTR = Configuration.getDouble( prefix + "." + PAR_NO_INSTR, 200e6);
+        BYTE_SIZE = Configuration.getInt( prefix + "." + PAR_BYTE_SIZE, DEFAULT_TASK_SIZE);
+        NO_INSTR = Configuration.getDouble( prefix + "." + PAR_NO_INSTR, DEFAULT_NO_INSTR);
         printParams();
 
     }

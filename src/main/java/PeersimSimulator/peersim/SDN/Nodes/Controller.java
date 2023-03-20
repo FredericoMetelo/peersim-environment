@@ -206,7 +206,7 @@ public class Controller implements CDProtocol, EDProtocol {
         return new EnvState(this.selectedNode, this.getQ(), w);
     }
     public double evaluateState(Node n, Node t, double w_l, double w_o, double Q_l, double Q_o, double miu_l, double miu_o, double Q_expected_l, double Q_expected_o) {
-        Log.dbg("Acquire Reward");
+        Log.dbg("Acquire Reward"); // <No:6 (1)> -0-> <No:9 (0)>
 
         Client clt = this.getClient();
 
