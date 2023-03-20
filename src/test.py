@@ -1,5 +1,5 @@
 from peersim_gym.envs.PeersimEnv import PeersimEnv
-import gym
+import gymnasium as gym
 if __name__ == "__main__":
     # env = gym.make("peersim_gym/PeersimEnv-v0")
 #    p.generate_config_file()

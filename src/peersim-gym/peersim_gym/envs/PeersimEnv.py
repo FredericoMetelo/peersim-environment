@@ -4,11 +4,11 @@ import subprocess as s
 import logging
 import threading
 import time
-import gym
+import gymnasium as gym
 import requests
-from gym.spaces import MultiDiscrete, Dict, Discrete, Box
+from gymnasium.spaces import MultiDiscrete, Dict, Discrete, Box
 import numpy as np
-from gym.core import RenderFrame, ActType, ObsType
+from gymnasium.core import RenderFrame, ActType, ObsType
 
 from peersim_gym.envs.PeersimThread import PeersimThread
 import peersim_gym.envs.PeersimConfigGenerator as cg
