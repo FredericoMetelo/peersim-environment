@@ -11,7 +11,13 @@ public class Task {
     /**
      * Stores the node id that requested the task.
      */
-    private int nodeId;
+    private int originNodeId;
+
+    /**
+     * Store the node id that is processing the task.
+     * Exists for debugging purposes mostly.
+     */
+    private int processingNodeId;
     /**
      * Size of the data being sent. Bytes in body of task request.
      */
@@ -26,11 +32,12 @@ public class Task {
      */
     private final double totalInstructions;
 
-    public Task(double sizeBytes, double totalInstructions, int nodeId) {
+    public Task(double sizeBytes, double totalInstructions, int originNodeId, int processingNodeId) {
         this.id = UUID.randomUUID().toString();
         this.sizeBytes = sizeBytes;
         this.totalInstructions = totalInstructions;
-        this.nodeId = nodeId;
+        this.originNodeId = originNodeId;
+        this.processingNodeId = processingNodeId;
     }
 
 
@@ -43,16 +50,23 @@ public class Task {
         return sizeBytes;
     }
 
+    public int getProcessingNodeId() {
+        return processingNodeId;
+    }
+
+    public void setProcessingNodeId(int processingNodeId) {
+        this.processingNodeId = processingNodeId;
+    }
 
     public double getTotalInstructions() {
         return totalInstructions;
     }
 
-    public int getNodeId() {
-        return nodeId;
+    public int getOriginNodeId() {
+        return originNodeId;
     }
-    public void setNodeId(int id) {
-        this.nodeId = id;
+    public void setOriginNodeId(int id) {
+        this.originNodeId = id;
     }
     public double getProgress() {
         return progress;

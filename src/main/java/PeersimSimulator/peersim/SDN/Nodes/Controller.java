@@ -18,6 +18,7 @@ import PeersimSimulator.peersim.transport.Transport;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
 public class Controller implements CDProtocol, EDProtocol {
@@ -120,7 +121,26 @@ public class Controller implements CDProtocol, EDProtocol {
 
             int targetNode = a.nodeId();
             int noTasks = a.noTasks();
+            if(targetNode < 0 || targetNode >= this.workerInfo.size()) {
+                // When the offload instructions are being sent to an illegal node I decided to return the negative of the utility constant
+                Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> is outside the know node indexes!");
+                // allow progress
+                stop = false;
+                return -UTILITY_REWARD;
+            }
+            if(noTasks < 0 || noTasks > Objects.requireNonNull(getWorkerInfo(targetNode)).getQueueSize()){
+                // When the offload instructions request to offload more tasks than are available I decided to return the negative of the utility constant.
+                // Note to self: This might be problematic as the number of tasks the node views is not ther real number
+                // of tasks the actual node has. There is a delay on the information, this might one day become a bottleneck.
+                // ¯\_(ツ)_/¯
 
+                Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> acan't offload that many tasks!");
+                // allow progress
+                stop = false;
+                return -UTILITY_REWARD;
+            }
+
+            // Regular offload behaviour
             Log.info("|CTR| SEND ACTION: SRC<" + this.getId() + "> to TARGET:<" +targetNode + "> offload (" + noTasks + ")");
 
             double reward = calculatReward(linkable, selectedWorker, targetNode, noTasks);

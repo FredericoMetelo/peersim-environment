@@ -124,7 +124,7 @@ public class Worker implements CDProtocol, EDProtocol {
                 int linkableID = FastConfig.getLinkable(protocolID);
                 Linkable linkable = (Linkable) node.getProtocol(linkableID);
                 // For convenience I'll have the Client in the first node, for now.
-                Node client = linkable.getNeighbor(current.getNodeId());
+                Node client = linkable.getNeighbor(current.getOriginNodeId());
 
                 if(!client.isUp()) return; // This happens task progress is lost.
 
@@ -199,7 +199,7 @@ public class Worker implements CDProtocol, EDProtocol {
                 Log.info("|WRK| Offloaded Tasks arrived at wrong node...");
                 return;
             }
-            List<Task> offloadedTasks = ev.getTaskList().stream().peek((t)->t.setNodeId(this.id)).toList();
+            List<Task> offloadedTasks = ev.getTaskList().stream().peek((t)->t.setOriginNodeId(this.id)).toList();
             Log.info("|WRK| TASK OFFLOAD RECIEVE: SRC<"+ ev.getSrcNode() + "> TARGET<"+this.getId()+"> NO_TASKS<" +offloadedTasks.size()+ ">");
             if(this.queue.size() + offloadedTasks.size() >= Q_MAX) {
                 for (int i = 0; i < offloadedTasks.size(); i++) {
@@ -254,7 +254,7 @@ public class Worker implements CDProtocol, EDProtocol {
                 return;
             }
 
-            moveTasks = moveTasks.stream().peek((t) -> t.setNodeId(targetNode)).toList();
+            moveTasks = moveTasks.stream().peek((t) -> t.setProcessingNodeId(targetNode)).toList();
             ((Transport)target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                     send(
                             node,
@@ -266,7 +266,7 @@ public class Worker implements CDProtocol, EDProtocol {
 
         }else if(event instanceof NewTaskEvent ev){
             // Recieve Task from Client
-            if(this.id != ev.getTask().getNodeId()){
+            if(this.id != ev.getTask().getProcessingNodeId()){
                 System.out.println("Task arrived at wrong node.");
                 return;
             }

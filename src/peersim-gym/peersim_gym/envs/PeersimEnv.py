@@ -1,17 +1,14 @@
-import subprocess
-from typing import Optional, Union, List, Tuple
-import subprocess as s
-import logging
-import threading
 import time
-import gymnasium as gym
-import requests
-from gymnasium.spaces import MultiDiscrete, Dict, Discrete, Box
-import numpy as np
-from gymnasium.core import RenderFrame, ActType, ObsType
+import time
 
-from peersim_gym.envs.PeersimThread import PeersimThread
+import gymnasium as gym
+import numpy as np
+import requests
+from gymnasium.core import ActType
+from gymnasium.spaces import MultiDiscrete, Dict, Discrete, Box
+
 import peersim_gym.envs.PeersimConfigGenerator as cg
+from peersim_gym.envs.PeersimThread import PeersimThread
 
 
 class PeersimEnv(gym.Env):

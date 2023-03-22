@@ -23,7 +23,7 @@ public class ControllerAPI  implements Control {
     public Information getState(){
         Controller c = (Controller) Network.get(0).getProtocol(Controller.getPid());
         while(!c.isStable()) Thread.onSpinWait(); // await the 100 ticks.
-        return new Information(c.getState(), CommonState.getEndTime() == CommonState.getTime());
+        return new Information(c.getState(), CommonState.getEndTime() == CommonState.getTime() + 1);
     }
 
     @PostMapping("/action")

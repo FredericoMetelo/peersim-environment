@@ -1,9 +1,3 @@
-import sys
-import os
-
-import peersim_gym.envs as module
-import pkg_resources
-
 import os
 this_dir, this_filename = os.path.split(__file__)
 print(this_dir +  "    " + this_filename)
