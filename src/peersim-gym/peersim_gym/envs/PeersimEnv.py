@@ -1,3 +1,4 @@
+import os
 import time
 import time
 
@@ -14,7 +15,7 @@ from peersim_gym.envs.PeersimThread import PeersimThread
 class PeersimEnv(gym.Env):
     metadata = {"render_modes": ["ansi"], "render_fps": 4}
 
-    def __init__(self, render_mode=None, number_nodes=10, max_Q_size=10, max_w=1, configs=None):
+    def __init__(self, render_mode=None, number_nodes=10, max_Q_size=10, max_w=1, configs=None, log_dir=None):
         # ==== Variables to configure the PeerSim
         self.number_nodes = number_nodes
         self.max_Q_size = max_Q_size
@@ -27,7 +28,9 @@ class PeersimEnv(gym.Env):
 
         # ==== Environment Definition
         # ---- State Space
+        self.__log_dir = log_dir
         self.__run_counter = 0
+
         if isinstance(max_Q_size, list):
             if len(max_Q_size) != number_nodes:
                 print("The number of entries in max_Q_size needs to be equal to"
@@ -86,8 +89,8 @@ class PeersimEnv(gym.Env):
         # self.simulator = PeersimThread(name='Run0', configs=self.config_path)
         # self.simulator.run()
 
-    def init(self, render_mode=None, number_nodes=10, max_Q_size=10, max_w=1, configs=None):
-        self.__init__(render_mode, number_nodes, max_Q_size, max_w, configs)
+    def init(self, render_mode=None, number_nodes=10, max_Q_size=10, max_w=1, configs=None, log_dir=None):
+        self.__init__(render_mode, number_nodes, max_Q_size, max_w, configs, log_dir=log_dir)
 
     def reset(self, **kwargs):
         if self.simulator != None:
@@ -116,6 +119,10 @@ class PeersimEnv(gym.Env):
     def close(self):
         self.simulator.stop()
 
+    def observation_space_shape(self):
+        return self.observation_space.sample().shape()
+    def action_space_shape(self):
+        return self.action_space.sample().shape()
     def __see_types(self):
         print("Example of action.")
         print(self.action_space.sample())
@@ -124,7 +131,12 @@ class PeersimEnv(gym.Env):
 
     def __run_peersim(self):
         self.__run_counter += 1
-        self.simulator.run()
+        log_file = None
+        if not (self.__log_dir  == None):
+            log_file = self.__log_dir + f'log_run_{self.__run_counter}.txt'
+            if os.path.exists(log_file):
+                os.remove(log_file)
+        self.simulator.run(output_file=log_file)
 
     def _get_obs(self):
         # Retrieve Observation
