@@ -56,7 +56,6 @@ class PeersimEnv(gym.Env):
         self.__log_dir = log_dir
         self.__run_counter = 0
 
-
         if isinstance(self.max_Q_size, list):
 
             if len(self.max_Q_size) != self.number_nodes:
@@ -109,17 +108,19 @@ class PeersimEnv(gym.Env):
         while not self.__is_up():
             time.sleep(0.5)  # Good Solution? No... But it is what it is.
         print("Server is up")
-        obs, done = self._get_obs()
-        return obs, {}
+        obs, done, info = self._get_obs()
+        return obs, info
 
     def step(self, action: ActType):
         # A step will advance the simulation in 100 ticks
         # Send action.
         r = self._send_action(action)
-        reward_for_action = float(r.content)  # Gives NaN sometimes. How to deal with it? Find a division by 0?
-        print(reward_for_action)
-        obs, done = self._get_obs()
-        return obs, reward_for_action, done, False, {}
+        reward_for_action = float(r.content)  # Gives NaN sometimes. How to deal with it? Find a division by 0?\
+        message = "Offload < from:" + str(self._observation['n_i']) + " to:" + str(action["target_node"]) + " tasks:"\
+                  + str(action["offload_amount"]) + "> -> Reward:" + str(reward_for_action)
+        print(message)
+        obs, done, info = self._get_obs()
+        return obs, reward_for_action, done, False, info
 
     def render(self):
         pass
@@ -142,7 +143,7 @@ class PeersimEnv(gym.Env):
     def __run_peersim(self):
         self.__run_counter += 1
         log_file = None
-        if not (self.__log_dir == None):
+        if not (self.__log_dir is None):
             log_file = self.__log_dir + f'log_run_{self.__run_counter}.txt'
             if os.path.exists(log_file):
                 os.remove(log_file)
@@ -161,7 +162,10 @@ class PeersimEnv(gym.Env):
         done = s.get("done")
         self._observation = obs
         self._done = done
-        return obs, done
+
+        dbg_info = s.get("info")
+        self._info = dbg_info
+        return obs, done, dbg_info
 
     def _send_action(self, action):
         payload = {"nodeId": action["target_node"], "noTasks": action["offload_amount"]}

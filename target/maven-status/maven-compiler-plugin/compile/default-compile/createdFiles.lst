@@ -7,6 +7,7 @@ PeersimSimulator/peersim/vector/VectAngle.class
 PeersimSimulator/peersim/vector/LinearDistribution.class
 PeersimSimulator/peersim/SDN/Nodes/ClientInitializer.class
 PeersimSimulator/peersim/graph/Graph.class
+PeersimSimulator/peersim/SDN/Records/DebugInfo.class
 PeersimSimulator/peersim/rangesim/RangeSimulator.class
 PeersimSimulator/peersim/graph/GraphFactory.class
 PeersimSimulator/peersim/Simulator.class

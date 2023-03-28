@@ -145,6 +145,7 @@
 /home/fm/Documents/Thesis/peersim-srv/src/main/java/PeersimSimulator/peersim/edsim/RegRandNextCycle.java
 /home/fm/Documents/Thesis/peersim-srv/src/main/java/PeersimSimulator/peersim/core/Cleanable.java
 /home/fm/Documents/Thesis/peersim-srv/src/main/java/PeersimSimulator/peersim/SDN/Nodes/Worker.java
+/home/fm/Documents/Thesis/peersim-srv/src/main/java/PeersimSimulator/peersim/SDN/Records/DebugInfo.java
 /home/fm/Documents/Thesis/peersim-srv/src/main/java/PeersimSimulator/peersim/core/IdleProtocol.java
 /home/fm/Documents/Thesis/peersim-srv/src/main/java/PeersimSimulator/peersim/SDN/Util/Log.java
 /home/fm/Documents/Thesis/peersim-srv/src/main/java/PeersimSimulator/peersim/reports/RandRemoval.java

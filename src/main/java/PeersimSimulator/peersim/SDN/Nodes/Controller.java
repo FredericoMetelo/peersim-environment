@@ -1,6 +1,7 @@
 package PeersimSimulator.peersim.SDN.Nodes;
 
 import PeersimSimulator.peersim.SDN.Links.SDNNodeProperties;
+import PeersimSimulator.peersim.SDN.Records.DebugInfo;
 import PeersimSimulator.peersim.SDN.Util.Log;
 import PeersimSimulator.peersim.SDN.Nodes.Events.OffloadInstructions;
 import PeersimSimulator.peersim.SDN.Nodes.Events.WorkerInfo;
@@ -57,6 +58,7 @@ public class Controller implements CDProtocol, EDProtocol {
     private boolean active;
 
     int selectedNode;
+    int cycle;
     List<WorkerInfo> workerInfo;
     private int id;
 
@@ -71,7 +73,8 @@ public class Controller implements CDProtocol, EDProtocol {
         DELAY_WEIGHT = Configuration.getInt( prefix + "." + PAR_DELAY_WEIGHT, 1) ;
         OVERLOAD_WEIGHT = Configuration.getInt( prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
         UTILITY_REWARD = Configuration.getInt( prefix + "." + PAR_UTILITY_REWARD, 1);
-        selectedNode = 1;
+        selectedNode = 1; // Ignores the controller.
+        cycle = 0; // Will transverse the available nodes.
         printParams();
 
     }
@@ -134,7 +137,7 @@ public class Controller implements CDProtocol, EDProtocol {
                 // of tasks the actual node has. There is a delay on the information, this might one day become a bottleneck.
                 // ¯\_(ツ)_/¯
 
-                Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> acan't offload that many tasks!");
+                Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> can't offload that many tasks <"+noTasks+">!");
                 // allow progress
                 stop = false;
                 return -UTILITY_REWARD;
@@ -155,9 +158,9 @@ public class Controller implements CDProtocol, EDProtocol {
 
             // allow progress
             stop = false;
-
-            selectedNode = (selectedNode + 1) % linkable.degree();
-
+            cycle = (cycle + 1) % (linkable.degree()-1);
+            selectedNode = 1 + cycle; // Note Network can't ever have less than 2 nodes.
+            // [0, 1, 2]
 
             return reward;
 
@@ -321,10 +324,13 @@ public class Controller implements CDProtocol, EDProtocol {
         return (Client) Network.get(0).getProtocol(Client.getPid());
     }
 
+    public DebugInfo getDebugInfo() {
+        return new DebugInfo(this.selectedNode);
+    }
     //======================================================================================================
     // Private Methods
-    //======================================================================================================
 
+    //======================================================================================================
     private void updateNode(WorkerInfo newWi){
         for (WorkerInfo oldWi : workerInfo) {
             if(oldWi.getId() == newWi.getId()){
@@ -342,6 +348,7 @@ public class Controller implements CDProtocol, EDProtocol {
         // Only happens with nodes that joined later. All nodes known from beginning are init with a 0 (?).
         workerInfo.add(newWi);
     }
+
     void initializeWorkerInfo(Node node, int protocolID) {
         double default_task_size = Configuration.getDouble( "protocol.clt.I", 200e6);
         double default_CPU_FREQ = Configuration.getDouble( "protocol.wrk.FREQ", 1e7);
@@ -362,6 +369,5 @@ public class Controller implements CDProtocol, EDProtocol {
         //if(active)
             Log.dbg("Controller Params: r_u<" + this.UTILITY_REWARD + "> X_d<" + this.DELAY_WEIGHT+ "> X_o<"+ this.OVERLOAD_WEIGHT+">" );
     }
-
 
 }

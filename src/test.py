@@ -7,10 +7,10 @@ if __name__ == "__main__":
     # configs_dict="/home/fm/Documents/Thesis/peersim-srv/configs/examples/default-config.txt"
     configs_dict = None
     env = gym.make("peersim_gym/PeersimEnv-v0")
-    env.env.init(configs={"protocol.ctrl.r_u": "999", "protocol.props.B": "1"})  # TODO Untested
+    env.env.init(configs={"SIZE": "3", "CYCLES": "100"}, log_dir='/home/fm/Documents/Thesis/peersim-srv/logs/')  # TODO mention that you can configure log directory
 
     a = ""
-    env.reset()
+    s, _ = env.reset()
     while a != "quit":
         a = input(">")
         if a == 'quit' or a == 'q':

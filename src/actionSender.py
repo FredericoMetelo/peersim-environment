@@ -12,7 +12,7 @@ def get_state():
     space_url = url_api + url_state_path
     headers_state = {"Accept": "application/json", "Connection": "keep-alive"}
     s = requests.get(space_url, headers=headers_state).json()
-    print("State:\n" + s)
+    print( s)
 
 
 def send_action(action):

@@ -1,0 +1,56 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.0.2)
+
+2023-03-28T10:59:08.323+01:00  INFO 9801 --- [           main] PeersimSimulator.peersim.Simulator       : Starting Simulator v0.0.1-SNAPSHOT using Java 17.0.6 with PID 9801 (/home/fm/Documents/Thesis/peersim-srv/src/peersim-gym/peersim_gym/envs/Environment/peersim-srv-0.0.1-SNAPSHOT.jar started by fm in /)
+2023-03-28T10:59:08.326+01:00  INFO 9801 --- [           main] PeersimSimulator.peersim.Simulator       : No active profile set, falling back to 1 default profile: "default"
+2023-03-28T10:59:09.378+01:00  INFO 9801 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2023-03-28T10:59:09.388+01:00  INFO 9801 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2023-03-28T10:59:09.389+01:00  INFO 9801 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.5]
+2023-03-28T10:59:09.460+01:00  INFO 9801 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2023-03-28T10:59:09.462+01:00  INFO 9801 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1039 ms
+2023-03-28T10:59:10.160+01:00  INFO 9801 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2023-03-28T10:59:10.173+01:00  INFO 9801 --- [           main] PeersimSimulator.peersim.Simulator       : Started Simulator in 2.214 seconds (process running for 2.582)
+Simulator: loading configuration
+ConfigProperties: File /home/fm/Documents/Thesis/peersim-srv/src/peersim-gym/peersim_gym/envs/configs/config.txt loaded.
+Simulator: starting experiment 0 invoking PeersimSimulator.peersim.edsim.EDSimulator
+Random seed: 1234567890
+
+
+
+EDSimulator: resetting
+Network: no node defined, using GeneralNode
+Client Params: CPI<1> T<150.0> I<2.0E8>
+Controller Params: r_u<1> X_d<1> X_o<150>
+Worker Params: NO_CORES<4> FREQ<1.0E7> Q_MAX<10>
+EDSimulator: running initializers
+- Running initializer init.sch: class PeersimSimulator.peersim.edsim.CDScheduler
+- Running initializer init.Net0: class PeersimSimulator.peersim.SDN.Links.SDNInitializer
+- Running initializer init.Net1: class PeersimSimulator.peersim.SDN.Links.WireSDNTopology
+- Running initializer init.InitWrk: class PeersimSimulator.peersim.SDN.Nodes.WorkerInitializer
+- Running initializer init.InitClt: class PeersimSimulator.peersim.SDN.Nodes.ClientInitializer
+- Running initializer init.InitCtrl: class PeersimSimulator.peersim.SDN.Nodes.ControllerInitializer
+EDSimulator: loaded controls []
+Current time: 0
+Start Waiting
+2023-03-28T10:59:10.660+01:00  INFO 9801 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2023-03-28T10:59:10.660+01:00  INFO 9801 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2023-03-28T10:59:10.663+01:00  INFO 9801 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <2> acan't offload that many tasks!
+Current time: 1
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <1> acan't offload that many tasks!
+Current time: 2
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <1> acan't offload that many tasks!
+Current time: 3
+Start Waiting
+Acquiring state

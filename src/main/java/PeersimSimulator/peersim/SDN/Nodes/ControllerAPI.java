@@ -1,6 +1,7 @@
 package PeersimSimulator.peersim.SDN.Nodes;
 
 import PeersimSimulator.peersim.SDN.Records.Action;
+import PeersimSimulator.peersim.SDN.Records.DebugInfo;
 import PeersimSimulator.peersim.SDN.Records.EnvState;
 import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Control;
@@ -23,7 +24,7 @@ public class ControllerAPI  implements Control {
     public Information getState(){
         Controller c = (Controller) Network.get(0).getProtocol(Controller.getPid());
         while(!c.isStable()) Thread.onSpinWait(); // await the 100 ticks.
-        return new Information(c.getState(), CommonState.getEndTime() == CommonState.getTime() + 1);
+        return new Information(c.getState(), CommonState.getEndTime() == CommonState.getTime() + 1, c.getDebugInfo());
     }
 
     @PostMapping("/action")
@@ -43,5 +44,5 @@ public class ControllerAPI  implements Control {
         return false;
     }
 
-    private record Information(EnvState state, boolean done){}
+    private record Information(EnvState state, boolean done, DebugInfo info){}
 }
