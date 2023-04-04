@@ -282,8 +282,8 @@ public class Controller implements CDProtocol, EDProtocol {
         Node t = linkable.getNeighbor(targetNode);
         double w_o = (initialInfo.getW_i() < noTasks) ? 0 : noTasks;
         double w_l = initialInfo.getW_i() - w_o;
-        double Q_l = initialInfo.getQueueSize();
-        double Q_o = targetInfo.getQueueSize();// initial Queue size plus the tasks that stayed.
+        double Q_l = initialInfo.getQueueSize(); // This will never be 0 with my current implementation.
+        double Q_o = targetInfo.getQueueSize(); // initial Queue size plus the tasks that stayed.
         double miu_l = initialInfo.getW();
         double miu_o = targetInfo.getW();
         double Q_expected_l = initialInfo.getQueueSize() - w_o;
@@ -310,7 +310,6 @@ public class Controller implements CDProtocol, EDProtocol {
         //= Communication Delay
         double t_c = (d_i_j == 0) ? 0 : 2 * w_o * clt.BYTE_SIZE / r_i_j ; // This can be a NaN
         // When the instruction to offload to itself is given then the cost of communication is 0. (aka d_i_j == 0)
-        // TODO kinda just hotfixed this. Perhaps looking further into this possibility is advised.
 
         //= Task Execution Delay
         double t_e = clt.NO_INSTR * clt.CPI * (w_l / ((Worker) n.getProtocol(Worker.getPid())).CPU_FREQ  + w_o / ((Worker) t.getProtocol(Worker.getPid())).CPU_FREQ);
