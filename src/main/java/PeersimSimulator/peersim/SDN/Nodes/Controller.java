@@ -10,16 +10,13 @@ import PeersimSimulator.peersim.SDN.Records.EnvState;
 import PeersimSimulator.peersim.cdsim.CDProtocol;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
-import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.edsim.EDProtocol;
 import PeersimSimulator.peersim.transport.Transport;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 
 public class Controller implements CDProtocol, EDProtocol {
@@ -62,6 +59,14 @@ public class Controller implements CDProtocol, EDProtocol {
     List<WorkerInfo> workerInfo;
     private int id;
 
+    private LinkedList<Integer> nodeUpdateEventList;
+
+    /**
+     * up and stop are the variables responsible for the flow management of the application.
+     * up - represents the state of the application, if the application is running up will be true and the controller will accept requests from the agent.tap:
+     * stop - is the variable that says if the application is executing and can't retrieve data. Every 100 ticks the simulation checks if the event queue is not empty.
+     * And selects the next node to offload from.
+     */
     private volatile boolean stop, up;
     public Controller(String prefix) {
         pid = Configuration.getPid(prefix+ "."+PAR_NAME);
@@ -75,6 +80,7 @@ public class Controller implements CDProtocol, EDProtocol {
         UTILITY_REWARD = Configuration.getInt( prefix + "." + PAR_UTILITY_REWARD, 1);
         selectedNode = 1; // Ignores the controller.
         cycle = 0; // Will transverse the available nodes.
+        nodeUpdateEventList = new LinkedList<>();
         printParams();
 
     }
@@ -94,7 +100,11 @@ public class Controller implements CDProtocol, EDProtocol {
     public void nextCycle(Node node, int protocolID) {
         if(!active) return;
         if(workerInfo.isEmpty()) initializeWorkerInfo(node, Controller.getPid());
-        stop = true;
+        // stop = true;
+        // The simulation only stops if the queue is not empty. Otherwise, it continues for another 100 ticks.
+        int linkableID = FastConfig.getLinkable(Controller.getPid());
+        Linkable linkable = (Linkable) node.getProtocol(linkableID);
+        stop = selectNextNode(linkable);
         up = true;
         awaitAction();
     }
@@ -115,7 +125,6 @@ public class Controller implements CDProtocol, EDProtocol {
         int linkableID = FastConfig.getLinkable(Controller.getPid());
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
         if (linkable.degree() > 0) {
-
 
             Node selectedWorker = linkable.getNeighbor(selectedNode);
             Worker protocol = (Worker) selectedWorker.getProtocol(Worker.getPid());
@@ -158,39 +167,14 @@ public class Controller implements CDProtocol, EDProtocol {
 
             // allow progress
             stop = false;
-            cycle = (cycle + 1) % (linkable.degree()-1);
-            selectedNode = 1 + cycle; // Note Network can't ever have less than 2 nodes.
             // [0, 1, 2]
-
             return reward;
-
         }
         return -1;
 
     }
 
-    private double calculatReward(Linkable linkable, Node selectedWorker, int targetNode, int noTasks) {
-        WorkerInfo initialInfo = getWorkerInfo(selectedNode);
-        WorkerInfo targetInfo = getWorkerInfo(targetNode);
-        assert initialInfo != null;
-        assert targetInfo != null;
 
-        int w_o = (initialInfo.getW_i() < noTasks) ? 0 : noTasks; // when number of tasks to offload is bigger than number of tasks nothing happens.
-        double reward = evaluateState(
-                selectedWorker,
-                linkable.getNeighbor(targetNode),
-                initialInfo.getW_i() - w_o,
-                w_o,
-                initialInfo.getQueueSize(),
-                targetInfo.getQueueSize(),// initial Queue size plus the tasks that stayed.
-                initialInfo.getW(),
-                targetInfo.getW(),
-                initialInfo.getQueueSize() - w_o,
-                targetInfo.getQueueSize() + w_o// initial Queue size plus the tasks that stayed.
-
-        );
-        return reward;
-    }
 
     private WorkerInfo getWorkerInfo(int nodeId){
         for (WorkerInfo w: workerInfo) {
@@ -210,69 +194,13 @@ public class Controller implements CDProtocol, EDProtocol {
         }
     }
 
+
+
     //======================================================================================================
-    // Interface Methods
+    // Private Methods
     //======================================================================================================
 
-    public List<WorkerInfo> getWorkerInfo() {
-        return workerInfo;
-    }
-
-    public void setWorkerInfo(List<WorkerInfo> workerInfo) {
-        this.workerInfo = workerInfo;
-    }
-
-    public EnvState getState(){
-        Log.dbg("Acquiring state");
-        // stop = true; Set the await action to block on next iter.
-        double w = this.workerInfo.get(selectedNode).getW();
-        return new EnvState(this.selectedNode, this.getQ(), w);
-    }
-    public double evaluateState(Node n, Node t, double w_l, double w_o, double Q_l, double Q_o, double miu_l, double miu_o, double Q_expected_l, double Q_expected_o) {
-        Log.dbg("Acquire Reward"); // <No:6 (1)> -0-> <No:9 (0)>
-
-        Client clt = this.getClient();
-
-        // Immediate Utility
-        double U = UTILITY_REWARD * Math.log(1 + w_l + w_o );
-
-        // Immediate Delay
-        double t_w = notZero(w_l) * (Q_l/miu_l) + notZero(w_o) * ((Q_l/miu_l) + (Q_o/miu_o)) ;
-
-
-        SDNNodeProperties propsNode =  (SDNNodeProperties) n.getProtocol(SDNNodeProperties.getPid());
-        SDNNodeProperties propsTarget =  (SDNNodeProperties) t.getProtocol(SDNNodeProperties.getPid());
-        double d_i_j = Math.sqrt(Math.pow(propsNode.getY() - propsTarget.getY(), 2) + Math.pow(propsNode.getX() - propsTarget.getX(), 2));
-        double r_i_j = propsNode.getBANDWIDTH() * Math.log(1 +
-                ( propsTarget.getPATH_LOSS_CONSTANT() * Math.pow(d_i_j, propsNode.getPATH_LOSS_EXPONENT()) * propsNode.getTRANSMISSION_POWER() ) / ( propsNode.getBANDWIDTH() * NORMALIZED_THERMAL_NOISE_POWER) );
-
-        double t_c = (d_i_j == 0) ? 0 : 2 * w_o * clt.BYTE_SIZE / r_i_j ; // This can be a NaN
-        // When the instruction to offload to itself is given then the cost of communication is 0. (aka d_i_j == 0)
-        // TODO kinda just hotfixed this. Perhaps looking further into this possibility is advised.
-
-
-        double t_e = clt.NO_INSTR * clt.CPI * (w_l / ((Worker) n.getProtocol(Worker.getPid())).CPU_FREQ  + w_o / ((Worker) t.getProtocol(Worker.getPid())).CPU_FREQ);
-
-        double D = (w_l == 0 && w_o == 0) ?  0 :  DELAY_WEIGHT * (t_w + t_c + t_e)/(w_l + w_o);
-        // If no transaction is being done and there is nothing to process locally then there is no delay. And can't divide by 0.
-
-        // Overload Probability - Note one simplification I take is look at each node as it's own M/M/1.
-        // I consider that overloaded means the tasks accumulate above a certain point. TODO think if I should just drop them?
-
-        Worker workerNode = (Worker) n.getProtocol(Worker.getPid());
-        Worker workerTarget = (Worker) t.getProtocol(Worker.getPid());
-
-        double Q_prime_l = Math.min(Math.max(0, Q_expected_l - workerNode.getProcessingPower()) + w_l, workerNode.Q_MAX); // This should technically be available in the WorkerInfo btw...
-        double Q_prime_o = Math.min(Math.max(0, Q_expected_o - workerTarget.getProcessingPower()) + w_o, workerTarget.Q_MAX);
-
-        double pOverload_l = Math.max(0, Client.getTaskArrivalRate() - Q_prime_l);
-        double pOverload_o = Math.max(0, Client.getTaskArrivalRate() - Q_prime_o);
-
-        double O = (w_l == 0 && w_o == 0) ? 0 : OVERLOAD_WEIGHT * (w_l * pOverload_l + w_o * pOverload_o)/(w_l + w_o); // Same logic applied in calculating D.
-
-        return U - (D + O);
-    }
-
+    //=== Node Management
     /**
      * Spin waits for the next action.
      */
@@ -281,56 +209,32 @@ public class Controller implements CDProtocol, EDProtocol {
         while (stop) Thread.onSpinWait();
     }
 
-    public boolean isActive() {
-        return active;
+    /**
+     * Returns <code>true</code> if a node was selected, the selected node is stored in the <code>selectedNode</code> field. If no nodes have tasks
+     * available to be offloaded then the method returns <code>false</code>.
+     * @param linkable
+     * @return <code>true</code> if a suitable node was found. <code>false</code> otherwise
+     */
+    private boolean selectNextNode(Linkable linkable) {
+        // cycle = (cycle + 1) % (linkable.degree()-1);
+        // selectedNode = 1 + cycle;
+        if(nodeUpdateEventList.isEmpty()){
+            return false;
+        }
+        this.selectedNode = -1;
+        int nodeID;
+        while(!nodeUpdateEventList.isEmpty()){
+            nodeID = nodeUpdateEventList.removeFirst();
+            if(getWorkerInfo(nodeID).getQueueSize() > 0){
+                this.selectedNode = nodeID;
+                this.nodeUpdateEventList.removeAll(Collections.singleton(nodeID));
+                // If it has tasks available and is going to be processed no need
+                // to have more entries of the node in the queue.
+                return true;
+            }
+        }
+        return false;
     }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-    public static int getPid(){
-        return pid;
-    }
-
-    public boolean isStable() {
-        return stop;
-    }
-
-    public boolean isUp() {
-        return up;
-    }
-
-    public void setUp(boolean up) {
-        this.up = up;
-    }
-
-    public double notZero(double n){
-        return (n == 0)? 0 : 1;
-    }
-
-    public List<Integer> getQ(){
-        return this.workerInfo.stream().map(WorkerInfo::getQueueSize).toList();
-    }
-
-    public Client getClient(){
-        return (Client) Network.get(0).getProtocol(Client.getPid());
-    }
-
-    public DebugInfo getDebugInfo() {
-        return new DebugInfo(this.selectedNode);
-    }
-    //======================================================================================================
-    // Private Methods
-
-    //======================================================================================================
     private void updateNode(WorkerInfo newWi){
         for (WorkerInfo oldWi : workerInfo) {
             if(oldWi.getId() == newWi.getId()){
@@ -340,6 +244,8 @@ public class Controller implements CDProtocol, EDProtocol {
                 oldWi.setQueueSize(newWi.getQueueSize());
                 oldWi.setNodeProcessingPower(newWi.getNodeProcessingPower());
                 oldWi.setAverageTaskSize(newWi.getAverageTaskSize());
+
+                nodeUpdateEventList.addLast(oldWi.getId());
                 return;
             }
         }
@@ -348,7 +254,6 @@ public class Controller implements CDProtocol, EDProtocol {
         // Only happens with nodes that joined later. All nodes known from beginning are init with a 0 (?).
         workerInfo.add(newWi);
     }
-
     void initializeWorkerInfo(Node node, int protocolID) {
         double default_task_size = Configuration.getDouble( "protocol.clt.I", 200e6);
         double default_CPU_FREQ = Configuration.getDouble( "protocol.wrk.FREQ", 1e7);
@@ -364,10 +269,135 @@ public class Controller implements CDProtocol, EDProtocol {
             );
         }
     }
+    //=== Reward Function
+    private double calculatReward(Linkable linkable, Node n, int targetNode, int noTasks) {
+        //== Setup the variables as explained.
+        WorkerInfo initialInfo = getWorkerInfo(selectedNode);
+        WorkerInfo targetInfo = getWorkerInfo(targetNode);
+        assert initialInfo != null;
+        assert targetInfo != null;
 
-    private void printParams(){
-        //if(active)
-            Log.dbg("Controller Params: r_u<" + this.UTILITY_REWARD + "> X_d<" + this.DELAY_WEIGHT+ "> X_o<"+ this.OVERLOAD_WEIGHT+">" );
+        // when number of tasks to offload is bigger than number of tasks nothing happens
+
+        Node t = linkable.getNeighbor(targetNode);
+        double w_o = (initialInfo.getW_i() < noTasks) ? 0 : noTasks;
+        double w_l = initialInfo.getW_i() - w_o;
+        double Q_l = initialInfo.getQueueSize();
+        double Q_o = targetInfo.getQueueSize();// initial Queue size plus the tasks that stayed.
+        double miu_l = initialInfo.getW();
+        double miu_o = targetInfo.getW();
+        double Q_expected_l = initialInfo.getQueueSize() - w_o;
+        double Q_expected_o = targetInfo.getQueueSize() + w_o; // initial Queue size plus the tasks that stayed.
+
+        //== Computing the reward
+        Log.dbg("Acquiring Reward");
+
+        Client clt = this.getClient();
+
+        //== Immediate Utility
+        double U = UTILITY_REWARD * Math.log(1 + w_l + w_o );
+
+        //== Immediate Delay
+        //= Delay of Sitting in Queue
+        double t_w = notZero(w_l) * (Q_l/miu_l) + notZero(w_o) * ((Q_l/miu_l) + (Q_o/miu_o)) ;
+
+
+        SDNNodeProperties propsNode =  (SDNNodeProperties) n.getProtocol(SDNNodeProperties.getPid());
+        SDNNodeProperties propsTarget =  (SDNNodeProperties) t.getProtocol(SDNNodeProperties.getPid());
+        double d_i_j = Math.sqrt(Math.pow(propsNode.getY() - propsTarget.getY(), 2) + Math.pow(propsNode.getX() - propsTarget.getX(), 2));
+        double r_i_j = propsNode.getBANDWIDTH() * Math.log(1 +
+                ( propsTarget.getPATH_LOSS_CONSTANT() * Math.pow(d_i_j, propsNode.getPATH_LOSS_EXPONENT()) * propsNode.getTRANSMISSION_POWER() ) / ( propsNode.getBANDWIDTH() * NORMALIZED_THERMAL_NOISE_POWER) );
+        //= Communication Delay
+        double t_c = (d_i_j == 0) ? 0 : 2 * w_o * clt.BYTE_SIZE / r_i_j ; // This can be a NaN
+        // When the instruction to offload to itself is given then the cost of communication is 0. (aka d_i_j == 0)
+        // TODO kinda just hotfixed this. Perhaps looking further into this possibility is advised.
+
+        //= Task Execution Delay
+        double t_e = clt.NO_INSTR * clt.CPI * (w_l / ((Worker) n.getProtocol(Worker.getPid())).CPU_FREQ  + w_o / ((Worker) t.getProtocol(Worker.getPid())).CPU_FREQ);
+
+        double D = (w_l == 0 && w_o == 0) ?  0 :  DELAY_WEIGHT * (t_w + t_c + t_e)/(w_l + w_o);
+        // If no transaction is being done and there is nothing to process locally then there is no delay. And can't divide by 0.
+
+        //== Overload Probability
+        // Note one simplification I take is look at each node as it's own M/M/1.
+        Worker workerNode = (Worker) n.getProtocol(Worker.getPid());
+        Worker workerTarget = (Worker) t.getProtocol(Worker.getPid());
+
+        double Q_prime_l = Math.min(Math.max(0, Q_expected_l - workerNode.getProcessingPower()) + w_l, workerNode.Q_MAX); // This should technically be available in the WorkerInfo btw...
+        double Q_prime_o = Math.min(Math.max(0, Q_expected_o - workerTarget.getProcessingPower()) + w_o, workerTarget.Q_MAX);
+
+        double pOverload_l = Math.max(0, Client.getTaskArrivalRate() - Q_prime_l);
+        double pOverload_o = Math.max(0, Client.getTaskArrivalRate() - Q_prime_o);
+
+        double O = (w_l == 0 && w_o == 0) ? 0 : OVERLOAD_WEIGHT * (w_l * pOverload_l + w_o * pOverload_o)/(w_l + w_o); // Same logic applied in calculating D.
+
+        return U - (D + O);
     }
 
+    private double notZero(double n){
+        return (n == 0)? 0 : 1;
+    }
+
+    //=== Logging and Debugging
+    private void printParams(){
+        //if(active)
+        Log.dbg("Controller Params: r_u<" + this.UTILITY_REWARD + "> X_d<" + this.DELAY_WEIGHT+ "> X_o<"+ this.OVERLOAD_WEIGHT+">" );
+    }
+
+    //======================================================================================================
+    // Interface Methods
+
+    //======================================================================================================
+    public List<WorkerInfo> getWorkerInfo() {
+        return workerInfo;
+    }
+
+    public void setWorkerInfo(List<WorkerInfo> workerInfo) {
+        this.workerInfo = workerInfo;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public static int getPid(){
+        return pid;
+    }
+
+    public List<Integer> getQ(){
+        return this.workerInfo.stream().map(WorkerInfo::getQueueSize).toList();
+    }
+
+    public EnvState getState(){
+        Log.dbg("Acquiring state");
+        // stop = true; Set the await action to block on next iter.
+        double w = this.workerInfo.get(selectedNode).getW();
+        return new EnvState(this.selectedNode, this.getQ(), w);
+    }
+    public Client getClient(){
+        return (Client) Network.get(0).getProtocol(Client.getPid());
+    }
+
+    public boolean isUp() {
+        return up;
+    }
+
+    public boolean isStable() {
+        return stop;
+    }
+
+    public DebugInfo getDebugInfo() {
+        return new DebugInfo(this.selectedNode);
+    }
 }
