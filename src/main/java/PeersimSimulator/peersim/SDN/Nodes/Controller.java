@@ -32,6 +32,9 @@ public class Controller implements CDProtocol, EDProtocol {
     private final int OVERLOAD_WEIGHT;
     private final static String PAR_OVERLOAD_WEIGHT = "X_o";
 
+    public final int CYCLE_SIZE;
+    private final static String PAR_CYCLE = "CYCLE";
+
     /**
      * The Normalized Thermal Noise power is measured in dBm/Hz. From "https://noisewave.com/faq.pdf"
      *
@@ -78,6 +81,8 @@ public class Controller implements CDProtocol, EDProtocol {
         DELAY_WEIGHT = Configuration.getInt( prefix + "." + PAR_DELAY_WEIGHT, 1) ;
         OVERLOAD_WEIGHT = Configuration.getInt( prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
         UTILITY_REWARD = Configuration.getInt( prefix + "." + PAR_UTILITY_REWARD, 1);
+        CYCLE_SIZE = Configuration.getInt(PAR_CYCLE, 100);
+
         selectedNode = 1; // Ignores the controller.
         cycle = 0; // Will transverse the available nodes.
         nodeUpdateEventList = new LinkedList<>();
@@ -129,16 +134,16 @@ public class Controller implements CDProtocol, EDProtocol {
             Node selectedWorker = linkable.getNeighbor(selectedNode);
             Worker protocol = (Worker) selectedWorker.getProtocol(Worker.getPid());
 
-            if(!selectedWorker.isUp() || workerInfo.isEmpty()) return -1;
+            if(!selectedWorker.isUp() || workerInfo.isEmpty()) return -100 * DELAY_WEIGHT;
 
             int targetNode = a.nodeId();
             int noTasks = a.noTasks();
-            if(targetNode < 0 || targetNode >= this.workerInfo.size()) {
+            if(targetNode <= 0 || targetNode >= this.workerInfo.size()) { // For now I'll block the controller node.
                 // When the offload instructions are being sent to an illegal node I decided to return the negative of the utility constant
                 Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> is outside the know node indexes!");
                 // allow progress
                 stop = false;
-                return -100*UTILITY_REWARD;
+                return -100*UTILITY_REWARD - 1; // - 1 is just to identify where the negative reward is happening.
             }
             if(noTasks < 0 || noTasks > Objects.requireNonNull(getWorkerInfo(targetNode)).getQueueSize()){
                 // When the offload instructions request to offload more tasks than are available I decided to return the negative of the utility constant.
@@ -149,7 +154,7 @@ public class Controller implements CDProtocol, EDProtocol {
                 Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> can't offload that many tasks <"+noTasks+">!");
                 // allow progress
                 stop = false;
-                return -100*UTILITY_REWARD;
+                return -100*UTILITY_REWARD - 2;
             }
 
             // Regular offload behaviour
@@ -170,7 +175,7 @@ public class Controller implements CDProtocol, EDProtocol {
             // [0, 1, 2]
             return reward;
         }
-        return -1;
+        return -100*DELAY_WEIGHT - 3;
 
     }
 
