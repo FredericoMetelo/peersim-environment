@@ -138,7 +138,7 @@ public class Controller implements CDProtocol, EDProtocol {
                 Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> is outside the know node indexes!");
                 // allow progress
                 stop = false;
-                return -UTILITY_REWARD;
+                return -100*UTILITY_REWARD;
             }
             if(noTasks < 0 || noTasks > Objects.requireNonNull(getWorkerInfo(targetNode)).getQueueSize()){
                 // When the offload instructions request to offload more tasks than are available I decided to return the negative of the utility constant.
@@ -149,7 +149,7 @@ public class Controller implements CDProtocol, EDProtocol {
                 Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> can't offload that many tasks <"+noTasks+">!");
                 // allow progress
                 stop = false;
-                return -UTILITY_REWARD;
+                return -100*UTILITY_REWARD;
             }
 
             // Regular offload behaviour
@@ -225,7 +225,11 @@ public class Controller implements CDProtocol, EDProtocol {
         int nodeID;
         while(!nodeUpdateEventList.isEmpty()){
             nodeID = nodeUpdateEventList.removeFirst();
-            if(getWorkerInfo(nodeID).getQueueSize() > 0){
+            // I exchanged the test from queuesize which would allow for w_i == 0, to the w_i itself.
+            // this makes sense as the Q is basically the size of the waiting nodes + the ones being processed,
+            // the nodes being processed can't be offloaded so it only makes sense to only stop if a node has stuff that
+            // could  be offloaded.
+            if(Objects.requireNonNull(getWorkerInfo(nodeID)).getW_i() > 0){
                 this.selectedNode = nodeID;
                 this.nodeUpdateEventList.removeAll(Collections.singleton(nodeID));
                 // If it has tasks available and is going to be processed no need

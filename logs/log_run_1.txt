@@ -7,15 +7,15 @@
  =========|_|==============|___/=/_/_/_/
  :: Spring Boot ::                (v3.0.2)
 
-2023-03-28T10:59:08.323+01:00  INFO 9801 --- [           main] PeersimSimulator.peersim.Simulator       : Starting Simulator v0.0.1-SNAPSHOT using Java 17.0.6 with PID 9801 (/home/fm/Documents/Thesis/peersim-srv/src/peersim-gym/peersim_gym/envs/Environment/peersim-srv-0.0.1-SNAPSHOT.jar started by fm in /)
-2023-03-28T10:59:08.326+01:00  INFO 9801 --- [           main] PeersimSimulator.peersim.Simulator       : No active profile set, falling back to 1 default profile: "default"
-2023-03-28T10:59:09.378+01:00  INFO 9801 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
-2023-03-28T10:59:09.388+01:00  INFO 9801 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2023-03-28T10:59:09.389+01:00  INFO 9801 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.5]
-2023-03-28T10:59:09.460+01:00  INFO 9801 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
-2023-03-28T10:59:09.462+01:00  INFO 9801 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1039 ms
-2023-03-28T10:59:10.160+01:00  INFO 9801 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
-2023-03-28T10:59:10.173+01:00  INFO 9801 --- [           main] PeersimSimulator.peersim.Simulator       : Started Simulator in 2.214 seconds (process running for 2.582)
+2023-04-04T16:32:57.656+01:00  INFO 32064 --- [           main] PeersimSimulator.peersim.Simulator       : Starting Simulator v0.0.1-SNAPSHOT using Java 17.0.6 with PID 32064 (/home/fm/Documents/Thesis/peersim-srv/src/peersim-gym/peersim_gym/envs/Environment/peersim-srv-0.0.1-SNAPSHOT.jar started by fm in /)
+2023-04-04T16:32:57.658+01:00  INFO 32064 --- [           main] PeersimSimulator.peersim.Simulator       : No active profile set, falling back to 1 default profile: "default"
+2023-04-04T16:32:58.760+01:00  INFO 32064 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2023-04-04T16:32:58.770+01:00  INFO 32064 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2023-04-04T16:32:58.770+01:00  INFO 32064 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.5]
+2023-04-04T16:32:58.834+01:00  INFO 32064 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2023-04-04T16:32:58.836+01:00  INFO 32064 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1112 ms
+2023-04-04T16:32:59.490+01:00  INFO 32064 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2023-04-04T16:32:59.508+01:00  INFO 32064 --- [           main] PeersimSimulator.peersim.Simulator       : Started Simulator in 2.194 seconds (process running for 2.605)
 Simulator: loading configuration
 ConfigProperties: File /home/fm/Documents/Thesis/peersim-srv/src/peersim-gym/peersim_gym/envs/configs/config.txt loaded.
 Simulator: starting experiment 0 invoking PeersimSimulator.peersim.edsim.EDSimulator
@@ -38,19 +38,274 @@ EDSimulator: running initializers
 EDSimulator: loaded controls []
 Current time: 0
 Start Waiting
-2023-03-28T10:59:10.660+01:00  INFO 9801 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
-2023-03-28T10:59:10.660+01:00  INFO 9801 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
-2023-03-28T10:59:10.663+01:00  INFO 9801 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
-Acquiring state
-|CTR| SEND ACTION: ILEGAL -> The target node <2> acan't offload that many tasks!
 Current time: 1
 Start Waiting
-Acquiring state
-|CTR| SEND ACTION: ILEGAL -> The target node <1> acan't offload that many tasks!
 Current time: 2
 Start Waiting
-Acquiring state
-|CTR| SEND ACTION: ILEGAL -> The target node <1> acan't offload that many tasks!
 Current time: 3
+Start Waiting
+Current time: 4
+Start Waiting
+Current time: 5
+Start Waiting
+Current time: 6
+Start Waiting
+Current time: 7
+Start Waiting
+Current time: 8
+Start Waiting
+Current time: 9
+Start Waiting
+Current time: 10
+Start Waiting
+Current time: 11
+Start Waiting
+Current time: 12
+Start Waiting
+Current time: 13
+|CLT| TASK SENT to Node:<1> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<63622b28-22e6-4e81-bf57-6f2bbe8f6bb2>
+Start Waiting
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <0> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<0->1> Wi <0->0>
+Current time: 14
+Start Waiting
+2023-04-04T16:32:59.965+01:00  INFO 32064 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2023-04-04T16:32:59.965+01:00  INFO 32064 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2023-04-04T16:32:59.968+01:00  INFO 32064 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <2> can't offload that many tasks <2>!
+|CLT| TASK SENT to Node:<1> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<1800d9ee-5bd8-402e-a51f-f2408f2771f0>
+|CLT| TASK SENT to Node:<2> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<904decba-8608-450b-9bec-fd5f75ca6abe>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <0> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<0->1> Wi <0->0>
+Current time: 15
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <1> can't offload that many tasks <9>!
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<1->2> Wi <0->1>
+Current time: 16
+|CLT| TASK SENT to Node:<1> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<744d9cc6-707f-4d3d-81d9-e4ff1fd18c08>
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <2> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<3->3> Wi <1->2>
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <2> can't offload that many tasks <4>!
+Current time: 17
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<7cad9fd3-b382-472b-a482-1732eda9a015>
+Start Waiting
+Current time: 18
+|WRK| TASK FINISH: SRC<1> Task<63622b28-22e6-4e81-bf57-6f2bbe8f6bb2>
+|CLT| TASK CONCLUDED: TaskId<63622b28-22e6-4e81-bf57-6f2bbe8f6bb2> NodeId:<63622b28-22e6-4e81-bf57-6f2bbe8f6bb2>
+Start Waiting
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<1->2> Wi <0->1>
+Current time: 19
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<5->2> Wi <2->1>
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <2> can't offload that many tasks <6>!
+Current time: 20
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: SRC<0> to TARGET:<2> offload (3)
+Acquiring Reward
+Tried to offload more tasks than are available.
+|WRK| TASK OFFLOAD SEND: SRC<1> TARGET<2> NO_TASKS<0>
+|WRK| TASK OFFLOAD RECIEVE: SRC<1> TARGET<2> NO_TASKS<0>
+Current time: 21
+|WRK| TASK FINISH: SRC<2> Task<904decba-8608-450b-9bec-fd5f75ca6abe>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<0> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<3->1> Wi <1->1>
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <2> can't offload that many tasks <7>!
+|WRK| WORKER-INFO SEND: SRC<1> Qi<2> Wi <0> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<3->2> Wi <1->0>
+|CLT| TASK CONCLUDED: TaskId<904decba-8608-450b-9bec-fd5f75ca6abe> NodeId:<904decba-8608-450b-9bec-fd5f75ca6abe>
+Current time: 22
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: SRC<0> to TARGET:<2> offload (2)
+Acquiring Reward
+Tried to offload more tasks than are available.
+|WRK| TASK OFFLOAD SEND: SRC<1> TARGET<2> NO_TASKS<0>
+|WRK| TASK OFFLOAD RECIEVE: SRC<1> TARGET<2> NO_TASKS<0>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <0> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<2->1> Wi <1->0>
+|CLT| TASK SENT to Node:<2> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<cb51a956-18ef-4bdb-a757-32cdfd82ee1b>
+Current time: 23
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <1> Working: <true>
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: SRC<0> to TARGET:<1> offload (1)
+Acquiring Reward
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<1->2> Wi <0->1>
+|WRK| TASK FINISH: SRC<1> Task<1800d9ee-5bd8-402e-a51f-f2408f2771f0>
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <0> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<2->1> Wi <0->0>
+|CLT| TASK CONCLUDED: TaskId<1800d9ee-5bd8-402e-a51f-f2408f2771f0> NodeId:<1800d9ee-5bd8-402e-a51f-f2408f2771f0>
+|WRK| TASK OFFLOAD SEND: SRC<2> TARGET<1> NO_TASKS<1>
+|WRK| TASK OFFLOAD RECIEVE: SRC<2> TARGET<1> NO_TASKS<1>
+Current time: 24
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <1> Working: <true>
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <1> can't offload that many tasks <10>!
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <0> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<1->2> Wi <0->1>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<3->1> Wi <1->0>
+Current time: 25
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <1> can't offload that many tasks <7>!
+Current time: 26
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: SRC<0> to TARGET:<1> offload (1)
+Acquiring Reward
+Tried to offload more tasks than are available.
+|WRK| TASK OFFLOAD SEND: SRC<2> TARGET<1> NO_TASKS<0>
+|WRK| TASK OFFLOAD RECIEVE: SRC<2> TARGET<1> NO_TASKS<0>
+Current time: 27
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <0> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<1->1> Wi <0->0>
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <1> Working: <true>
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: SRC<0> to TARGET:<2> offload (1)
+Acquiring Reward
+Tried to offload more tasks than are available.
+|WRK| TASK OFFLOAD SEND: SRC<2> TARGET<2> NO_TASKS<0>
+|WRK| TASK OFFLOAD RECIEVE: SRC<2> TARGET<2> NO_TASKS<0>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<3->2> Wi <1->1>
+Current time: 28
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <0> Working: <true>
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <2> can't offload that many tasks <9>!
+|WRK| TASK FINISH: SRC<1> Task<744d9cc6-707f-4d3d-81d9-e4ff1fd18c08>
+|CLT| TASK CONCLUDED: TaskId<744d9cc6-707f-4d3d-81d9-e4ff1fd18c08> NodeId:<744d9cc6-707f-4d3d-81d9-e4ff1fd18c08>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<1->1> Wi <0->0>
+|CLT| TASK SENT to Node:<1> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<235b1391-5307-42ca-ba0d-f6336a4b871d>
+Current time: 29
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <2> can't offload that many tasks <7>!
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<3->2> Wi <1->1>
+Current time: 30
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <1> can't offload that many tasks <7>!
+Current time: 31
+|CLT| TASK SENT to Node:<2> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<2dcc7dcb-5754-471a-9e08-16ec6f196040>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<1->2> Wi <0->1>
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: SRC<0> to TARGET:<2> offload (1)
+Acquiring Reward
+|WRK| TASK OFFLOAD SEND: SRC<2> TARGET<2> NO_TASKS<1>
+|WRK| TASK OFFLOAD RECIEVE: SRC<2> TARGET<2> NO_TASKS<1>
+Current time: 32
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <1> Working: <true>
+Start Waiting
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<3->2> Wi <1->1>
+Current time: 33
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <1> can't offload that many tasks <9>!
+|WRK| TASK FINISH: SRC<2> Task<7cad9fd3-b382-472b-a482-1732eda9a015>
+|CLT| TASK CONCLUDED: TaskId<7cad9fd3-b382-472b-a482-1732eda9a015> NodeId:<7cad9fd3-b382-472b-a482-1732eda9a015>
+|CLT| TASK SENT to Node:<1> FROM < 1>
+|WRK| TASK FINISH: SRC<1> Task<cb51a956-18ef-4bdb-a757-32cdfd82ee1b>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<d1c0447f-7177-4146-8239-93f58f2c9f83>
+|CLT| TASK CONCLUDED: TaskId<cb51a956-18ef-4bdb-a757-32cdfd82ee1b> NodeId:<cb51a956-18ef-4bdb-a757-32cdfd82ee1b>
+Current time: 34
+Start Waiting
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <0> Working: <true>
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<3->2> Wi <1->1>
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<30bb8c3d-205d-4e63-b039-fc68d3f01b77>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<3->1> Wi <1->0>
+Current time: 35
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <2> can't offload that many tasks <8>!
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<1->2> Wi <0->1>
+Current time: 36
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <2> can't offload that many tasks <5>!
+Current time: 37
+Start Waiting
+Current time: 38
+|WRK| TASK FINISH: SRC<1> Task<235b1391-5307-42ca-ba0d-f6336a4b871d>
+|WRK| TASK FINISH: SRC<2> Task<2dcc7dcb-5754-471a-9e08-16ec6f196040>
+Start Waiting
+|CLT| TASK SENT to Node:<1> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<9ad1eaff-4474-41f6-92c6-4388f57c8f5d>
+|CLT| TASK CONCLUDED: TaskId<2dcc7dcb-5754-471a-9e08-16ec6f196040> NodeId:<2dcc7dcb-5754-471a-9e08-16ec6f196040>
+|CLT| TASK CONCLUDED: TaskId<235b1391-5307-42ca-ba0d-f6336a4b871d> NodeId:<235b1391-5307-42ca-ba0d-f6336a4b871d>
+Current time: 39
+Start Waiting
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <0> Working: <true>
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<3->2> Wi <1->1>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<3->1> Wi <1->0>
+Current time: 40
+|CLT| TASK SENT to Node:<1> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<8a597608-2416-463a-a7be-04adeb1930a5>
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <2> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<3->3> Wi <1->2>
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: SRC<0> to TARGET:<1> offload (1)
+Acquiring Reward
+|WRK| TASK OFFLOAD SEND: SRC<1> TARGET<1> NO_TASKS<1>
+|WRK| TASK OFFLOAD RECIEVE: SRC<1> TARGET<1> NO_TASKS<1>
+Current time: 41
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: SRC<0> to TARGET:<1> offload (4)
+Acquiring Reward
+|WRK| WORKER-INFO SEND: SRC<1> Qi<2> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<5->3> Wi <2->1>
+Tried to offload more tasks than are available.
+|WRK| TASK OFFLOAD SEND: SRC<2> TARGET<1> NO_TASKS<0>
+|WRK| TASK OFFLOAD RECIEVE: SRC<2> TARGET<1> NO_TASKS<0>
+Current time: 42
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: SRC<0> to TARGET:<1> offload (2)
+Acquiring Reward
+Tried to offload more tasks than are available.
+|WRK| TASK OFFLOAD SEND: SRC<1> TARGET<1> NO_TASKS<0>
+|WRK| TASK OFFLOAD RECIEVE: SRC<1> TARGET<1> NO_TASKS<0>
+|WRK| WORKER-INFO SEND: SRC<1> Qi<3> Wi <0> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<4->3> Wi <1->0>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <0> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<1->1> Wi <0->0>
+Current time: 43
+Start Waiting
+Acquiring state
+|CTR| SEND ACTION: ILEGAL -> The target node <2> can't offload that many tasks <6>!
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<c97947f0-c4eb-43fc-a871-3a93cb6afa0b>
+|WRK| TASK FINISH: SRC<1> Task<d1c0447f-7177-4146-8239-93f58f2c9f83>
+|CLT| TASK CONCLUDED: TaskId<d1c0447f-7177-4146-8239-93f58f2c9f83> NodeId:<d1c0447f-7177-4146-8239-93f58f2c9f83>
+Current time: 44
 Start Waiting
 Acquiring state
