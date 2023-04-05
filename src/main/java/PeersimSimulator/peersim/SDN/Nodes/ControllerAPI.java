@@ -16,15 +16,23 @@ public class ControllerAPI  implements Control {
     @Autowired
     private ApplicationEventPublisher applicationEventPublisher;
 
+    Information lastInfo;
+
     public ControllerAPI(ApplicationEventPublisher applicationEventPublisher) {
         this.applicationEventPublisher = applicationEventPublisher;
+        lastInfo = null;
     }
 
     @GetMapping("/state")
-    public Information getState(){
+    public Information getState() {
         Controller c = (Controller) Network.get(0).getProtocol(Controller.getPid());
-        while(!c.isStable()) Thread.onSpinWait(); // await the 100 ticks.
-        return new Information(c.getState(), CommonState.getEndTime() <= CommonState.getTime() + c.CYCLE_SIZE, c.getDebugInfo()); // aka will end on this action.
+        if (CommonState.POST_SIMULATION == CommonState.getPhase()) {
+            return new Information(lastInfo.state(), true, lastInfo.info());
+        }
+        while (!c.isStable()) Thread.onSpinWait(); // await the 100 ticks.
+        Information i = new Information(c.getState(), CommonState.getEndTime() <= CommonState.getTime() + c.CYCLE_SIZE, c.getDebugInfo());
+        this.lastInfo = i;
+        return i;
     }
 
     @PostMapping("/action")
@@ -36,8 +44,9 @@ public class ControllerAPI  implements Control {
     @GetMapping("/up")
     public boolean isUp(){
         Controller c = (Controller) Network.get(0).getProtocol(Controller.getPid());
-        return c.isUp();
+        return !(CommonState.getPhase() == CommonState.POST_SIMULATION) && c.isUp();
     }
+
 
     @Override
     public boolean execute() {

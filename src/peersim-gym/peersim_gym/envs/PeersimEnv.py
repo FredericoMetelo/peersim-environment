@@ -113,7 +113,12 @@ class PeersimEnv(gym.Env):
 
     def step(self, action: ActType):
         # A step will advance the simulation in 100 ticks
-        # Send action.
+        # Sends an action, first tests if the simulation is still running if the simulation has already
+        # stopped then returns the last observed state.Otherwise, returns the result of taking the step.
+
+        if not self.__is_up():
+            return self._observation, 0, True, False, self._info
+
         r = self._send_action(action)
         reward_for_action = float(r.content)  # Gives NaN sometimes. How to deal with it? Find a division by 0?\
         message = "Offload < from:" + str(self._observation['n_i']) + " to:" + str(action["target_node"]) + " tasks:"\
