@@ -17,6 +17,9 @@ class PeersimEnv(gym.Env):
 
     def __init__(self, render_mode=None, configs=None, log_dir=None):
         # ==== Variables to configure the PeerSim
+        # This value does not include the controller, SIZE represents the total number of nodes which includes
+        # the controller.
+        # (aka if number_nodes is 10 there is a total of 11 nodes (1 controller + 10 workers))
         self.number_nodes = 10
         self.max_Q_size = 10
         self.max_w = 1
@@ -39,7 +42,7 @@ class PeersimEnv(gym.Env):
                 self.max_Q_size = int(configs["protocol.wrk.Q_MAX"])
 
             if "SIZE" in configs:
-                self.number_nodes = int(configs["SIZE"])
+                self.number_nodes = int(configs["SIZE"]) - 1
 
             cg.generate_config_file(configs)
             self.config_path = cg.TARGET_FILE_PATH
@@ -68,7 +71,7 @@ class PeersimEnv(gym.Env):
             q_list = [self.max_Q_size for _ in range(self.number_nodes)]
         self.observation_space = Dict(
             {
-                "n_i": Discrete(self.number_nodes, start=1),
+                "n_i": Discrete(self.number_nodes, start=1),  # Ignores the controller
                 "Q": MultiDiscrete(q_list),
                 "w": Box(high=self.max_w, low=0, dtype=np.float)
                 # The authors use a Natural number to represent this, value. I use a continuous value, because the way

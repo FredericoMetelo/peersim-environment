@@ -28,7 +28,7 @@ public class Controller implements CDProtocol, EDProtocol {
     private final int DELAY_WEIGHT;
     private final static String PAR_DELAY_WEIGHT = "X_d";
 
-
+    private final int WRONG_MOVE_PUNISHMENT;
     private final int OVERLOAD_WEIGHT;
     private final static String PAR_OVERLOAD_WEIGHT = "X_o";
 
@@ -82,7 +82,7 @@ public class Controller implements CDProtocol, EDProtocol {
         OVERLOAD_WEIGHT = Configuration.getInt( prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
         UTILITY_REWARD = Configuration.getInt( prefix + "." + PAR_UTILITY_REWARD, 1);
         CYCLE_SIZE = Configuration.getInt(PAR_CYCLE, 100);
-
+        WRONG_MOVE_PUNISHMENT = -100*UTILITY_REWARD;
         selectedNode = 1; // Ignores the controller.
         cycle = 0; // Will transverse the available nodes.
         nodeUpdateEventList = new LinkedList<>();
@@ -117,7 +117,7 @@ public class Controller implements CDProtocol, EDProtocol {
 
 
     public double sendAction(Action a) {
-        if(!active || a == null || a.noTasks() < 0 || a.nodeId() < 0) return -1;
+        if(!active || a == null || a.noTasks() < 0 || a.nodeId() < 0) return WRONG_MOVE_PUNISHMENT - 10;
 
         // Pick Node to be offloaded. Inform Python   of the WorkerInfo in question. Get the Action for that node to execute.
         /*
@@ -134,7 +134,7 @@ public class Controller implements CDProtocol, EDProtocol {
             Node selectedWorker = linkable.getNeighbor(selectedNode);
             Worker protocol = (Worker) selectedWorker.getProtocol(Worker.getPid());
 
-            if(!selectedWorker.isUp() || workerInfo.isEmpty()) return -100 * DELAY_WEIGHT;
+            if(!selectedWorker.isUp() || workerInfo.isEmpty()) return WRONG_MOVE_PUNISHMENT - 1;
 
             int targetNode = a.nodeId();
             int noTasks = a.noTasks();
@@ -143,7 +143,7 @@ public class Controller implements CDProtocol, EDProtocol {
                 Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> is outside the know node indexes!");
                 // allow progress
                 stop = false;
-                return -100*UTILITY_REWARD - 1; // - 1 is just to identify where the negative reward is happening.
+                return WRONG_MOVE_PUNISHMENT - 2; // - 1 is just to identify where the negative reward is happening.
             }
             if(noTasks < 0 || noTasks > Objects.requireNonNull(getWorkerInfo(targetNode)).getQueueSize()){
                 // When the offload instructions request to offload more tasks than are available I decided to return the negative of the utility constant.
@@ -154,7 +154,7 @@ public class Controller implements CDProtocol, EDProtocol {
                 Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> can't offload that many tasks <"+noTasks+">!");
                 // allow progress
                 stop = false;
-                return -100*UTILITY_REWARD - 2;
+                return WRONG_MOVE_PUNISHMENT - 3;
             }
 
             // Regular offload behaviour
@@ -175,7 +175,7 @@ public class Controller implements CDProtocol, EDProtocol {
             // [0, 1, 2]
             return reward;
         }
-        return -100*DELAY_WEIGHT - 3;
+        return WRONG_MOVE_PUNISHMENT - 4;
 
     }
 
@@ -263,13 +263,22 @@ public class Controller implements CDProtocol, EDProtocol {
         // Only happens with nodes that joined later. All nodes known from beginning are init with a 0 (?).
         workerInfo.add(newWi);
     }
+
+    /**
+     * This method will generate an entry for each of the nodes in the network excluding the controller node.
+     * Note: In the future perhaps have two different modes. One where the Controller participates in the network,
+     * another where the controller is just managing the network (curretn implementation is this where the controller is
+     * just managing the network).
+     * @param node
+     * @param protocolID
+     */
     void initializeWorkerInfo(Node node, int protocolID) {
         double default_task_size = Configuration.getDouble( "protocol.clt.I", 200e6);
         double default_CPU_FREQ = Configuration.getDouble( "protocol.wrk.FREQ", 1e7);
         int default_CPU_NO_CORES = Configuration.getInt( "protocol.wrk.NO_CORES", 4);
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        for(int i = 0; i < linkable.degree(); i++){
+        for(int i = 1; i < linkable.degree(); i++){
             Node target = linkable.getNeighbor(i);
             if (!target.isUp()) return; // This happens task progress is lost.
             Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
@@ -336,8 +345,8 @@ public class Controller implements CDProtocol, EDProtocol {
 
         double pOverload_l = Math.max(0, Client.getTaskArrivalRate() - Q_prime_l);
         double pOverload_o = Math.max(0, Client.getTaskArrivalRate() - Q_prime_o);
-
-        double O = (w_l == 0 && w_o == 0) ? 0 : OVERLOAD_WEIGHT * (w_l * pOverload_l + w_o * pOverload_o)/(w_l + w_o); // Same logic applied in calculating D.
+// REMOVED FOR TESTING PURPOSES -> (w_l == 0 && w_o == 0) ? 0 :
+        double O =  OVERLOAD_WEIGHT * (w_l * pOverload_l + w_o * pOverload_o)/(w_l + w_o); // Same logic applied in calculating D.
 
         return U - (D + O);
     }
@@ -360,10 +369,6 @@ public class Controller implements CDProtocol, EDProtocol {
         return workerInfo;
     }
 
-    public void setWorkerInfo(List<WorkerInfo> workerInfo) {
-        this.workerInfo = workerInfo;
-    }
-
     public boolean isActive() {
         return active;
     }
@@ -384,13 +389,14 @@ public class Controller implements CDProtocol, EDProtocol {
     }
 
     public List<Integer> getQ(){
+        int start = 1; // By definition can't have less than 3 nodes. For convenience
         return this.workerInfo.stream().map(WorkerInfo::getQueueSize).toList();
     }
 
     public EnvState getState(){
         Log.dbg("Acquiring state");
         // stop = true; Set the await action to block on next iter.
-        double w = this.workerInfo.get(selectedNode).getW();
+        double w = getWorkerInfo(this.selectedNode).getW();
         return new EnvState(this.selectedNode, this.getQ(), w);
     }
     public Client getClient(){

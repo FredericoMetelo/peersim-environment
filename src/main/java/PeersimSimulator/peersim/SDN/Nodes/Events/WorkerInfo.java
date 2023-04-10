@@ -88,4 +88,9 @@ public class WorkerInfo {
     public void setNodeProcessingPower(double nodeProcessingPower) {
         this.nodeProcessingPower = nodeProcessingPower;
     }
+
+    @Override
+    public String toString() {
+        return "<WorkerInfo - ID:" + this.id + " Q:"+this.getQueueSize()+">";
+    }
 }
