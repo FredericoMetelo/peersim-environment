@@ -138,8 +138,11 @@ public class Controller implements CDProtocol, EDProtocol {
 
             int targetNode = a.nodeId();
             int noTasks = a.noTasks();
-            if(targetNode <= 0 || targetNode >= this.workerInfo.size()) { // For now I'll block the controller node.
-                // When the offload instructions are being sent to an illegal node I decided to return the negative of the utility constant
+            if(targetNode <= 0 || targetNode - 1 > this.workerInfo.size()) {
+                // Note: This was >= this.WorkerInfo.size -> Now Worker info is between 1 and SIZE - 1.
+                // In a Network with 5 nodes, 0 is the controller then we have 1,2,3,4 as the Workers:
+                // WorkerInfo: [1 2 3 4] where the size of the worker info is the index of the last node.
+
                 Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> is outside the know node indexes!");
                 // allow progress
                 stop = false;
