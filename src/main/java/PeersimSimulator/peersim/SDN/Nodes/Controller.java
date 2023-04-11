@@ -82,7 +82,7 @@ public class Controller implements CDProtocol, EDProtocol {
         OVERLOAD_WEIGHT = Configuration.getInt( prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
         UTILITY_REWARD = Configuration.getInt( prefix + "." + PAR_UTILITY_REWARD, 1);
         CYCLE_SIZE = Configuration.getInt(PAR_CYCLE, 100);
-        WRONG_MOVE_PUNISHMENT = -100*UTILITY_REWARD;
+        WRONG_MOVE_PUNISHMENT = -200*UTILITY_REWARD;
         selectedNode = 1; // Ignores the controller.
         cycle = 0; // Will transverse the available nodes.
         nodeUpdateEventList = new LinkedList<>();

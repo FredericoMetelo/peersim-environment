@@ -29,6 +29,8 @@ class PeersimEnv(gym.Env):
         self.url_state_path = "/state"
         self.url_isUp = "/up"
 
+        self.default_timeout = 3  # Second
+
         # Checking the configurations
         if configs is None:
             configs = {"protocol.wrk.Q_MAX": str(self.max_Q_size), "SIZE": str(self.number_nodes)}
@@ -111,7 +113,7 @@ class PeersimEnv(gym.Env):
         while not self.__is_up():
             time.sleep(0.5)  # Good Solution? No... But it is what it is.
         print("Server is up")
-        obs, done, info = self._get_obs()
+        obs, done, info = self.__get_obs()
         return obs, info
 
     def step(self, action: ActType):
@@ -122,12 +124,12 @@ class PeersimEnv(gym.Env):
         if not self.__is_up():
             return self._observation, 0, True, False, self._info
 
-        r = self._send_action(action)
+        r = self.__send_action(action)
         reward_for_action = float(r.content)  # Gives NaN sometimes. How to deal with it? Find a division by 0?\
-        message = "Offload < from:" + str(self._observation['n_i']) + " to:" + str(action["target_node"]) + " tasks:"\
+        message = "Offload < from:" + str(self._observation['n_i']) + " to:" + str(action["target_node"]) + " tasks:" \
                   + str(action["offload_amount"]) + "> -> Reward:" + str(reward_for_action)
         print(message)
-        obs, done, info = self._get_obs()
+        obs, done, info = self.__get_obs()
         return obs, reward_for_action, done, False, info
 
     def render(self):
@@ -157,39 +159,52 @@ class PeersimEnv(gym.Env):
                 os.remove(log_file)
         self.simulator.run(output_file=log_file)
 
-    def _get_obs(self):
+    def __get_obs(self):
         # Retrieve Observation
         space_url = self.url_api + self.url_state_path
         headers_state = {"Accept": "application/json", "Connection": "keep-alive"}
-        s = requests.get(space_url, headers=headers_state).json()
-        obs = {'n_i': s.get("state").get('n_i'),
-               'Q': np.asarray(s.get("state").get("Q")),
-               'w': np.asarray([s.get("state").get("w")])
-               }
-        # print(obs)
-        done = s.get("done")
-        self._observation = obs
-        self._done = done
+        try:
+            s = requests.get(space_url, headers=headers_state, timeout=self.default_timeout).json()
+            obs = {'n_i': s.get("state").get('n_i'),
+                   'Q': np.asarray(s.get("state").get("Q")),
+                   'w': np.asarray([s.get("state").get("w")])
+                   }
+            # print(obs)
+            done = s.get("done")
+            self._observation = obs
+            self._done = done
 
-        dbg_info = s.get("info")
-        self._info = dbg_info
-        return obs, done, dbg_info
+            dbg_info = s.get("info")
+            self._info = dbg_info
+            return obs, done, dbg_info
+        except requests.exceptions.Timeout:
+            print("Failed to get observation, connection timed out. Returning old reward.")
+            return self._observation, True, self._info
 
-    def _send_action(self, action):
+    def __send_action(self, action):
         payload = {"nodeId": action["target_node"], "noTasks": action["offload_amount"]}
         headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
         action_url = self.url_api + self.url_action_path
-        r = requests.post(action_url, json=payload, headers=headers_action)
-        return r
+        try:
+            r = requests.post(action_url, json=payload, headers=headers_action, timeout=self.default_timeout)
+            self._reward = r
+            return r
+        except requests.exceptions.Timeout:
+            print("Failed to send action, could not connect to the environment. Returning old reward.")
+            return self._reward
 
     def __is_up(self):
         payload = {}
         headers_action = {"Accept": "application/json", "Connection": "keep-alive"}
         action_url = self.url_api + self.url_isUp
         try:
-            r = requests.get(action_url, json=payload, headers=headers_action)
+            r = requests.get(action_url, json=payload, headers=headers_action, timeout=self.default_timeout)
             status = r.content == 'True' or r.content == 'true' or r.content
+        except requests.exceptions.Timeout:
+            print("Failed at Connecting to the Environment")
+            status = False
         except requests.exceptions.ConnectionError:
             # if the Server is not yet reachable. We wait.
             status = False
+
         return status
