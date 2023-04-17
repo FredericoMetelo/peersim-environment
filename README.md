@@ -271,6 +271,9 @@ Note: Entries without the format <protocol|init|control>.string_id.parameter_nam
   ``` 
   protocol.clt.I 200e6
   ```
+- ** Task Arrival Rate per Client **. At each time step a Client will with probability of taskArrivalRate send a task for each node.
+``` protocol.clt.taskArrivalRate 0.01```
+
 ### Configurations of the Worker
 <a name="ConfigurationOfTheWorker"></a>
 - **Number of Cores in Worker CPU**. This parameter is used in two ways:

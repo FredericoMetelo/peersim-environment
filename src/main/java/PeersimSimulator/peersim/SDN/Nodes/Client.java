@@ -16,11 +16,11 @@ import PeersimSimulator.peersim.transport.Transport;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 public class Client implements CDProtocol, EDProtocol {
     public static final int DEFAULT_TASK_SIZE = 500;
     public static final double DEFAULT_NO_INSTR = 200e6;
+    public static final double DEFAULT_TASKARRIVALRATE = 0.01;
 
     private static final String PAR_BYTE_SIZE = "T";
     public final double BYTE_SIZE; // Mbytes
@@ -34,6 +34,9 @@ public class Client implements CDProtocol, EDProtocol {
 
     private static final String PAR_NAME = "name";
     private static int pid;
+
+    public static String PAR_TASKARRIVALRATE = "protocol.clt.taskArrivalRate";
+    private final double TASK_ARRIVAL_RATE;
 
     /**
      * Defines f this node is working as a Client
@@ -50,7 +53,7 @@ public class Client implements CDProtocol, EDProtocol {
     private int noResults;
 
     private List<Long> nextArrival;
-    private static final double taskArrivalRate = 0.10;
+
     // 0.10 % chance of new task being sent to worker per time tick.
     // Assuming poisson process therefore no change!
     private int id;
@@ -62,10 +65,13 @@ public class Client implements CDProtocol, EDProtocol {
         noResults = 0;
         nextArrival = null;
         active = false;
+
         // Read Constants
         CPI = Configuration.getInt( prefix + "." + PAR_CPI, 1) ;
         BYTE_SIZE = Configuration.getInt( prefix + "." + PAR_BYTE_SIZE, DEFAULT_TASK_SIZE);
         NO_INSTR = Configuration.getDouble( prefix + "." + PAR_NO_INSTR, DEFAULT_NO_INSTR);
+        TASK_ARRIVAL_RATE = Configuration.getDouble( prefix + "." + PAR_TASKARRIVALRATE, DEFAULT_TASKARRIVALRATE );
+
         printParams();
 
     }
@@ -148,7 +154,7 @@ public class Client implements CDProtocol, EDProtocol {
 
              Note: The task arrival rate of this poisson process is lambda.
          */
-        return (long) (-Math.log(CommonState.r.nextDouble()) / taskArrivalRate);
+        return (long) (-Math.log(CommonState.r.nextDouble()) / TASK_ARRIVAL_RATE);
     }
     private void initTaskManagement(int degree) {
         nextArrival = new ArrayList<Long>(degree);
@@ -161,9 +167,10 @@ public class Client implements CDProtocol, EDProtocol {
         return active;
     }
 
-    public static double getTaskArrivalRate() {
-        return taskArrivalRate;
-    }
+
+    // public static double getTaskArrivalRate() {
+    //    return taskArrivalRate;
+    // }
 
     public void setActive(boolean active) {
         this.active = active;

@@ -35,6 +35,8 @@ public class Controller implements CDProtocol, EDProtocol {
     public final int CYCLE_SIZE;
     private final static String PAR_CYCLE = "CYCLE";
 
+    public final double EXPECTED_TASK_ARRIVAL_RATE;
+
     /**
      * The Normalized Thermal Noise power is measured in dBm/Hz. From "https://noisewave.com/faq.pdf"
      *
@@ -57,6 +59,12 @@ public class Controller implements CDProtocol, EDProtocol {
      */
     private boolean active;
 
+    /**
+     * selectedNode represents the latest selected ID of node, between [0, N]
+     * <p>
+     * The selection is based on an Evnet Queue, the node with the oldest event is selected. All other events of that
+     * node are removed from the Queue.
+     */
     int selectedNode;
     int cycle;
     List<WorkerInfo> workerInfo;
@@ -82,6 +90,8 @@ public class Controller implements CDProtocol, EDProtocol {
         OVERLOAD_WEIGHT = Configuration.getInt( prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
         UTILITY_REWARD = Configuration.getInt( prefix + "." + PAR_UTILITY_REWARD, 1);
         CYCLE_SIZE = Configuration.getInt(PAR_CYCLE, 100);
+        EXPECTED_TASK_ARRIVAL_RATE =  Configuration.getDouble( prefix + "." + Client.PAR_TASKARRIVALRATE, Client.DEFAULT_TASKARRIVALRATE );
+
         WRONG_MOVE_PUNISHMENT = -200*UTILITY_REWARD;
         selectedNode = 1; // Ignores the controller.
         cycle = 0; // Will transverse the available nodes.
@@ -148,7 +158,8 @@ public class Controller implements CDProtocol, EDProtocol {
                 stop = false;
                 return WRONG_MOVE_PUNISHMENT - 2; // - 1 is just to identify where the negative reward is happening.
             }
-            if(noTasks < 0 || noTasks > Objects.requireNonNull(getWorkerInfo(targetNode)).getQueueSize()){
+            // No checks for validity of source node, logic of program guarantee correct
+            if(noTasks < 0 || noTasks > Objects.requireNonNull(getWorkerInfo(selectedNode)).getQueueSize()){
                 // When the offload instructions request to offload more tasks than are available I decided to return the negative of the utility constant.
                 // Note to self: This might be problematic as the number of tasks the node views is not ther real number
                 // of tasks the actual node has. There is a delay on the information, this might one day become a bottleneck.
@@ -346,8 +357,8 @@ public class Controller implements CDProtocol, EDProtocol {
         double Q_prime_l = Math.min(Math.max(0, Q_expected_l - workerNode.getProcessingPower()) + w_l, workerNode.Q_MAX); // This should technically be available in the WorkerInfo btw...
         double Q_prime_o = Math.min(Math.max(0, Q_expected_o - workerTarget.getProcessingPower()) + w_o, workerTarget.Q_MAX);
 
-        double pOverload_l = Math.max(0, Client.getTaskArrivalRate() - Q_prime_l);
-        double pOverload_o = Math.max(0, Client.getTaskArrivalRate() - Q_prime_o);
+        double pOverload_l = Math.max(0, EXPECTED_TASK_ARRIVAL_RATE - Q_prime_l);
+        double pOverload_o = Math.max(0, EXPECTED_TASK_ARRIVAL_RATE - Q_prime_o);
 // REMOVED FOR TESTING PURPOSES -> (w_l == 0 && w_o == 0) ? 0 :
         double O =  OVERLOAD_WEIGHT * (w_l * pOverload_l + w_o * pOverload_o)/(w_l + w_o); // Same logic applied in calculating D.
 

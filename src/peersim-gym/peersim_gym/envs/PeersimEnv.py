@@ -126,10 +126,11 @@ class PeersimEnv(gym.Env):
 
         r = self.__send_action(action)
         reward_for_action = float(r.content)  # Gives NaN sometimes. How to deal with it? Find a division by 0?\
-        message = "Offload < from:" + str(self._observation['n_i']) + " to:" + str(action["target_node"]) + " tasks:" \
-                  + str(action["offload_amount"]) + "> -> Reward:" + str(reward_for_action)
-        print(message)
+
+        self.__print_information(action, reward_for_action)
+
         obs, done, info = self.__get_obs()
+
         return obs, reward_for_action, done, False, info
 
     def render(self):
@@ -149,6 +150,17 @@ class PeersimEnv(gym.Env):
         print(self.action_space.sample())
         print("Example of space.")
         print(self.observation_space.sample())
+
+    def __print_information(self, action, reward_for_action):
+        print(self._observation['Q'])
+        tasks_target = self._observation['Q'][int(action["target_node"]) - 1] # Q is between 0 and N-1, and the node indexes are between 1 and N
+        O_t = "" if tasks_target < self.max_Q_size else " (O)"
+        tasks_source = self._observation['Q'][int(self._observation['n_i']) - 1]
+        O_s = "" if tasks_source < self.max_Q_size else " (O)"
+        message = "Offload < from:" + str(self._observation['n_i']) + " {Q:" + str(tasks_source) + O_s + \
+                  "} to:" + str(action["target_node"]) + " {Q:" + str(tasks_target) + O_t + \
+                  "} no_tasks:" + str(action["offload_amount"]) + "}> -> Reward:" + str(reward_for_action)
+        print(message)
 
     def __run_peersim(self):
         self.__run_counter += 1
