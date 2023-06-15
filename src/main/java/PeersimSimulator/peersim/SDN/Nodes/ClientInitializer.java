@@ -52,7 +52,7 @@ public class ClientInitializer  implements Control {
      */
     public boolean execute() {
         // Initialize the Clients
-        for(int i = 1; i < Network.size(); i++){
+        for(int i = 0; i < Network.size(); i++){
             Client c = ((Client) Network.get(i).getProtocol(pid));
             ;
             c.setActive(true);

@@ -18,6 +18,8 @@ protocol.props.Beta1 0.001
 protocol.props.Beta2 4
 protocol.props.P_ti 20
 
+
+
 #=============Define Simulation Globals
 
 random.seed 1234567890
@@ -49,7 +51,7 @@ protocol.clt.linkable lnk
 protocol.clt.name clt
 protocol.clt.step CYCLE
 protocol.clt.transport tr
-
+protocol.clt.taskArrivalRate 0.4
 
 protocol.ctrl PeersimSimulator.peersim.SDN.Nodes.Controller
 protocol.ctrl.linkable lnk

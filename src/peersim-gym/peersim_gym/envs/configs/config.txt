@@ -17,6 +17,7 @@ protocol.props.B 2
 protocol.props.Beta1 0.001
 protocol.props.Beta2 4
 protocol.props.P_ti 20
+protocol.clt.taskArrivalRate 0.4
 
 #=============Define Simulation Globals
 

@@ -148,16 +148,7 @@ public class Controller implements CDProtocol, EDProtocol {
 
             int targetNode = a.nodeId();
             int noTasks = a.noTasks();
-            if(targetNode <= 0 || targetNode - 1 > this.workerInfo.size()) {
-                // Note: This was >= this.WorkerInfo.size -> Now Worker info is between 1 and SIZE - 1.
-                // In a Network with 5 nodes, 0 is the controller then we have 1,2,3,4 as the Workers:
-                // WorkerInfo: [1 2 3 4] where the size of the worker info is the index of the last node.
 
-                Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> is outside the know node indexes!");
-                // allow progress
-                stop = false;
-                return WRONG_MOVE_PUNISHMENT - 2; // - 1 is just to identify where the negative reward is happening.
-            }
             // No checks for validity of source node, logic of program guarantee correct
             if(noTasks < 0 || noTasks > Objects.requireNonNull(getWorkerInfo(selectedNode)).getQueueSize()){
                 // When the offload instructions request to offload more tasks than are available I decided to return the negative of the utility constant.
@@ -180,7 +171,7 @@ public class Controller implements CDProtocol, EDProtocol {
                     send(
                             node,
                             selectedWorker,
-                            new OffloadInstructions(targetNode, noTasks), // TODO get the values for this constructor from python!!!
+                            new OffloadInstructions(targetNode, noTasks),
                             Worker.getPid()
                     );
 
@@ -230,7 +221,10 @@ public class Controller implements CDProtocol, EDProtocol {
 
     /**
      * Returns <code>true</code> if a node was selected, the selected node is stored in the <code>selectedNode</code> field. If no nodes have tasks
-     * available to be offloaded then the method returns <code>false</code>.
+     * available to be offloaded then the method returns <code>false</code>.\
+     *
+     * God! Please, clean this method up later... There is enough spaghetti to feed an entire italian province in here.
+     *
      * @param linkable
      * @return <code>true</code> if a suitable node was found. <code>false</code> otherwise
      */
@@ -240,7 +234,9 @@ public class Controller implements CDProtocol, EDProtocol {
         if(nodeUpdateEventList.isEmpty()){
             return false;
         }
-        this.selectedNode = -1;
+
+        this.selectedNode = 0;
+        // this.selectedNode = -1;
         int nodeID;
         while(!nodeUpdateEventList.isEmpty()){
             nodeID = nodeUpdateEventList.removeFirst();
@@ -248,14 +244,15 @@ public class Controller implements CDProtocol, EDProtocol {
             // this makes sense as the Q is basically the size of the waiting nodes + the ones being processed,
             // the nodes being processed can't be offloaded so it only makes sense to only stop if a node has stuff that
             // could  be offloaded.
-            if(Objects.requireNonNull(getWorkerInfo(nodeID)).getW_i() > 0){
-                this.selectedNode = nodeID;
+            if(Objects.requireNonNull(getWorkerInfo(nodeID)).getW_i() > 0 && Objects.requireNonNull(getWorkerInfo(nodeID)).getId() == 0){ // Aka it's the Id of the node being played
+                this.selectedNode = 0; // nodeID; NEW
                 this.nodeUpdateEventList.removeAll(Collections.singleton(nodeID));
                 // If it has tasks available and is going to be processed no need
                 // to have more entries of the node in the queue.
                 return true;
             }
         }
+        nodeUpdateEventList  = new LinkedList<>(); // Memory leaks her we go!
         return false;
     }
     private void updateNode(WorkerInfo newWi){
@@ -292,7 +289,7 @@ public class Controller implements CDProtocol, EDProtocol {
         int default_CPU_NO_CORES = Configuration.getInt( "protocol.wrk.NO_CORES", 4);
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        for(int i = 1; i < linkable.degree(); i++){
+        for(int i = 0; i < linkable.degree(); i++){
             Node target = linkable.getNeighbor(i);
             if (!target.isUp()) return; // This happens task progress is lost.
             Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
@@ -359,8 +356,8 @@ public class Controller implements CDProtocol, EDProtocol {
 
         double pOverload_l = Math.max(0, EXPECTED_TASK_ARRIVAL_RATE - Q_prime_l);
         double pOverload_o = Math.max(0, EXPECTED_TASK_ARRIVAL_RATE - Q_prime_o);
-// REMOVED FOR TESTING PURPOSES -> (w_l == 0 && w_o == 0) ? 0 :
-        double O =  OVERLOAD_WEIGHT * (w_l * pOverload_l + w_o * pOverload_o)/(w_l + w_o); // Same logic applied in calculating D.
+// Update Reward functions?
+        double O = (w_l == 0 && w_o == 0) ? 0 : OVERLOAD_WEIGHT * (w_l * pOverload_l + w_o * pOverload_o)/(w_l + w_o); // Same logic applied in calculating D.
 
         return U - (D + O);
     }
