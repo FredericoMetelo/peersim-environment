@@ -346,7 +346,7 @@ public class Controller implements CDProtocol, EDProtocol {
         double D = (w_l == 0 && w_o == 0) ?  0 :  DELAY_WEIGHT * (t_w + t_c + t_e)/(w_l + w_o);
         // If no transaction is being done and there is nothing to process locally then there is no delay. And can't divide by 0.
 
-        //== Overload Probability
+        //== Overload ProbabilityZ
         // Note one simplification I take is look at each node as it's own M/M/1.
         Worker workerNode = (Worker) n.getProtocol(Worker.getPid());
         Worker workerTarget = (Worker) t.getProtocol(Worker.getPid());
@@ -407,7 +407,9 @@ public class Controller implements CDProtocol, EDProtocol {
     public EnvState getState(){
         Log.dbg("Acquiring state");
         // stop = true; Set the await action to block on next iter.
-        double w = getWorkerInfo(this.selectedNode).getW();
+        WorkerInfo wi = getWorkerInfo(this.selectedNode);
+        double w = wi.getW();
+        int offloadable_tasks = wi.getW_i();
         return new EnvState(this.selectedNode, this.getQ(), w);
     }
     public Client getClient(){
