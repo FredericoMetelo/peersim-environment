@@ -1,6 +1,7 @@
 SIZE 6
 CYCLE 1
 CYCLES 1000
+random.seed 8115727030
 MINDELAY 0
 MAXDELAY 0
 DROP 0
@@ -17,11 +18,9 @@ protocol.props.B 2
 protocol.props.Beta1 0.001
 protocol.props.Beta2 4
 protocol.props.P_ti 20
-protocol.clt.taskArrivalRate 0.4
 
 #=============Define Simulation Globals
 
-random.seed 1234567890
 network.size SIZE
 simulation.endtime CYCLE*CYCLES
 simulation.logtime CYCLE
