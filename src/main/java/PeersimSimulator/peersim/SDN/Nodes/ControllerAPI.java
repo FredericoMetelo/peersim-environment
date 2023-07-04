@@ -37,6 +37,7 @@ public class ControllerAPI  implements Control {
 
     @PostMapping("/action")
     public double postAction(@RequestBody Action a){
+
         Controller c = (Controller) Network.get(0).getProtocol(Controller.getPid());
         return c.sendAction(a);
     }

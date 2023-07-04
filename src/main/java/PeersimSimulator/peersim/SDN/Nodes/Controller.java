@@ -134,6 +134,7 @@ public class Controller implements CDProtocol, EDProtocol {
          * This will initially be done in round-robin style across all the nodes except the controller.
          * Updating one node per cycle.
          */
+        Log.dbg(a.toString());
         Node node = Network.get(CONTROLLER_ID);
         if(workerInfo.isEmpty()) initializeWorkerInfo(node, Controller.getPid());
 
