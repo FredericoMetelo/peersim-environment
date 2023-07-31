@@ -1,6 +1,7 @@
 import os
 import time
 import time
+from random import randint
 
 import gymnasium as gym
 import numpy as np
@@ -31,30 +32,9 @@ class PeersimEnv(gym.Env):
 
         self.default_timeout = 3  # Second
 
-        # Checking the configurations
-        if configs is None:
-            configs = {"protocol.wrk.Q_MAX": str(self.max_Q_size), "SIZE": str(self.number_nodes)}
+        self.config_archive = configs
 
-            cg.generate_config_file(configs)
-            self.config_path = cg.TARGET_FILE_PATH
-
-        elif type(configs) is dict:
-            # Consistency of QMax in configs and the arguments.
-            if "protocol.wrk.Q_MAX" in configs:
-                self.max_Q_size = int(configs["protocol.wrk.Q_MAX"])
-
-            if "SIZE" in configs:
-                self.number_nodes = int(configs["SIZE"]) - 1
-
-            cg.generate_config_file(configs)
-            self.config_path = cg.TARGET_FILE_PATH
-
-        elif type(configs) is str:
-            self.config_path = configs
-
-        else:
-            raise Exception(
-                "Invalid Type for the configs parameter. Needs to be None, a Dictionary or a String. Please see the project README.md")
+        self.__gen_config(configs)
 
         # ==== Environment Definition
         # ---- State Space
@@ -101,6 +81,37 @@ class PeersimEnv(gym.Env):
         # self.simulator = PeersimThread(name='Run0', configs=self.config_path)
         # self.simulator.run()
 
+    def __gen_config(self, configs, regen_seed=False):
+        # Checking the configurations
+        if configs is None:
+
+            configs = {"protocol.wrk.Q_MAX": str(self.max_Q_size), "SIZE": str(self.number_nodes),
+                       "random.seed": self.__gen_seed()}
+
+            cg.generate_config_file(configs)
+            self.config_path = cg.TARGET_FILE_PATH
+
+        elif type(configs) is dict:
+            # Consistency of QMax in configs and the arguments.
+            if "protocol.wrk.Q_MAX" in configs:
+                self.max_Q_size = int(configs["protocol.wrk.Q_MAX"])
+
+            if "SIZE" in configs:
+                self.number_nodes = int(configs["SIZE"])  # - 1 Not anymore
+
+            if not ("random.seed" in configs) or regen_seed:
+                configs["random.seed"] = self.__gen_seed()
+                print(f'seed:{configs["random.seed"]}')
+
+            cg.generate_config_file(configs)
+            self.config_path = cg.TARGET_FILE_PATH
+        elif type(configs) is str:
+            self.config_path = configs
+
+        else:
+            raise Exception(
+                "Invalid Type for the configs parameter. Needs to be None, a Dictionary or a String. Please see the project README.md")
+
     def init(self, render_mode=None, configs=None, log_dir=None):
         self.__init__(render_mode, configs, log_dir=log_dir)
 
@@ -109,6 +120,7 @@ class PeersimEnv(gym.Env):
             self.simulator.stop()
         else:
             self.simulator = PeersimThread(name=f'Run{self.__run_counter}', configs=self.config_path)
+        self.__gen_config(self.config_archive, regen_seed=True)
         self.__run_peersim()
         while not self.__is_up():
             time.sleep(0.5)  # Good Solution? No... But it is what it is.
@@ -220,3 +232,7 @@ class PeersimEnv(gym.Env):
             status = False
 
         return status
+
+    def __gen_seed(self):
+        n = randint(1000000000, 9999999999)
+        return str(n)

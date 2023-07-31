@@ -7,29 +7,8 @@
  =========|_|==============|___/=/_/_/_/
  :: Spring Boot ::                (v3.0.2)
 
-2023-04-17T11:18:19.443+01:00  INFO 16443 --- [           main] PeersimSimulator.peersim.Simulator       : Starting Simulator v0.0.1-SNAPSHOT using Java 17.0.6 with PID 16443 (/home/fm/Documents/Thesis/peersim-srv/src/peersim-gym/peersim_gym/envs/Environment/peersim-srv-0.0.1-SNAPSHOT.jar started by fm in /)
-2023-04-17T11:18:19.447+01:00  INFO 16443 --- [           main] PeersimSimulator.peersim.Simulator       : No active profile set, falling back to 1 default profile: "default"
-2023-04-17T11:18:20.797+01:00  INFO 16443 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
-2023-04-17T11:18:20.807+01:00  INFO 16443 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2023-04-17T11:18:20.808+01:00  INFO 16443 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.5]
-2023-04-17T11:18:20.879+01:00  INFO 16443 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
-2023-04-17T11:18:20.881+01:00  INFO 16443 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1356 ms
-2023-04-17T11:18:21.486+01:00  WARN 16443 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
-2023-04-17T11:18:21.489+01:00  INFO 16443 --- [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
-2023-04-17T11:18:21.501+01:00  INFO 16443 --- [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
-
-Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
-2023-04-17T11:18:21.515+01:00 ERROR 16443 --- [           main] o.s.b.d.LoggingFailureAnalysisReporter   : 
-
-***************************
-APPLICATION FAILED TO START
-***************************
-
-Description:
-
-Web server failed to start. Port 8080 was already in use.
-
-Action:
-
-Identify and stop the process that's listening on port 8080 or configure this application to listen on another port.
-
+2023-07-04T22:26:19.287+01:00  INFO 9842 --- [           main] PeersimSimulator.peersim.Simulator       : Starting Simulator v0.0.1-SNAPSHOT using Java 17.0.7 with PID 9842 (/home/fm/Documents/Thesis/peersim-srv/src/peersim-gym/peersim_gym/envs/Environment/peersim-srv-0.0.1-SNAPSHOT.jar started by fm in /)
+2023-07-04T22:26:19.290+01:00  INFO 9842 --- [           main] PeersimSimulator.peersim.Simulator       : No active profile set, falling back to 1 default profile: "default"
+2023-07-04T22:26:20.791+01:00  INFO 9842 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2023-07-04T22:26:20.917+01:00  INFO 9842 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1531 ms
+2023-07-04T22:26:22.417+01:00  WARN 9842 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'

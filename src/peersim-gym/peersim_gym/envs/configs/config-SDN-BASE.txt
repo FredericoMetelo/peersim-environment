@@ -1,7 +1,6 @@
 
 #=============Define Simulation Globals
 
-random.seed 1234567890
 network.size SIZE
 simulation.endtime CYCLE*CYCLES
 simulation.logtime CYCLE

@@ -35,7 +35,7 @@ public class Client implements CDProtocol, EDProtocol {
     private static final String PAR_NAME = "name";
     private static int pid;
 
-    public static String PAR_TASKARRIVALRATE = "protocol.clt.taskArrivalRate";
+    public static String PAR_TASKARRIVALRATE = "taskArrivalRate";
     private final double TASK_ARRIVAL_RATE;
 
     /**
@@ -97,7 +97,7 @@ public class Client implements CDProtocol, EDProtocol {
 
         if(nextArrival == null) initTaskManagement(linkable.degree());
 
-        for(int i = 1; i < linkable.degree(); i++) {
+        for(int i = 0; i < linkable.degree(); i++) {
             if (nextArrival.get(i) <= CommonState.getTime()) {
                 Node target = linkable.getNeighbor(i);
                 if (!target.isUp()) return; // This happens task progress is lost.

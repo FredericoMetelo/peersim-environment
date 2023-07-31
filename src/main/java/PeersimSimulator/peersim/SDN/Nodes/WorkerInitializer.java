@@ -52,10 +52,10 @@ public class WorkerInitializer implements Control {
      */
     public boolean execute() {
         // Node 0 is not a worker.
-        ((Worker) Network.get(0).getProtocol(pid)).setActive(false);
+        ((Worker) Network.get(0).getProtocol(pid)).setActive(true);
         // If we want to set the controller as a worker remove the line above (start i=0 in loop)
         // Note: All Nodes have protocol Worker as True.
-        for(int i = 1; i<Network.size(); i++){
+        for(int i = 0; i<Network.size(); i++){
             Worker w = ((Worker) Network.get(i).getProtocol(pid));
             w.setId(i);
             // Set other Variables like CPU speed and others here.

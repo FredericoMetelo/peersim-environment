@@ -12,7 +12,7 @@ if __name__ == "__main__":
     a = ""
     s, _ = env.reset()
     while a != "quit":
-        # a = input(">")
+        a = input(">")
         if a == 'quit' or a == 'q':
             break
         if a == 'r':

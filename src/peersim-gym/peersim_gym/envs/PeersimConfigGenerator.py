@@ -6,6 +6,7 @@ PEERSIM_DEFAULTS = {
     "SIZE" : "10",
     "CYCLE": "1",
     "CYCLES": "1000",
+    "random.seed": "1234567890",
     "MINDELAY": "0",
     "MAXDELAY": "0",
     "DROP": "0",
@@ -26,7 +27,7 @@ PEERSIM_DEFAULTS = {
 BASE_FILE_PATH = os.path.join(this_dir, "configs", "config-SDN-BASE.txt")
 TARGET_FILE_PATH = os.path.join(this_dir, "configs", "config.txt")
 
-def generate_config_file(config_dict):
+def generate_config_file(config_dict, explicit_lines=False):
     print("GENERATING CONFIG FILE")
     if config_dict is None:
         config_dict = {}
@@ -41,11 +42,13 @@ def generate_config_file(config_dict):
         for key in PEERSIM_DEFAULTS.keys():
             value = config_dict.get(key) if key in config_dict else PEERSIM_DEFAULTS.get(key)
             line = key + " " + value + "\n"
-            print(line)
+            if explicit_lines:
+                print(line)
             newFile.write(line)
         # Append the baselines
         for line in fileoutput:
             newFile.write(line)
-            print(line)
+            if explicit_lines:
+                print(line)
         baseFile.close()
         newFile.close()

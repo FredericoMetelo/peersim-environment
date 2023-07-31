@@ -1,6 +1,7 @@
 SIZE 6
 CYCLE 1
 CYCLES 1000
+random.seed 4604546579
 MINDELAY 0
 MAXDELAY 0
 DROP 0
@@ -20,7 +21,6 @@ protocol.props.P_ti 20
 
 #=============Define Simulation Globals
 
-random.seed 1234567890
 network.size SIZE
 simulation.endtime CYCLE*CYCLES
 simulation.logtime CYCLE

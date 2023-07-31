@@ -191,7 +191,7 @@ configs_dict="/home/fm/Documents/Thesis/peersim-srv/configs/examples/default-con
 configs_dict = None  # Default Value
 
 # Just pass the configuration in the configs parameter.
-env = PeersimEnv(configs=configs_dict)
+env = PeersimEnv(configs=configs_dict, log_dir="")
 ```
 Internally we always pass a config file to the Peersim simulation tool.
 When the configs are passed as a `Dict` or `None` a configuration file is generated. The details of the possible configurations are in the next section.
