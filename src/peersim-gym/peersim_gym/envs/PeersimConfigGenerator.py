@@ -16,6 +16,7 @@ PEERSIM_DEFAULTS = {
     "protocol.clt.CPI": "1",
     "protocol.clt.T": "150",
     "protocol.clt.I": "200e6",
+    "protocol.clt.taskArrivalRate": "0.2",
     "protocol.wrk.NO_CORES": "4",
     "protocol.wrk.FREQ": "1e7",
     "protocol.wrk.Q_MAX": "10",

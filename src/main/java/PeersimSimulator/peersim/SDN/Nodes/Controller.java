@@ -10,6 +10,7 @@ import PeersimSimulator.peersim.SDN.Records.EnvState;
 import PeersimSimulator.peersim.cdsim.CDProtocol;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
+import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
@@ -151,7 +152,7 @@ public class Controller implements CDProtocol, EDProtocol {
             int noTasks = a.noTasks();
 
             // No checks for validity of source node, logic of program guarantee correct
-            if(noTasks < 0 || noTasks > Objects.requireNonNull(getWorkerInfo(selectedNode)).getQueueSize()){
+            if(noTasks < 0 || noTasks > Objects.requireNonNull(getWorkerInfo(selectedNode)).getTotalTasks()){
                 // When the offload instructions request to offload more tasks than are available I decided to return the negative of the utility constant.
                 // Note to self: This might be problematic as the number of tasks the node views is not ther real number
                 // of tasks the actual node has. There is a delay on the information, this might one day become a bottleneck.
@@ -259,7 +260,7 @@ public class Controller implements CDProtocol, EDProtocol {
     private void updateNode(WorkerInfo newWi){
         for (WorkerInfo oldWi : workerInfo) {
             if(oldWi.getId() == newWi.getId()){
-                Log.info("|CTR| WORKER-INFO UPDATE: SRC<"+ newWi.getId() + "> Qi<" +oldWi.getQueueSize()+"->" +newWi.getQueueSize() + "> Wi <" +oldWi.getW_i()+"->"  + newWi.getW_i() + ">");
+                Log.info("|CTR| WORKER-INFO UPDATE: SRC<"+ newWi.getId() + "> Qi<" +oldWi.getTotalTasks()+"->" +newWi.getTotalTasks() + "> Wi <" +oldWi.getW_i()+"->"  + newWi.getW_i() + ">");
 
                 oldWi.setW_i(newWi.getW_i());
                 oldWi.setQueueSize(newWi.getQueueSize());
@@ -270,7 +271,7 @@ public class Controller implements CDProtocol, EDProtocol {
                 return;
             }
         }
-        Log.info("|CTR| WORKER-INFO ADD: SRC<"+ newWi.getId() + "> Qi<" +"->" +newWi.getQueueSize() + "> Wi <" + newWi.getW_i() + ">");
+        Log.info("|CTR| WORKER-INFO ADD: SRC<"+ newWi.getId() + "> Qi<" +"->" +newWi.getTotalTasks() + "> Wi <" + newWi.getW_i() + ">");
         // Means no node with given Id has sent information to the Controller yet.
         // Only happens with nodes that joined later. All nodes known from beginning are init with a 0 (?).
         workerInfo.add(newWi);
@@ -312,12 +313,12 @@ public class Controller implements CDProtocol, EDProtocol {
         Node t = linkable.getNeighbor(targetNode);
         double w_o = (initialInfo.getW_i() < noTasks) ? 0 : noTasks;
         double w_l = initialInfo.getW_i() - w_o;
-        double Q_l = initialInfo.getQueueSize(); // This will never be 0 with my current implementation.
-        double Q_o = targetInfo.getQueueSize(); // initial Queue size plus the tasks that stayed.
+        double Q_l = initialInfo.getTotalTasks(); // This will never be 0 with my current implementation.
+        double Q_o = targetInfo.getTotalTasks(); // initial Queue size plus the tasks that stayed.
         double miu_l = initialInfo.getW();
         double miu_o = targetInfo.getW();
-        double Q_expected_l = initialInfo.getQueueSize() - w_o;
-        double Q_expected_o = targetInfo.getQueueSize() + w_o; // initial Queue size plus the tasks that stayed.
+        double Q_expected_l = initialInfo.getTotalTasks() - w_o;
+        double Q_expected_o = targetInfo.getTotalTasks() + w_o; // initial Queue size plus the tasks that stayed.
 
         //== Computing the reward
         Log.dbg("Acquiring Reward");
@@ -401,16 +402,17 @@ public class Controller implements CDProtocol, EDProtocol {
     }
 
     public List<Integer> getQ(){
-        int start = 1; // By definition can't have less than 3 nodes. For convenience
-        return this.workerInfo.stream().map(WorkerInfo::getQueueSize).toList();
+        //int start = 1; // By definition can't have less than 3 nodes. For convenience
+        return this.workerInfo.stream().map(WorkerInfo::getTotalTasks).toList();
     }
 
     public EnvState getState(){
         Log.dbg("Acquiring state");
         // stop = true; Set the await action to block on next iter.
-        WorkerInfo wi = getWorkerInfo(this.selectedNode);
+        WorkerInfo wi = getWorkerInfo(this.selectedNode); // TODO fix this function. Remenant of before.
+        assert wi != null;
         double w = wi.getW();
-        int offloadable_tasks = wi.getW_i();
+        //int offloadable_tasks = wi.getW_i();
         return new EnvState(this.selectedNode, this.getQ(), w);
     }
     public Client getClient(){
@@ -426,6 +428,34 @@ public class Controller implements CDProtocol, EDProtocol {
     }
 
     public DebugInfo getDebugInfo() {
-        return new DebugInfo(this.selectedNode);
+        List<Integer> droppedFromLastCycle = new LinkedList<Integer>();
+        List<Integer> droppedTotal = new LinkedList<Integer>();
+        List<Integer> totalTasksRecieved= new LinkedList<Integer>();
+        List<Integer> tasksRecievedSinceLastCycle= new LinkedList<Integer>();
+        List<Integer> totalTasksProcessed= new LinkedList<Integer>();
+        List<Integer> totalTasksOffloaded= new LinkedList<Integer>();
+        List<Boolean> workerInvariant= new LinkedList<>();
+
+        for (int i = 0; i < Network.size(); ++i) {
+            Worker w = ((Worker) Network.get(i).getProtocol(Worker.getPid()));
+            droppedTotal.add(w.getTotalDropped());
+            droppedFromLastCycle.add(w.getDroppedLastCycle());
+            totalTasksRecieved.add(w.getTotalTasksRecieved());
+            tasksRecievedSinceLastCycle.add(w.getTasksRecievedSinceLastCycle());
+            totalTasksProcessed.add(w.getTotalTasksProcessed());
+            totalTasksOffloaded.add(w.getTotalTasksOffloaded());
+            workerInvariant.add(
+                    w.getTotalTasksRecieved() == w.getTotalDropped() + w.getTotalTasksProcessed() + w.getTotalTasksOffloaded() + w.getNumberOfTasks()
+                    );
+        }
+        return new DebugInfo(this.selectedNode,
+                CommonState.getTime(),
+                droppedTotal,
+                droppedFromLastCycle,
+                totalTasksRecieved,
+                tasksRecievedSinceLastCycle,
+                totalTasksProcessed,
+                totalTasksOffloaded,
+                workerInvariant);
     }
 }

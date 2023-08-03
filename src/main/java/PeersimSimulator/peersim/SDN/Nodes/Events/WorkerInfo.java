@@ -3,8 +3,6 @@ package PeersimSimulator.peersim.SDN.Nodes.Events;
 import PeersimSimulator.peersim.SDN.Nodes.Client;
 import PeersimSimulator.peersim.core.Network;
 
-import java.util.List;
-
 public class WorkerInfo {
 
     /**
@@ -40,8 +38,12 @@ public class WorkerInfo {
         this.nodeProcessingPower = nodeProcessingPower;
     }
 
+    public int getTotalTasks() {
+        return this.getQueueSize() + getW_i();
+    }
+
     public int getQueueSize() {
-        return queueSize + getW_i();
+        return queueSize;
     }
 
     public void setQueueSize(int queueSize) {
@@ -91,6 +93,6 @@ public class WorkerInfo {
 
     @Override
     public String toString() {
-        return "<WorkerInfo - ID:" + this.id + " Q:"+this.getQueueSize()+">";
+        return "<WorkerInfo - ID:" + this.id + " Q:"+this.getTotalTasks()+">";
     }
 }

@@ -1,7 +1,7 @@
-SIZE 6
+SIZE 3
 CYCLE 1
-CYCLES 1000
-random.seed 6114709041
+CYCLES 100
+random.seed 8924549359
 MINDELAY 0
 MAXDELAY 0
 DROP 0
@@ -11,6 +11,7 @@ protocol.ctrl.X_o 150
 protocol.clt.CPI 1
 protocol.clt.T 150
 protocol.clt.I 200e6
+protocol.clt.taskArrivalRate 0.8
 protocol.wrk.NO_CORES 4
 protocol.wrk.FREQ 1e7
 protocol.wrk.Q_MAX 10
