@@ -77,7 +77,7 @@ protocol.props.name props
 protocol.lnk PeersimSimulator.peersim.core.IdleProtocol
 
 #--------Define Transport Protocol
-protocol.urt PeersimSimulator.peersim.transport.UniformRandomTransport
+protocol.urt PeersimSimulator.peersim.SDN.Transport.BaseDelayTransport
 protocol.urt.mindelay (CYCLE*MINDELAY)/100
 protocol.urt.maxdelay (CYCLE*MAXDELAY)/100
 

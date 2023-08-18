@@ -3,7 +3,7 @@ package PeersimSimulator.peersim.SDN.Nodes.Events;
 import PeersimSimulator.peersim.SDN.Nodes.Client;
 import PeersimSimulator.peersim.core.Network;
 
-public class WorkerInfo {
+public class WorkerInfo implements Message{
 
     /**
      * This is a constant value representing a default expected task size based. Represents the knowledge the node has
@@ -94,5 +94,10 @@ public class WorkerInfo {
     @Override
     public String toString() {
         return "<WorkerInfo - ID:" + this.id + " Q:"+this.getTotalTasks()+">";
+    }
+
+    @Override
+    public double getSize() {
+        return 1;
     }
 }

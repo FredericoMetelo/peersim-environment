@@ -1,6 +1,6 @@
 package PeersimSimulator.peersim.SDN.Nodes.Events;
 
-public class OffloadInstructions {
+public class OffloadInstructions implements Message{
     private int targetNode;
     private int noTasks;
 
@@ -23,5 +23,10 @@ public class OffloadInstructions {
 
     public void setNoTasks(int noTasks) {
         this.noTasks = noTasks;
+    }
+
+    @Override
+    public double getSize() {
+        return 1; // 16 bytes which is two ints is 0.0016 Mbytes
     }
 }

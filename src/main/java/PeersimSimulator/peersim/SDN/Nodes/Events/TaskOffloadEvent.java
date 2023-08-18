@@ -1,10 +1,11 @@
 package PeersimSimulator.peersim.SDN.Nodes.Events;
 
+import PeersimSimulator.peersim.SDN.Nodes.Client;
 import PeersimSimulator.peersim.SDN.Tasks.Task;
 
 import java.util.List;
 
-public class TaskOffloadEvent {
+public class TaskOffloadEvent implements Message{
     int srcNode;
     int dstNode;
 
@@ -38,5 +39,10 @@ public class TaskOffloadEvent {
 
     public void setTaskList(List<Task> taskList) {
         this.taskList = taskList;
+    }
+
+    @Override
+    public double getSize() {
+        return taskList.size() * Client.DEFAULT_TASK_SIZE;
     }
 }

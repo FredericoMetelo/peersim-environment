@@ -1,6 +1,6 @@
 package PeersimSimulator.peersim.SDN.Nodes.Events;
 
-public class TaskConcludedEvent {
+public class TaskConcludedEvent implements Message {
     int tickConcluded;
 
     int nodeId;
@@ -44,5 +44,10 @@ public class TaskConcludedEvent {
 
     public void setResult(byte[] result) {
         this.result = result;
+    }
+
+    @Override
+    public double getSize() {
+        return 1;
     }
 }
