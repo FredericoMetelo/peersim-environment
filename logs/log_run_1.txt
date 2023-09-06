@@ -7,8 +7,252 @@
  =========|_|==============|___/=/_/_/_/
  :: Spring Boot ::                (v3.0.2)
 
-2023-07-04T22:26:19.287+01:00  INFO 9842 --- [           main] PeersimSimulator.peersim.Simulator       : Starting Simulator v0.0.1-SNAPSHOT using Java 17.0.7 with PID 9842 (/home/fm/Documents/Thesis/peersim-srv/src/peersim-gym/peersim_gym/envs/Environment/peersim-srv-0.0.1-SNAPSHOT.jar started by fm in /)
-2023-07-04T22:26:19.290+01:00  INFO 9842 --- [           main] PeersimSimulator.peersim.Simulator       : No active profile set, falling back to 1 default profile: "default"
-2023-07-04T22:26:20.791+01:00  INFO 9842 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
-2023-07-04T22:26:20.917+01:00  INFO 9842 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1531 ms
-2023-07-04T22:26:22.417+01:00  WARN 9842 --- [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2023-07-31T15:23:05.780+01:00  INFO 76729 --- [           main] PeersimSimulator.peersim.Simulator       : Starting Simulator v0.0.1-SNAPSHOT using Java 17.0.7 with PID 76729 (/home/fm/Documents/Thesis/peersim-srv/src/peersim-gym/peersim_gym/envs/Environment/peersim-srv-0.0.1-SNAPSHOT.jar started by fm in /)
+2023-07-31T15:23:05.784+01:00  INFO 76729 --- [           main] PeersimSimulator.peersim.Simulator       : No active profile set, falling back to 1 default profile: "default"
+2023-07-31T15:23:07.080+01:00  INFO 76729 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2023-07-31T15:23:07.091+01:00  INFO 76729 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2023-07-31T15:23:07.091+01:00  INFO 76729 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.5]
+2023-07-31T15:23:07.186+01:00  INFO 76729 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2023-07-31T15:23:07.188+01:00  INFO 76729 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1317 ms
+2023-07-31T15:23:08.003+01:00  INFO 76729 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2023-07-31T15:23:08.031+01:00  INFO 76729 --- [           main] PeersimSimulator.peersim.Simulator       : Started Simulator in 2.649 seconds (process running for 3.082)
+Simulator: loading configuration
+ConfigProperties: File /home/fm/Documents/Thesis/peersim-srv/src/peersim-gym/peersim_gym/envs/configs/config.txt loaded.
+Simulator: starting experiment 0 invoking PeersimSimulator.peersim.edsim.EDSimulator
+Random seed: 8924549359
+
+
+
+EDSimulator: resetting
+Network: no node defined, using GeneralNode
+Client Params: CPI<1> T<150.0> I<2.0E8>
+Controller Params: r_u<1> X_d<1> X_o<150>
+Worker Params: NO_CORES<4> FREQ<1.0E7> Q_MAX<10>
+EDSimulator: running initializers
+- Running initializer init.sch: class PeersimSimulator.peersim.edsim.CDScheduler
+- Running initializer init.Net0: class PeersimSimulator.peersim.SDN.Links.SDNInitializer
+- Running initializer init.Net1: class PeersimSimulator.peersim.SDN.Links.WireSDNTopology
+- Running initializer init.InitWrk: class PeersimSimulator.peersim.SDN.Nodes.WorkerInitializer
+- Running initializer init.InitClt: class PeersimSimulator.peersim.SDN.Nodes.ClientInitializer
+- Running initializer init.InitCtrl: class PeersimSimulator.peersim.SDN.Nodes.ControllerInitializer
+EDSimulator: loaded controls []
+Current time: 0
+|CLT| TASK SENT to Node:<0> FROM < 2>
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|CLT| TASK SENT to Node:<2> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<f5f1be50-868c-4bc3-ac76-e32044abd044>
+|CLT| TASK SENT to Node:<0> FROM < 0>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<dc1de186-60f4-4922-a71b-7def8f4c810e>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<b2c8202b-b6d1-43d3-9e11-6fa6899c0a3d>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<384621d9-277f-4672-ab00-86090a3f47f0>
+Start Waiting
+Current time: 1
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <1> Working: <true>
+Start Waiting
+|WRK| WORKER-INFO SEND: SRC<0> Qi<1> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<0> Qi<0->2> Wi <0->1>
+|CLT| TASK SENT to Node:<0> FROM < 1>
+|CLT| TASK SENT to Node:<2> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<9a576fc4-4c56-444f-a99d-9869f7249b8b>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<e35f9fd4-89f8-4a9a-a7d5-65f5a7dc87a2>
+|CLT| TASK SENT to Node:<0> FROM < 2>
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<09142021-9925-4137-8f5c-ae4b7a1a35a7>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<f6120a2d-ca69-41ae-aeaa-4487688af0f7>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<0->2> Wi <0->1>
+|CLT| TASK SENT to Node:<0> FROM < 0>
+|CLT| TASK SENT to Node:<2> FROM < 0>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<ecdfc498-f663-494f-9019-523346f4679a>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<786dfae1-3586-4836-9bc2-51208c4271ed>
+Current time: 2
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <4> Working: <true>
+|CLT| TASK SENT to Node:<0> FROM < 1>
+|CLT| TASK SENT to Node:<2> FROM < 1>
+Start Waiting
+2023-07-31T15:23:08.529+01:00  INFO 76729 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2023-07-31T15:23:08.529+01:00  INFO 76729 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2023-07-31T15:23:08.533+01:00  INFO 76729 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 4 ms
+Acquiring state
+target: 2 no_task: 5
+|CTR| SEND ACTION: ILEGAL -> The target node <2> can't offload that many tasks <5>!
+|CLT| TASK SENT to Node:<0> FROM < 0>
+|CLT| TASK SENT to Node:<2> FROM < 0>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<1995c71e-83dd-42ce-a9f8-7dcb21b10492>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<c5f688a5-ea44-433d-8bb6-a931d20ae6c8>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<a86754dc-71ab-45df-96f9-35ceac7bdf28>
+|WRK| WORKER-INFO SEND: SRC<0> Qi<1> Wi <5> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<0> Qi<3->6> Wi <1->5>
+|CLT| TASK SENT to Node:<0> FROM < 2>
+|CLT| TASK SENT to Node:<1> FROM < 2>
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<858aee01-7bae-4659-aec3-a913b37e08f1>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<d4d468c5-fb31-4675-9d9b-313d4a22ae0c>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<4654614e-54f2-435e-9aeb-0bb106df9c23>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<3->5> Wi <1->4>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<e990e1d0-fcff-498d-bbd6-e9855b36e5f3>
+Current time: 3
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <0> Working: <true>
+|CLT| TASK SENT to Node:<0> FROM < 0>
+|CLT| TASK SENT to Node:<2> FROM < 0>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<0b04d5cf-f3a8-407d-ba32-0ceeeea32912>
+|WRK| WORKER-INFO SEND: SRC<0> Qi<1> Wi <7> Working: <true>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<cdd1aed6-b5a5-4a24-b383-e12b444a1441>
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|CLT| TASK SENT to Node:<2> FROM < 1>
+|CTR| WORKER-INFO UPDATE: SRC<0> Qi<11->8> Wi <5->7>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <8> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<9->9> Wi <4->8>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<2efcdbcb-2e67-4608-9d03-9dc28e122c79>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<0->1> Wi <0->0>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<8d044267-c307-48c5-a214-066932df7ac8>
+Start Waiting
+Acquiring state
+target: 1 no_task: 8
+|CTR| SEND ACTION: SRC<0> to TARGET:<1> offload (8)
+Acquiring Reward
+|WRK| TASK OFFLOAD SEND: SRC<0> TARGET<1> NO_TASKS<8>
+|WRK| TASK OFFLOAD RECIEVE: SRC<0> TARGET<1> NO_TASKS<8>
+Current time: 4
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<2576f284-e951-4e83-bb99-a4053327f810>
+|CLT| TASK SENT to Node:<0> FROM < 1>
+|CLT| TASK SENT to Node:<2> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<9d10ccad-6888-4690-bff9-6508c96215f6>
+|CLT| TASK SENT to Node:<0> FROM < 0>
+|CLT| TASK SENT to Node:<2> FROM < 0>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<c9773443-1635-4d09-bf1d-e9d5f5974f27>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <12> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<17->13> Wi <8->12>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<01cfcdfa-548d-4b3c-8882-3abdd89ff1cc>
+|WRK| WORKER-INFO SEND: SRC<0> Qi<1> Wi <1> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<0> Qi<15->2> Wi <7->1>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<d91c8299-3211-451d-a603-196c3dd82486>
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <8> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<1->9> Wi <0->8>
+Start Waiting
+Acquiring state
+target: 2 no_task: 3
+|CTR| SEND ACTION: SRC<0> to TARGET:<2> offload (3)
+Acquiring Reward
+Tried to offload more tasks than are available.
+|WRK| TASK OFFLOAD SEND: SRC<0> TARGET<2> NO_TASKS<0>
+|WRK| TASK OFFLOAD RECIEVE: SRC<0> TARGET<2> NO_TASKS<0>
+Current time: 5
+|WRK| TASK FINISH: SRC<2> Task<dc1de186-60f4-4922-a71b-7def8f4c810e>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<0> Wi <13> Working: <true>
+|CLT| TASK CONCLUDED: TaskId<dc1de186-60f4-4922-a71b-7def8f4c810e> NodeId:<dc1de186-60f4-4922-a71b-7def8f4c810e>
+|CLT| TASK SENT to Node:<1> FROM < 2>
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<68a881d6-58d3-4a99-a270-bdb038fbf55e>
+Start Waiting
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<25->13> Wi <12->13>
+|CLT| TASK SENT to Node:<0> FROM < 1>
+|CLT| TASK SENT to Node:<1> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<ec9d185e-cb01-40ac-8727-e1f076d3991c>
+|CLT| TASK SENT to Node:<0> FROM < 0>
+|CLT| TASK SENT to Node:<2> FROM < 0>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<cf70b612-15cb-42cf-94ce-3726a025dcbb>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<653e810e-67bd-411a-9ec6-9bdda42bfd1b>
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <10> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<17->11> Wi <8->10>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<7f345f61-6de2-4a57-b8b3-e50a4db8de78>
+|WRK| TASK FINISH: SRC<0> Task<f5f1be50-868c-4bc3-ac76-e32044abd044>
+|WRK| WORKER-INFO SEND: SRC<0> Qi<2> Wi <1> Working: <true>
+|CLT| TASK CONCLUDED: TaskId<f5f1be50-868c-4bc3-ac76-e32044abd044> NodeId:<f5f1be50-868c-4bc3-ac76-e32044abd044>
+|CTR| WORKER-INFO UPDATE: SRC<0> Qi<3->3> Wi <1->1>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<092be8b2-d836-4724-8652-0656104868f7>
+Current time: 6
+|CLT| TASK SENT to Node:<0> FROM < 2>
+|CLT| TASK SENT to Node:<1> FROM < 2>
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<e170389f-2474-4099-b62d-16ff35e7b538>
+|CLT| TASK SENT to Node:<0> FROM < 1>
+|CLT| TASK SENT to Node:<1> FROM < 1>
+|CLT| TASK SENT to Node:<2> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<838e85b8-2a9c-41c2-af15-27ae8be62b5d>
+Start Waiting
+Acquiring state
+target: 2 no_task: 10
+|CTR| SEND ACTION: ILEGAL -> The target node <2> can't offload that many tasks <10>!
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<03af362d-d6f6-4c19-9b7c-a2a6a0f916e7>
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <12> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<21->13> Wi <10->12>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<7358ec72-56b5-4720-a55a-660f6ea0d575>
+|WRK| WORKER-INFO SEND: SRC<0> Qi<2> Wi <3> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<0> Qi<4->5> Wi <1->3>
+|CLT| TASK SENT to Node:<0> FROM < 0>
+|CLT| TASK SENT to Node:<2> FROM < 0>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<511e3d2a-fe1f-4989-80a5-c14f45b3b01e>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<0a8787b3-b2ff-412c-a9c4-80c28e332f21>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <16> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<26->17> Wi <13->16>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<e5f738a5-9c6c-4aab-9a0d-8671bf565202>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<0e137bb3-bf35-456e-a59e-c88e22609162>
+Current time: 7
+|CLT| TASK SENT to Node:<0> FROM < 1>
+|CLT| TASK SENT to Node:<1> FROM < 1>
+|CLT| TASK SENT to Node:<2> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<18610c41-5220-412e-a9fa-02a5137e44f3>
+|WRK| TASK FINISH: SRC<1> Task<e990e1d0-fcff-498d-bbd6-e9855b36e5f3>
+|WRK| WORKER-INFO SEND: SRC<0> Qi<2> Wi <5> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<0> Qi<8->7> Wi <3->5>
+|CLT| TASK CONCLUDED: TaskId<e990e1d0-fcff-498d-bbd6-e9855b36e5f3> NodeId:<e990e1d0-fcff-498d-bbd6-e9855b36e5f3>
+|CLT| TASK SENT to Node:<0> FROM < 0>
+|CLT| TASK SENT to Node:<2> FROM < 0>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<d1156ddd-e760-4f00-a220-7c8adb5ea075>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <19> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<33->20> Wi <16->19>
+|CLT| TASK SENT to Node:<0> FROM < 2>
+|CLT| TASK SENT to Node:<1> FROM < 2>
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<10603b9c-b331-414d-a06b-eafd9b25333e>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<798e71b4-5992-4e7c-83c4-2bfece72e870>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<cfec2d8f-a21b-4ac8-bd8b-e7b176af0a37>
+Start Waiting
+Acquiring state
+target: 1 no_task: 3
+|CTR| SEND ACTION: SRC<0> to TARGET:<1> offload (3)
+Acquiring Reward
+|WRK| TASK OFFLOAD SEND: SRC<0> TARGET<1> NO_TASKS<3>
+|WRK| TASK OFFLOAD RECIEVE: SRC<0> TARGET<1> NO_TASKS<3>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<b60f40d9-9adc-4a69-b49f-8e9b2a82b198>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<9c39d703-9028-4e83-9a96-aa04093b4c28>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<3ea9d474-a633-4aed-aabe-d28cebae6dad>
+Current time: 8
+|CLT| TASK SENT to Node:<0> FROM < 2>
+|CLT| TASK SENT to Node:<1> FROM < 2>
+|CLT| TASK SENT to Node:<2> FROM < 2>
+|CLT| TASK SENT to Node:<0> FROM < 0>
+|CLT| TASK SENT to Node:<1> FROM < 0>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<09312dbd-0bf2-4c5e-8293-4268fb2a05c1>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<f9d4d986-463f-43ba-873f-b91f08005a5e>
+Start Waiting
+|CLT| TASK SENT to Node:<1> FROM < 1>
+|CLT| TASK SENT to Node:<2> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<270a1066-ff4c-481f-9f30-7ad41ec5dd05>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<4bbfa4f8-c94f-45e7-b597-ca859a54db36>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<6480920b-67ee-46f8-93ad-fda07ac7b8fd>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <21> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<39->22> Wi <19->21>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<91c3b140-aec9-4262-89f4-be722df2b6d5>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<66554e8d-b4a4-451b-9ef9-9f9f89b2c9b1>
+|WRK| WORKER-INFO SEND: SRC<0> Qi<5> Wi <4> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<0> Qi<12->9> Wi <5->4>
+|WRK| WORKER-INFO SEND: SRC<1> Qi<1> Wi <19> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<1> Qi<25->20> Wi <12->19>
+Current time: 9
+|CLT| TASK SENT to Node:<0> FROM < 1>
+|CLT| TASK SENT to Node:<1> FROM < 1>
+|CLT| TASK SENT to Node:<2> FROM < 1>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<cc5c3299-bb2e-4105-886a-3a8628a443ba>
+|WRK| NEW TASK RECIEVE: ID<0>TASK_ID<448d3d80-888e-4816-8fd6-5d3a8cb01b63>
+|WRK| NEW TASK RECIEVE: ID<2>TASK_ID<7d290646-67ce-4e12-8e05-aebd4e8c36d2>
+|WRK| WORKER-INFO SEND: SRC<0> Qi<5> Wi <5> Working: <true>
+|WRK| WORKER-INFO SEND: SRC<2> Qi<1> Wi <23> Working: <true>
+|CTR| WORKER-INFO UPDATE: SRC<2> Qi<43->24> Wi <21->23>
+|CLT| TASK SENT to Node:<0> FROM < 0>
+|CLT| TASK SENT to Node:<1> FROM < 0>
+|CLT| TASK SENT to Node:<2> FROM < 0>
+|WRK| NEW TASK RECIEVE: ID<1>TASK_ID<5a0ff4e1-895e-40df-a32c-0ea9726094f9>
+Start Waiting
+Acquiring state

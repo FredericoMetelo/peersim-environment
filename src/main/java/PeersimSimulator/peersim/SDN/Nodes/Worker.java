@@ -43,6 +43,23 @@ public class Worker implements CDProtocol, EDProtocol {
      * We ignore important factors like the memory management and the influence of the OS.
      */
     public double processingPower;
+
+    /**
+     * Tasks dropped on the last cycle.
+     */
+    public int droppedLastCycle;
+
+    /**
+     * Total tasks dropped.
+     */
+    public int totalDropped;
+
+    public int totalTasksRecieved;
+    public int tasksRecievedSinceLastCycle;
+    public int totalTasksProcessed;
+
+    public int totalTasksOffloaded;
+
     /**
      * Queue with the requests assigned to this Node.
      * This represents the Q_i.
@@ -67,6 +84,8 @@ public class Worker implements CDProtocol, EDProtocol {
      */
     private boolean active;
 
+    // invariant: totalTasksReceived = totalTasksProcessed + totalTasksDropped + totalTasksOffloaded + getQueueSize()
+
     public Worker(String prefix) {
         //======== Define the Constant values from Configs ===========//
         // TODO make this definable from the configs.
@@ -83,6 +102,12 @@ public class Worker implements CDProtocol, EDProtocol {
         receivedRequests = new LinkedList<>();
         current  = null;
         active = true;
+        totalDropped = 0;
+        droppedLastCycle = 0;
+        totalTasksRecieved = 0;
+        tasksRecievedSinceLastCycle = 0;
+        totalTasksProcessed = 0;
+        totalTasksOffloaded = 0;
     }
 
     @Override
@@ -110,7 +135,7 @@ public class Worker implements CDProtocol, EDProtocol {
         *  3. If a queue is empty and there are tasks in the recievedRequests those are processed
         *  4. If the there are no tasks to be processed the node idles.
         */
-
+        // droppedLastCycle = 0;
         double remain = processingPower;
         while (remain > 0 && !idle()){
             if(current == null || current.done()){
@@ -121,6 +146,7 @@ public class Worker implements CDProtocol, EDProtocol {
             }
             remain = current.addProgress(remain);
             if(current.done()){
+                totalTasksProcessed++;
                 int linkableID = FastConfig.getLinkable(protocolID);
                 Linkable linkable = (Linkable) node.getProtocol(linkableID);
                 // For convenience I'll have the Client in the first node, for now.
@@ -130,7 +156,7 @@ public class Worker implements CDProtocol, EDProtocol {
 
 
                 // Controller controllerProtocol = (Controller) controller.getProtocol(Controller.getPid());
-                Log.info("|WRK| TASK FINISH: SRC<"+ this.getId() + "> Task<" +this.current.getId()+ ">");
+                Log.info("|WRK| TASK FINISH: SRC<"+ this.getId() + "> Task <" +this.current.getId()+ ">");
                 ((Transport)client.getProtocol(FastConfig.getTransport(Client.getPid()))).
                         send(
                                 node,
@@ -153,13 +179,13 @@ public class Worker implements CDProtocol, EDProtocol {
             if(!controller.isUp()) return;
 
             // Controller controllerProtocol = (Controller) controller.getProtocol(Controller.getPid());
-            Log.info("|WRK| WORKER-INFO SEND: SRC<"+ this.getId() + "> Qi<" +getQueueSize()+ "> Wi <" + this.receivedRequests.size() + "> Working: <"  + !(current == null) + ">");
+            Log.info("|WRK| WORKER-INFO SEND: SRC<"+ this.getId() + "> Qi<" +this.queue.size()+ "> Wi <" + this.receivedRequests.size() + "> Working: <"  + !(current == null) + ">");
 
             ((Transport)controller.getProtocol(FastConfig.getTransport(Controller.getPid()))).
                     send(
                             node,
                             controller,
-                            new WorkerInfo(this.id, getQueueSize(), this.receivedRequests.size(), averageTaskSize(), processingPower),
+                            new WorkerInfo(this.id, this.queue.size(), this.receivedRequests.size(), averageTaskSize(), processingPower),
                             Controller.getPid()
                     );
             this.changed = false;
@@ -201,17 +227,25 @@ public class Worker implements CDProtocol, EDProtocol {
             }
             List<Task> offloadedTasks = ev.getTaskList().stream().peek((t)->t.setOriginNodeId(this.id)).toList();
             Log.info("|WRK| TASK OFFLOAD RECIEVE: SRC<"+ ev.getSrcNode() + "> TARGET<"+this.getId()+"> NO_TASKS<" +offloadedTasks.size()+ ">");
-            if(this.queue.size() + offloadedTasks.size() >= Q_MAX) {
+            totalTasksRecieved += offloadedTasks.size();
+            tasksRecievedSinceLastCycle += offloadedTasks.size();
+
+            if(this.getNumberOfTasks() + offloadedTasks.size() >= Q_MAX) {
                 for (int i = 0; i < offloadedTasks.size(); i++) {
-                    this.queue.add(offloadedTasks.get(i));
-                    if(this.queue.size() >= Q_MAX) // This section of the method was done late, review this!!!!
+                    if(this.getNumberOfTasks() >= Q_MAX) {
+                        int dropped = offloadedTasks.size() - i;
+                        this.droppedLastCycle += dropped;
+                        this.totalDropped += dropped;
                         break;
+                    }
+                    this.queue.add(offloadedTasks.get(i));
                 }
-                Log.err("Dropping Tasks Node "+this.getId()+" is Overloaded!");
+                Log.err("Dropping Tasks("+this.droppedLastCycle+") Node "+this.getId()+" is Overloaded!");
 
             }else {
                 this.receivedRequests.addAll(offloadedTasks);
             }
+
             this.changed = true;
 
         }else if(event instanceof OffloadInstructions ev){
@@ -222,8 +256,10 @@ public class Worker implements CDProtocol, EDProtocol {
             else{
                 // Guarantee that we don't try to send more tasks than we actually can.
                 Log.err("Tried to offload more tasks than are available.");
-                noToOffload = 0; // TODO not shure what to do here.
-                // noToOffload = receivedRequests.size();
+                // noToOffload = 0;
+                // TODO Changed behaviour from offloading 0 to all the tasks available to offload. Yes, this could be
+                //  optimized by setting the recievedRequests to as the moveTasks and creating a new recievedRequests.
+                 noToOffload = receivedRequests.size();
             }
             int targetNode = ev.getTargetNode();
 
@@ -239,6 +275,9 @@ public class Worker implements CDProtocol, EDProtocol {
                 // Add whats left of the received requests to the queue.
                 this.queue.add(this.receivedRequests.remove(0));
             }
+
+            totalTasksOffloaded += moveTasks.size();
+
             // Send list to node
             int linkableID = FastConfig.getLinkable(pid);
             Linkable linkable = (Linkable) node.getProtocol(linkableID);
@@ -253,7 +292,7 @@ public class Worker implements CDProtocol, EDProtocol {
                 this.receivedRequests.addAll(moveTasks);
                 return;
             }
-
+// TODO
             moveTasks = moveTasks.stream().peek((t) -> t.setProcessingNodeId(targetNode)).toList();
             ((Transport)target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                     send(
@@ -270,8 +309,14 @@ public class Worker implements CDProtocol, EDProtocol {
                 System.out.println("Task arrived at wrong node.");
                 return;
             }
-            if(this.queue.size() >= Q_MAX) // This section of the method was done late, review this!!!!
+
+            this.totalTasksRecieved++;
+            this.tasksRecievedSinceLastCycle++;
+
+            if(this.getNumberOfTasks() >= Q_MAX) // This section of the method was done late, review this!!!!
             {
+                droppedLastCycle ++;
+                totalDropped++;
                 System.out.println("Dropping Tasks, Node "+this.getId()+" is overloaded!");
                 return;
             }
@@ -287,8 +332,8 @@ public class Worker implements CDProtocol, EDProtocol {
     public boolean isActive() {
         return active;
     }
-    public int getQueueSize(){
-        return this.queue.size() + ((current == null || current.done()) ? 0 : 1);
+    public int getNumberOfTasks(){
+        return this.queue.size() + this.receivedRequests.size() + ((current == null || current.done()) ? 0 : 1);
     }
 
     public void setActive(boolean active) {
@@ -318,6 +363,43 @@ public class Worker implements CDProtocol, EDProtocol {
         this.processingPower = processingPower;
     }
 
+    /**
+     * @return The number of dropped tasks since the last time this method was called.
+     */
+    public int getDroppedLastCycle() {
+        int aux_droppedLastCycle = droppedLastCycle;
+        droppedLastCycle = 0;
+        return aux_droppedLastCycle;
+    }
+
+    /**
+     * @return all the tasks dropped in this node since the beginning of the simulation.
+     */
+    public int getTotalDropped() {
+        return totalDropped;
+    }
+
+    public int getTotalTasksRecieved() {
+        return totalTasksRecieved;
+    }
+
+    /**
+     * @return all the tasks received since the last time this method was called. Independently of how they were handled.
+     */
+    public int getTasksRecievedSinceLastCycle() {
+        int aux_tasksRecievedSinceLastCycle = tasksRecievedSinceLastCycle;
+        tasksRecievedSinceLastCycle = 0;
+        return aux_tasksRecievedSinceLastCycle;
+    }
+
+    public int getTotalTasksProcessed() {
+        return totalTasksProcessed;
+    }
+
+    public int getTotalTasksOffloaded() {
+        return totalTasksOffloaded;
+    }
+
     //======================================================================================================
     // Private Methods
     //======================================================================================================
@@ -330,14 +412,17 @@ public class Worker implements CDProtocol, EDProtocol {
     public boolean selectNextTask() {
         if(current != null && !current.done()){
             // Finish ongoing task. No changes to current.
+
             return this.changed;
         }else if(!queue.isEmpty()){
             // Get next process in the awaiting queue.
             current = queue.poll();
+
             return true;
         } else if (!receivedRequests.isEmpty()) {
             // When the queue is empty it dips into the undistributed requests.
             current = receivedRequests.remove(0);
+
             return true;
         }
         // Node has no tasks therefore will idle.
@@ -356,11 +441,14 @@ public class Worker implements CDProtocol, EDProtocol {
     @Override
     public String toString(){
         String curr = (current != null)? current.getId() : "NULL";
-        return "Worker ID<" + this.getId() + "> | Q: " + getQueueSize() +" W: " + this.receivedRequests.size() + " Current: " + curr;
+        return "Worker ID<" + this.getId() + "> | Q: " + this.queue.size() +" W: " + this.receivedRequests.size() + " Current: " + curr;
     }
 
     private void printParams(){
         //if(active)
             Log.dbg("Worker Params: NO_CORES<" + this.CPU_NO_CORES + "> FREQ<" + this.CPU_FREQ+ "> Q_MAX<"+ this.Q_MAX+">" );
     }
+
+
+
 }

@@ -21,6 +21,10 @@ package PeersimSimulator.peersim.transport;
 import PeersimSimulator.peersim.config.*;
 import PeersimSimulator.peersim.core.*;
 
+// TODO Important Link:
+// How to compute the Data Rate. Just divide the Message Size for the data rate of the channel and we get the time
+// it takes to send a message.
+// https://dsp.stackexchange.com/questions/58420/calculating-data-rate-using-bandwidth-transmission-power-noise-power-spectrum
 
 /**
  * This transport protocol can be combined with other transports

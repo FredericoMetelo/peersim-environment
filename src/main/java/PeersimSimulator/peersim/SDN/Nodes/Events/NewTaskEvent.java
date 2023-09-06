@@ -2,7 +2,7 @@ package PeersimSimulator.peersim.SDN.Nodes.Events;
 
 import PeersimSimulator.peersim.SDN.Tasks.Task;
 
-public class NewTaskEvent {
+public class NewTaskEvent  implements Message{
     Task task;
 
     public NewTaskEvent(Task task) {
@@ -15,5 +15,10 @@ public class NewTaskEvent {
 
     public void setTask(Task task) {
         this.task = task;
+    }
+
+    @Override
+    public double getSize() {
+        return task.getSizeBytes();
     }
 }
