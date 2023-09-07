@@ -9,7 +9,7 @@ public class WorkerInfo implements Message{
      * This is a constant value representing a default expected task size based. Represents the knowledge the node has
      * of a priori expected task size.
      */
-    private static final double DEFAULT_TASK_SIZE = Client.DEFAULT_TASK_SIZE * Client.DEFAULT_NO_INSTR;
+    // private static final double DEFAULT_TASK_SIZE = Client.DEFAULT_TASK_SIZE * Client.DEFAULT_NO_INSTR;
     private int id; // the index of the node.
 
 
@@ -56,7 +56,7 @@ public class WorkerInfo implements Message{
      */
     public double getW() {
         Client clt = (Client) Network.get(0).getProtocol(Client.getPid());
-        return (averageTaskSize == 0) ? nodeProcessingPower/(DEFAULT_TASK_SIZE) : nodeProcessingPower/(averageTaskSize * clt.CPI);
+        return (averageTaskSize == 0) ? nodeProcessingPower/(clt.getAverageTaskSize()) : nodeProcessingPower/(averageTaskSize);
     }
 
     public void setW_i(int w_i) {

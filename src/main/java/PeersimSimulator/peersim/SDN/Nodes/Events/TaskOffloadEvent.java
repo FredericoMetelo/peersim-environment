@@ -4,6 +4,7 @@ import PeersimSimulator.peersim.SDN.Nodes.Client;
 import PeersimSimulator.peersim.SDN.Tasks.Task;
 
 import java.util.List;
+import java.util.OptionalDouble;
 
 public class TaskOffloadEvent implements Message{
     int srcNode;
@@ -43,6 +44,6 @@ public class TaskOffloadEvent implements Message{
 
     @Override
     public double getSize() {
-        return taskList.size() * Client.DEFAULT_TASK_SIZE;
+        return taskList.stream().mapToDouble(Task::getSizeBytes).sum();
     }
 }

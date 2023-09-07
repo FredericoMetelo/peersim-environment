@@ -14,29 +14,41 @@ import PeersimSimulator.peersim.edsim.EDProtocol;
 import PeersimSimulator.peersim.transport.Transport;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 public class Client implements CDProtocol, EDProtocol {
-    public static final int DEFAULT_TASK_SIZE = 500;
-    public static final double DEFAULT_NO_INSTR = 200e6;
+    public static final String DEFAULT_TASK_SIZE = "500";
+    public static final String DEFAULT_NO_INSTR = "200e6";
     public static final double DEFAULT_TASKARRIVALRATE = 0.01;
 
+    public static final int DEFAULT_NUMBEROFTASKS = 1;
+
     private static final String PAR_BYTE_SIZE = "T";
-    public final double BYTE_SIZE; // Mbytes
+    private double[] BYTE_SIZE; // Mbytes
+    private double averageByteSize;
+
 
     private static final String PAR_NO_INSTR = "I";
 
-    public final double NO_INSTR;
+    public double[] NO_INSTR;
+    private static final String PAR_TASKS_WEIGHTS = "weight";
+    private double[] TASK_CUMULATIVE_PROBS;
 
     private static final String PAR_CPI = "CPI";
-    public final int CPI;
+    public int[] CPI;
+
+    private static final String PAR_NO_TASKS = "numberOfTasks";
+    private final int numberOfTasks;
+
 
     private static final String PAR_NAME = "name";
     private static int pid;
 
     public static String PAR_TASKARRIVALRATE = "taskArrivalRate";
     private final double TASK_ARRIVAL_RATE;
+
 
     /**
      * Defines f this node is working as a Client
@@ -49,10 +61,14 @@ public class Client implements CDProtocol, EDProtocol {
      * List with Ids of the tasks awaiting response.
      */
     List<TaskInfo> tasksAwaiting;
+
+
     private float averageLatency;
     private int noResults;
 
     private List<Long> nextArrival;
+
+    public double averageTaskSize;
 
     // 0.10 % chance of new task being sent to worker per time tick.
     // Assuming poisson process therefore no change!
@@ -67,12 +83,49 @@ public class Client implements CDProtocol, EDProtocol {
         active = false;
 
         // Read Constants
-        CPI = Configuration.getInt( prefix + "." + PAR_CPI, 1) ;
-        BYTE_SIZE = Configuration.getInt( prefix + "." + PAR_BYTE_SIZE, DEFAULT_TASK_SIZE);
-        NO_INSTR = Configuration.getDouble( prefix + "." + PAR_NO_INSTR, DEFAULT_NO_INSTR);
         TASK_ARRIVAL_RATE = Configuration.getDouble( prefix + "." + PAR_TASKARRIVALRATE, DEFAULT_TASKARRIVALRATE );
+        numberOfTasks = Configuration.getInt( prefix + "." + PAR_NO_TASKS, DEFAULT_NUMBEROFTASKS);
+
+        getTaskMetadata(prefix);
 
         printParams();
+
+    }
+
+    private void getTaskMetadata(String prefix){ // Bad name: maybe initeTaskMetadata
+        String[] _CPI = Configuration.getString( prefix + "." + PAR_CPI, "1").split(",") ;
+        String[] _BYTE_SIZE = Configuration.getString( prefix + "." + PAR_BYTE_SIZE, DEFAULT_TASK_SIZE).split(",") ;
+        String[] _NO_INSTR = Configuration.getString( prefix + "." + PAR_NO_INSTR, DEFAULT_NO_INSTR).split(",") ;
+
+        String[] _TASK_WEIGHTS_STR = Configuration.getString( prefix + "." + PAR_TASKS_WEIGHTS, DEFAULT_NO_INSTR).split(",") ;
+
+        if(_CPI.length != numberOfTasks || _NO_INSTR.length != numberOfTasks || _BYTE_SIZE.length != numberOfTasks || _TASK_WEIGHTS_STR.length != numberOfTasks){
+             throw new RuntimeException("The number of tasks and the number of parameters for the tasks do not match");
+        }
+
+        CPI = Arrays.stream(_CPI).mapToInt(num -> Integer.parseInt(num)).toArray();
+        BYTE_SIZE = Arrays.stream(_BYTE_SIZE).mapToDouble(num -> Double.parseDouble(num)).toArray();
+        NO_INSTR = Arrays.stream(_NO_INSTR).mapToDouble(num -> Double.parseDouble(num)).toArray();
+
+        // Get probabilities of each task. Might have problems if to big differences in weight beween tasks.
+        double[] _WEIGHTS = Arrays.stream(_TASK_WEIGHTS_STR).mapToDouble(num -> Double.parseDouble(num)).toArray();
+        double total_weight = Arrays.stream(_WEIGHTS).sum();
+        double[] _TASK_WEIGHTS = Arrays.stream(_WEIGHTS).map(num -> num/total_weight).toArray();
+
+
+        TASK_CUMULATIVE_PROBS = new double[numberOfTasks];
+
+        // First element, there must always be at least one task type.
+        averageTaskSize = _TASK_WEIGHTS[0] * CPI[0] * NO_INSTR[0];
+        averageByteSize = _TASK_WEIGHTS[0] * BYTE_SIZE[0];
+        TASK_CUMULATIVE_PROBS[0] = _TASK_WEIGHTS[0];
+
+        for(int i = 1; i < numberOfTasks; i++){
+            // Compute the average task size and the weight of each task
+            averageTaskSize += _TASK_WEIGHTS[i] * CPI[i] * NO_INSTR[i];
+            averageByteSize += _TASK_WEIGHTS[0] * BYTE_SIZE[i];
+            TASK_CUMULATIVE_PROBS[i] = TASK_CUMULATIVE_PROBS[i-1] + _TASK_WEIGHTS[i];
+        }
 
     }
 
@@ -101,8 +154,11 @@ public class Client implements CDProtocol, EDProtocol {
             if (nextArrival.get(i) <= CommonState.getTime()) {
                 Node target = linkable.getNeighbor(i);
                 if (!target.isUp()) return; // This happens task progress is lost.
+
+                int taskType = this.pickTaskType();
+
                 Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
-                Task task = new Task(BYTE_SIZE, NO_INSTR, this.getId(), wi.getId());
+                Task task = new Task(BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), wi.getId());
                 tasksAwaiting.add(new TaskInfo(task.getId(), CommonState.getTime()));
                 Log.info("|CLT| TASK SENT to Node:<" + wi.getId() + "> FROM < " + this.getId()+">");
                 ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
@@ -119,7 +175,10 @@ public class Client implements CDProtocol, EDProtocol {
 
     }
 
-
+    private int pickTaskType(){ // Btw variable is a randDouble not a randInt
+        double aux = CommonState.r.nextDouble();
+        return findFirstBigger(TASK_CUMULATIVE_PROBS, aux);
+    }
 
     @Override
     public void processEvent(Node node, int pid, Object event) {
@@ -167,6 +226,9 @@ public class Client implements CDProtocol, EDProtocol {
         return active;
     }
 
+    public double getAverageTaskSize() {
+        return averageTaskSize;
+    }
 
     // public static double getTaskArrivalRate() {
     //    return taskArrivalRate;
@@ -208,5 +270,35 @@ public class Client implements CDProtocol, EDProtocol {
     private void printParams(){
         //if(active)
             Log.dbg("Client Params: CPI<" + this.CPI + "> T<" + this.BYTE_SIZE+ "> I<"+ this.NO_INSTR+">" );
+    }
+
+    public double getAverageByteSize() {
+        return averageByteSize;
+    }
+
+    /**
+     * Binary search for the index of the first bigger value. This is ChatGPT generated but I've confirmed by hand it
+     * works as intended.
+     * @param sortedArray
+     * @param target
+     * @return the index of the first bigger value.
+     */
+    private static int findFirstBigger(double[] sortedArray, double target) {
+        int left = 0;
+        int right = sortedArray.length - 1;
+        int result = -1;
+
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+
+            if (sortedArray[mid] > target) {
+                result = mid;
+                right = mid - 1; // Continue searching in the left half
+            } else {
+                left = mid + 1; // Continue searching in the right half
+            }
+        }
+
+        return result;
     }
 }

@@ -286,17 +286,24 @@ public class Controller implements CDProtocol, EDProtocol {
      * @param protocolID
      */
     void initializeWorkerInfo(Node node, int protocolID) {
-        double default_task_size = Configuration.getDouble( "protocol.clt.I", 200e6);
-        double default_CPU_FREQ = Configuration.getDouble( "protocol.wrk.FREQ", 1e7);
-        int default_CPU_NO_CORES = Configuration.getInt( "protocol.wrk.NO_CORES", 4);
+        // TODO: It woud be more reasonable to add Workers as they communicate their WorkerInfo.
+        //  For now I'll leave it with a default value but proper developement would recommend using the method that
+        //  does not offload until some worker is seen and that will only consider the workers that communicated with it
+        //  their WorkerInfo
+
+        double default_task_size = 200e6; // FIX THIS
+        double default_CPU_FREQ = 1e7;    // FIX THIS
+        int default_CPU_NO_CORES = 4;     // FIX THIS
+
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
         for(int i = 0; i < linkable.degree(); i++){
             Node target = linkable.getNeighbor(i);
             if (!target.isUp()) return; // This happens task progress is lost.
+
             Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
             workerInfo.add(
-                    new WorkerInfo(wi.getId(), 0, 0, default_task_size, Math.floor(default_CPU_NO_CORES*default_CPU_FREQ))
+                    new WorkerInfo(wi.getId(), 0, 0, default_task_size, Math.floor(default_CPU_NO_CORES*default_CPU_FREQ)) // This should technically be a request...
             );
         }
     }
@@ -339,11 +346,11 @@ public class Controller implements CDProtocol, EDProtocol {
         double r_i_j = propsNode.getBANDWIDTH() * Math.log(1 +
                 ( propsTarget.getPATH_LOSS_CONSTANT() * Math.pow(d_i_j, propsNode.getPATH_LOSS_EXPONENT()) * propsNode.getTRANSMISSION_POWER() ) / ( propsNode.getBANDWIDTH() * NORMALIZED_THERMAL_NOISE_POWER) );
         //= Communication Delay
-        double t_c = (d_i_j == 0) ? 0 : 2 * w_o * clt.BYTE_SIZE / r_i_j ; // This can be a NaN
+        double t_c = (d_i_j == 0) ? 0 : 2 * w_o * clt.getAverageByteSize() / r_i_j ; // This can be a NaN
         // When the instruction to offload to itself is given then the cost of communication is 0. (aka d_i_j == 0)
 
         //= Task Execution Delay
-        double t_e = clt.NO_INSTR * clt.CPI * (w_l / ((Worker) n.getProtocol(Worker.getPid())).CPU_FREQ  + w_o / ((Worker) t.getProtocol(Worker.getPid())).CPU_FREQ);
+        double t_e = clt.getAverageTaskSize() * (w_l / ((Worker) n.getProtocol(Worker.getPid())).CPU_FREQ  + w_o / ((Worker) t.getProtocol(Worker.getPid())).CPU_FREQ);
 
         double D = (w_l == 0 && w_o == 0) ?  0 :  DELAY_WEIGHT * (t_w + t_c + t_e)/(w_l + w_o);
         // If no transaction is being done and there is nothing to process locally then there is no delay. And can't divide by 0.
