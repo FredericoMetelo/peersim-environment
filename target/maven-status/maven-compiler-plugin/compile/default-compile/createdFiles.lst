@@ -71,6 +71,7 @@ PeersimSimulator/peersim/core/Protocol.class
 PeersimSimulator/peersim/util/MomentStats.class
 PeersimSimulator/peersim/dynamics/WireStar.class
 PeersimSimulator/peersim/graph/ConstUndirGraph.class
+PeersimSimulator/peersim/SDN/Transport/BaseDelayTransport.class
 PeersimSimulator/peersim/edsim/PriorityQ$Event.class
 PeersimSimulator/peersim/cdsim/CDProtocol.class
 PeersimSimulator/peersim/dynamics/WireKOut.class
@@ -148,6 +149,7 @@ PeersimSimulator/peersim/vector/PeakDistribution.class
 PeersimSimulator/peersim/SDN/Links/SDNObserver.class
 PeersimSimulator/peersim/core/Fallible.class
 PeersimSimulator/peersim/util/IndexIterator.class
+PeersimSimulator/peersim/SDN/Nodes/Events/Message.class
 PeersimSimulator/peersim/edsim/RegRandNextCycle.class
 PeersimSimulator/peersim/rangesim/ProcessHandler.class
 PeersimSimulator/peersim/dynamics/RandNI.class

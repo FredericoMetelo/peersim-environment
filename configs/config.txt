@@ -1,15 +1,25 @@
-SIZE 10
+SIZE 3
 CYCLE 1
-CYCLES 1000
+CYCLES 100
+random.seed 8924549359
 MINDELAY 0
 MAXDELAY 0
 DROP 0
 protocol.ctrl.r_u 1
 protocol.ctrl.X_d 1
 protocol.ctrl.X_o 150
-protocol.clt.CPI 1
-protocol.clt.T 150
-protocol.clt.I 200e6
+
+
+
+protocol.clt.taskArrivalRate 0.8
+
+protocol.clt.numberOfTasks 2
+protocol.clt.T 150,200
+protocol.clt.I 200e6,250e6
+protocol.clt.CPI 1,1
+protocol.clt.weight 1,1
+
+
 protocol.wrk.NO_CORES 4
 protocol.wrk.FREQ 1e7
 protocol.wrk.Q_MAX 10
@@ -18,11 +28,8 @@ protocol.props.Beta1 0.001
 protocol.props.Beta2 4
 protocol.props.P_ti 20
 
-
-
 #=============Define Simulation Globals
 
-random.seed 1234567890
 network.size SIZE
 simulation.endtime CYCLE*CYCLES
 simulation.logtime CYCLE
@@ -33,11 +40,11 @@ simulation.logtime CYCLE
 protocol.lnk PeersimSimulator.peersim.core.IdleProtocol
 
 #--------Define Transport Protocol
-protocol.urt UniformRandomTransport
+protocol.urt PeersimSimulator.peersim.transport.UniformRandomTransport
 protocol.urt.mindelay (CYCLE*MINDELAY)/100
 protocol.urt.maxdelay (CYCLE*MAXDELAY)/100
 
-protocol.tr UnreliableTransport
+protocol.tr PeersimSimulator.peersim.transport.UnreliableTransport
 protocol.tr.transport urt
 protocol.tr.drop DROP
 
@@ -47,11 +54,8 @@ protocol.clt.linkable lnk
 protocol.clt.name clt
 protocol.clt.step CYCLE
 protocol.clt.transport tr
-protocol.clt.linkable lnk
-protocol.clt.name clt
-protocol.clt.step CYCLE
-protocol.clt.transport tr
-protocol.clt.taskArrivalRate 0.8
+
+
 
 protocol.ctrl PeersimSimulator.peersim.SDN.Nodes.Controller
 protocol.ctrl.linkable lnk
@@ -78,11 +82,11 @@ protocol.props.name props
 protocol.lnk PeersimSimulator.peersim.core.IdleProtocol
 
 #--------Define Transport Protocol
-protocol.urt UniformRandomTransport
+protocol.urt PeersimSimulator.peersim.SDN.Transport.BaseDelayTransport
 protocol.urt.mindelay (CYCLE*MINDELAY)/100
 protocol.urt.maxdelay (CYCLE*MAXDELAY)/100
 
-protocol.tr UnreliableTransport
+protocol.tr PeersimSimulator.peersim.transport.UnreliableTransport
 protocol.tr.transport urt
 protocol.tr.drop DROP
 

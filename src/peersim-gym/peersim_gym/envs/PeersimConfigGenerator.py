@@ -13,6 +13,8 @@ PEERSIM_DEFAULTS = {
     "protocol.ctrl.r_u": "1",
     "protocol.ctrl.X_d": "1",
     "protocol.ctrl.X_o": "150",
+    "protocol.clt.numberOfTasks": "1",
+    "protocol.clt.weight": "1",
     "protocol.clt.CPI": "1",
     "protocol.clt.T": "150",
     "protocol.clt.I": "200e6",

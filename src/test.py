@@ -7,7 +7,17 @@ if __name__ == "__main__":
     # configs_dict="/home/fm/Documents/Thesis/peersim-srv/configs/examples/default-config.txt"
     configs_dict = None
     env = gym.make("peersim_gym/PeersimEnv-v0")
-    env.env.init(configs={"SIZE": "3", "CYCLES": "100", "protocol.clt.taskArrivalRate": "0.8"}, log_dir='/home/fm/Documents/Thesis/peersim-srv/logs/')  # TODO mention that you can configure log directory
+    env.env.init(configs={
+                            "SIZE": "3",
+                            "CYCLES": "100",
+                            "protocol.clt.taskArrivalRate": "0.4",
+                            "protocol.clt.numberOfTasks": "2",
+                            "protocol.clt.T": "150,200",
+                            "protocol.clt.I":  "200e6,250e6",
+                            "protocol.clt.CPI": "1,1",
+                            "protocol.clt.weight": "1,1"
+                          },
+                 log_dir='/home/fm/Documents/Thesis/peersim-srv/logs/')  # TODO mention that you can configure log directory
 
     a = ""
     s, _ = env.reset()
