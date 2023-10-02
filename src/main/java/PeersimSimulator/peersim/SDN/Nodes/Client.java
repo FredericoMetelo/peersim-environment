@@ -1,5 +1,6 @@
 package PeersimSimulator.peersim.SDN.Nodes;
 
+import PeersimSimulator.peersim.SDN.Tasks.ITask;
 import PeersimSimulator.peersim.SDN.Util.Log;
 import PeersimSimulator.peersim.SDN.Nodes.Events.NewTaskEvent;
 import PeersimSimulator.peersim.SDN.Nodes.Events.TaskConcludedEvent;
@@ -158,7 +159,7 @@ public class Client implements CDProtocol, EDProtocol {
                 int taskType = this.pickTaskType();
 
                 Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
-                Task task = new Task(BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), wi.getId());
+                ITask task = new Task(BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), wi.getId()); // TODO this needs to be changed to something that will properly acommodate whatever I need to implement.
                 tasksAwaiting.add(new TaskInfo(task.getId(), CommonState.getTime()));
                 Log.info("|CLT| TASK SENT to Node:<" + wi.getId() + "> FROM < " + this.getId()+">");
                 ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).

@@ -1,8 +1,8 @@
 package PeersimSimulator.peersim.SDN.Nodes;
 
+import PeersimSimulator.peersim.SDN.Tasks.ITask;
 import PeersimSimulator.peersim.SDN.Util.Log;
 import PeersimSimulator.peersim.SDN.Nodes.Events.*;
-import PeersimSimulator.peersim.SDN.Tasks.Task;
 import java.util.*;
 
 import PeersimSimulator.peersim.cdsim.CDProtocol;
@@ -64,14 +64,14 @@ public class Worker implements CDProtocol, EDProtocol {
      * Queue with the requests assigned to this Node.
      * This represents the Q_i.
      */
-    Queue<Task> queue;
+    Queue<ITask> queue;
 
     /**
      * Requests that arrived at this node and are awaiting processing.
      * This represents the W.
      */
-    List<Task> receivedRequests;
-    Task current;
+    List<ITask> receivedRequests;
+    ITask current;
     /**
      * Flag for if there have been changes to the queue size o new requests received.
      */
@@ -201,11 +201,11 @@ public class Worker implements CDProtocol, EDProtocol {
     private double averageTaskSize() {
         double acc = this.current == null ? 0 : this.current.getTotalInstructions() - this.current.getProgress();
         double noTasks = this.current == null ? 0 : 1;
-        for (Task t: queue) {
+        for (ITask t: queue) {
             acc += t.getTotalInstructions();
             noTasks++;
         }
-        for (Task t: receivedRequests){
+        for (ITask t: receivedRequests){
             acc += t.getTotalInstructions();
             noTasks++;
         }
@@ -225,7 +225,7 @@ public class Worker implements CDProtocol, EDProtocol {
                 Log.info("|WRK| Offloaded Tasks arrived at wrong node...");
                 return;
             }
-            List<Task> offloadedTasks = ev.getTaskList().stream().peek((t)->t.setOriginNodeId(this.id)).toList();
+            List<ITask> offloadedTasks = ev.getTaskList().stream().peek((t)->t.setOriginNodeId(this.id)).toList();
             Log.info("|WRK| TASK OFFLOAD RECIEVE: SRC<"+ ev.getSrcNode() + "> TARGET<"+this.getId()+"> NO_TASKS<" +offloadedTasks.size()+ ">");
             totalTasksRecieved += offloadedTasks.size();
             tasksRecievedSinceLastCycle += offloadedTasks.size();
@@ -263,7 +263,7 @@ public class Worker implements CDProtocol, EDProtocol {
             }
             int targetNode = ev.getTargetNode();
 
-            List<Task> moveTasks = new ArrayList<>(noToOffload);
+            List<ITask> moveTasks = new ArrayList<>(noToOffload);
             Log.info("|WRK| TASK OFFLOAD SEND: SRC<"+ this.id + "> TARGET<" + targetNode + "> NO_TASKS<" + noToOffload+ ">");
             int end = this.receivedRequests.size();
             for(int i = 0; i < noToOffload; i++){

@@ -1,19 +1,19 @@
 package PeersimSimulator.peersim.SDN.Nodes.Events;
 
-import PeersimSimulator.peersim.SDN.Tasks.Task;
+import PeersimSimulator.peersim.SDN.Tasks.ITask;
 
 public class NewTaskEvent  implements Message{
-    Task task;
+    ITask task;
 
-    public NewTaskEvent(Task task) {
+    public NewTaskEvent(ITask task) {
         this.task = task;
     }
 
-    public Task getTask() {
+    public ITask getTask() {
         return task;
     }
 
-    public void setTask(Task task) {
+    public void setTask(ITask task) {
         this.task = task;
     }
 

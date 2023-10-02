@@ -1,6 +1,7 @@
 package PeersimSimulator.peersim.SDN.Nodes.Events;
 
 import PeersimSimulator.peersim.SDN.Nodes.Client;
+import PeersimSimulator.peersim.SDN.Tasks.ITask;
 import PeersimSimulator.peersim.SDN.Tasks.Task;
 
 import java.util.List;
@@ -10,9 +11,9 @@ public class TaskOffloadEvent implements Message{
     int srcNode;
     int dstNode;
 
-    List<Task> taskList;
+    List<ITask> taskList;
 
-    public TaskOffloadEvent(int srcNode, int dstNode, List<Task> taskList) {
+    public TaskOffloadEvent(int srcNode, int dstNode, List<ITask> taskList) {
         this.srcNode = srcNode;
         this.dstNode = dstNode;
         this.taskList = taskList;
@@ -34,16 +35,16 @@ public class TaskOffloadEvent implements Message{
         this.dstNode = dstNode;
     }
 
-    public List<Task> getTaskList() {
+    public List<ITask> getTaskList() {
         return taskList;
     }
 
-    public void setTaskList(List<Task> taskList) {
+    public void setTaskList(List<ITask> taskList) {
         this.taskList = taskList;
     }
 
     @Override
     public double getSize() {
-        return taskList.stream().mapToDouble(Task::getSizeBytes).sum();
+        return taskList.stream().mapToDouble(ITask::getSizeBytes).sum();
     }
 }
