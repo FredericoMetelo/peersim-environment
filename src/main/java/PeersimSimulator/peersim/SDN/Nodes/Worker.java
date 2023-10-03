@@ -68,7 +68,6 @@ public class Worker implements CDProtocol, EDProtocol {
 
     /**
      * Requests that arrived at this node and are awaiting processing.
-     * This represents the W.
      */
     List<ITask> receivedRequests;
     ITask current;
@@ -150,7 +149,7 @@ public class Worker implements CDProtocol, EDProtocol {
                 int linkableID = FastConfig.getLinkable(protocolID);
                 Linkable linkable = (Linkable) node.getProtocol(linkableID);
                 // For convenience I'll have the Client in the first node, for now.
-                Node client = linkable.getNeighbor(current.getOriginNodeId());
+                Node client = linkable.getNeighbor(current.getClientID());
 
                 if(!client.isUp()) return; // This happens task progress is lost.
 
@@ -225,7 +224,7 @@ public class Worker implements CDProtocol, EDProtocol {
                 Log.info("|WRK| Offloaded Tasks arrived at wrong node...");
                 return;
             }
-            List<ITask> offloadedTasks = ev.getTaskList().stream().peek((t)->t.setOriginNodeId(this.id)).toList();
+            List<ITask> offloadedTasks = ev.getTaskList().stream().peek((t)->t.setClientID(this.id)).toList();
             Log.info("|WRK| TASK OFFLOAD RECIEVE: SRC<"+ ev.getSrcNode() + "> TARGET<"+this.getId()+"> NO_TASKS<" +offloadedTasks.size()+ ">");
             totalTasksRecieved += offloadedTasks.size();
             tasksRecievedSinceLastCycle += offloadedTasks.size();

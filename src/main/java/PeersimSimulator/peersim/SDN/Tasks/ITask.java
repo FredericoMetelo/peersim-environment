@@ -11,7 +11,7 @@ public abstract class ITask {
     /**
      * Stores the node id that requested the task.
      */
-    protected int originNodeId;
+    protected int clientID;
 
     /**
      * Store the node id that is processing the task.
@@ -33,11 +33,11 @@ public abstract class ITask {
      */
     protected final double totalInstructions;
 
-    public ITask(double sizeBytes, double totalInstructions, int originNodeId, int processingNodeId) {
+    public ITask(double sizeBytes, double totalInstructions, int clientID, int processingNodeId) {
         this.id = UUID.randomUUID().toString();
         this.sizeBytes = sizeBytes;
         this.totalInstructions = totalInstructions;
-        this.originNodeId = originNodeId;
+        this.clientID = clientID;
         this.processingNodeId = processingNodeId;
     }
 
@@ -61,12 +61,13 @@ public abstract class ITask {
         return totalInstructions;
     }
 
-    public int getOriginNodeId() {
-        return originNodeId;
+    public int getClientID() {
+        return clientID;
     }
-    public void setOriginNodeId(int id) {
-        this.originNodeId = id;
+    public void setClientID(int id) {
+        this.clientID = id;
     }
+
     public double getProgress() {
         return progress;
     }
