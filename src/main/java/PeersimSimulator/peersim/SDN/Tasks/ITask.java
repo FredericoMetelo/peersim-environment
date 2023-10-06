@@ -17,11 +17,16 @@ public abstract class ITask {
      * Store the node id that is processing the task.
      * Exists for debugging purposes mostly.
      */
-    protected int processingNodeId;
+    protected int originalHandlerID;
+
+    protected String applicationID;
+
     /**
      * Size of the data being sent. Bytes in body of task request.
      */
-    protected final double sizeBytes;
+    protected final double inputSizeBytes;
+
+    protected final double outputSizeBytes;
 
     protected double progress;
 
@@ -33,28 +38,34 @@ public abstract class ITask {
      */
     protected final double totalInstructions;
 
-    public ITask(double sizeBytes, double totalInstructions, int clientID, int processingNodeId) {
+    public ITask(double inputSizeBytes, int outputSizeBytes, double totalInstructions, int clientID, int originalHandlerID, String applicationID) {
         this.id = UUID.randomUUID().toString();
-        this.sizeBytes = sizeBytes;
+        this.inputSizeBytes = inputSizeBytes;
+        this.outputSizeBytes = outputSizeBytes;
         this.totalInstructions = totalInstructions;
         this.clientID = clientID;
-        this.processingNodeId = processingNodeId;
+        this.originalHandlerID = originalHandlerID;
+        this.applicationID = applicationID;
     }
 
     public String getId() {
         return id;
     }
 
-    public double getSizeBytes() {
-        return sizeBytes;
+    public String getAppID(){
+        return this.applicationID;
     }
 
-    public int getProcessingNodeId() {
-        return processingNodeId;
+    public double getInputSizeBytes() {
+        return inputSizeBytes;
     }
 
-    public void setProcessingNodeId(int processingNodeId) {
-        this.processingNodeId = processingNodeId;
+    public int getOriginalHandlerID() {
+        return originalHandlerID;
+    }
+
+    public void setOriginalHandlerID(int originalHandlerID) {
+        this.originalHandlerID = originalHandlerID;
     }
 
     public double getTotalInstructions() {

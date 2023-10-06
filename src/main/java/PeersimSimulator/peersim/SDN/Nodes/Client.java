@@ -3,7 +3,7 @@ package PeersimSimulator.peersim.SDN.Nodes;
 import PeersimSimulator.peersim.SDN.Tasks.ITask;
 import PeersimSimulator.peersim.SDN.Util.Log;
 import PeersimSimulator.peersim.SDN.Nodes.Events.NewTaskEvent;
-import PeersimSimulator.peersim.SDN.Nodes.Events.TaskConcludedEvent;
+import PeersimSimulator.peersim.SDN.Nodes.Events.AppConcludedEvent;
 import PeersimSimulator.peersim.SDN.Tasks.Task;
 import PeersimSimulator.peersim.cdsim.CDProtocol;
 import PeersimSimulator.peersim.config.Configuration;
@@ -185,7 +185,7 @@ public class Client implements CDProtocol, EDProtocol {
     public void processEvent(Node node, int pid, Object event) {
         if(!active) return;
         // Recieve answer from task sent.
-        if(event instanceof TaskConcludedEvent ev){
+        if(event instanceof AppConcludedEvent ev){
              long endTick = CommonState.getTime();
             for(int i = 0; i < tasksAwaiting.size(); i++){
                 if(tasksAwaiting.get(i).id.equals(ev.getTaskId())){

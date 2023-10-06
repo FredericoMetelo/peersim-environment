@@ -19,6 +19,6 @@ public class NewTaskEvent  implements Message{
 
     @Override
     public double getSize() {
-        return task.getSizeBytes();
+        return task.getInputSizeBytes();
     }
 }

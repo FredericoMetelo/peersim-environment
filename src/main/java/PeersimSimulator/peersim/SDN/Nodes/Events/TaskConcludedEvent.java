@@ -1,53 +1,32 @@
 package PeersimSimulator.peersim.SDN.Nodes.Events;
 
-public class TaskConcludedEvent implements Message {
-    int tickConcluded;
+public class TaskConcludedEvent implements Message{
 
-    int nodeId;
+    int handlerID;
+    String appID;
 
-    String taskId;
+    int clientID;
 
-    byte[] result;
-
-    public TaskConcludedEvent(int nodeId, String taskId) {
-        this.nodeId = nodeId;
-        this.taskId = taskId;
+    public TaskConcludedEvent(int handlerID, String appID, int clientID) {
+        this.handlerID = handlerID;
+        this.appID = appID;
+        this.clientID = clientID;
     }
 
-    public int getTickConcluded() {
-        return tickConcluded;
+    public int getHandlerID() {
+        return handlerID;
     }
 
-    public void setTickConcluded(int tickConcluded) {
-        this.tickConcluded = tickConcluded;
+    public String getAppID() {
+        return appID;
     }
 
-    public int getNodeId() {
-        return nodeId;
-    }
-
-    public void setNodeId(int nodeId) {
-        this.nodeId = nodeId;
-    }
-
-    public String getTaskId() {
-        return taskId;
-    }
-
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
-
-    public byte[] getResult() {
-        return result;
-    }
-
-    public void setResult(byte[] result) {
-        this.result = result;
+    public int getClientID() {
+        return clientID;
     }
 
     @Override
     public double getSize() {
-        return 1;
+        return 0;
     }
 }
