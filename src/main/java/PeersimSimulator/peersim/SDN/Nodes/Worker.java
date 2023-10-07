@@ -1,5 +1,6 @@
 package PeersimSimulator.peersim.SDN.Nodes;
 
+import PeersimSimulator.peersim.SDN.Records.LoseTaskInfo;
 import PeersimSimulator.peersim.SDN.Tasks.Application;
 import PeersimSimulator.peersim.SDN.Tasks.ITask;
 import PeersimSimulator.peersim.SDN.Util.Log;
@@ -65,7 +66,7 @@ public class Worker implements CDProtocol, EDProtocol {
      * Queue with the requests assigned to this Node.
      * This represents the Q_i.
      */
-    Queue<ITask> queue; // TODO Convert this to either an heap or another form of ordered list...
+    PriorityQueue<ITask> queue;
 
     /**
      * Requests that arrived at this node and are awaiting processing.
@@ -73,6 +74,8 @@ public class Worker implements CDProtocol, EDProtocol {
     List<Application> recievedApplications;
 
     Map<String, Application> managedApplications;
+
+    Map<String, LoseTaskInfo> loseTaskInformation;
 
 
     ITask current;
@@ -90,6 +93,21 @@ public class Worker implements CDProtocol, EDProtocol {
 
     // invariant: totalTasksReceived = totalTasksProcessed + totalTasksDropped + totalTasksOffloaded + getQueueSize()
 
+
+    double minCompLoad;
+    double maxCompLoad;
+
+    int minSucc;
+    int maxSucc;
+
+    int minArrivalTime;
+
+    double minCompletionRate;
+    double maxCompletionRate;
+
+
+
+
     public Worker(String prefix) {
         //======== Define the Constant values from Configs ===========//
         // TODO make this definable from the configs.
@@ -102,8 +120,7 @@ public class Worker implements CDProtocol, EDProtocol {
         printParams();
         processingPower = Math.floor(CPU_NO_CORES * CPU_FREQ);
         //======== Init Datastructures ===========//
-        queue = new LinkedList<>(); // Assuming no concurrency within node. If we want to handle multiple requests confirm trx safe.
-        recievedApplications = new LinkedList<>();
+
         current  = null;
         active = true;
         totalDropped = 0;
@@ -112,6 +129,17 @@ public class Worker implements CDProtocol, EDProtocol {
         tasksRecievedSinceLastCycle = 0;
         totalTasksProcessed = 0;
         totalTasksOffloaded = 0;
+
+        minCompLoad = Double.MAX_VALUE;
+        maxCompLoad = Double.MIN_VALUE;
+
+        minSucc = Integer.MAX_VALUE;
+        maxSucc = Integer.MIN_VALUE;
+
+        minArrivalTime = Integer.MAX_VALUE;
+
+        minCompletionRate = Double.MAX_VALUE;
+        maxCompletionRate = Double.MIN_VALUE;
     }
 
     @Override
@@ -166,6 +194,9 @@ public class Worker implements CDProtocol, EDProtocol {
                     int linkableID = FastConfig.getLinkable(protocolID);
                     Linkable linkable = (Linkable) node.getProtocol(linkableID);
                     Node handler = linkable.getNeighbor(current.getOriginalHandlerID());
+
+                    // Clean up the data structures
+                    loseTaskInformation.remove(current.getId());
 
                     if(!handler.isUp()) return; // This happens task progress is lost.
                     Log.info("|WRK| TASK FINISH: SRC<"+ this.getId() + "> Task <" +this.current.getId()+ ">");
@@ -230,29 +261,142 @@ public class Worker implements CDProtocol, EDProtocol {
                 );
     }
 
-    private void applicationSerialization(){
+    private void applicationSerialization(){ // God, the coimplexity of this method offends me. Think of implementing this as rolling values latter on!!
         // Heap listNew = new Heap...
-        // Compute whatever necessary metrics
+        PriorityQueue<ITask> newQ = new PriorityQueue<>();
+        // Compute whatever necessary metrics across all applications -> Store Metrics  in the last metrics variable
+        minCompLoad = Double.MAX_VALUE;
+        maxCompLoad = Double.MIN_VALUE;
+
+        minSucc = Integer.MAX_VALUE;
+        maxSucc = Integer.MIN_VALUE;
+
+        minArrivalTime = Integer.MAX_VALUE;
+
+        minCompletionRate = Double.MAX_VALUE;
+        maxCompletionRate = Double.MIN_VALUE;
+
+        Map<String, Double> previousPrioritiesPerTask = new HashMap<>();
+
+        for(Application a : recievedApplications){
+            getDataForPriorityMetrics(a);
+
+        }
+        for (ITask t : queue){
+
+            previousPrioritiesPerTask.put(t.getId(), t.getCurrentRank()); // Must have a previous rank to be in the queue.
+
+            Application a = managedApplications.get(t.getAppID());
+            if(a != null) {
+                getDataForPriorityMetrics(a);
+            }else{
+                LoseTaskInfo lti = loseTaskInformation.get(t.getId());
+                if(lti.getMaxComputation() > maxCompLoad) maxCompLoad = lti.getMaxComputation();
+                if(lti.getMinComputation() < minCompLoad) minCompLoad = lti.getMinComputation();
+
+                if(lti.getMaxSuccessors() > maxSucc) maxSucc = lti.getMaxSuccessors();
+                if(lti.getMinSuccessors() < minSucc) minSucc = lti.getMinSuccessors();
+
+                if(lti.getArrivalTime() < minArrivalTime) minArrivalTime = lti.getArrivalTime();
+
+                if(lti.getCompletionRate() > maxCompletionRate) maxCompletionRate = lti.getCompletionRate();
+                if(lti.getCompletionRate() < minCompletionRate) minCompletionRate =lti.getCompletionRate();
+            }
+        }
         // Cycle through queued tasks ranking them and re-inserting them in app
-        // Cycle through new applications ranking their every-tasks and re-inserting them in app
+        for (ITask t :queue) {
+            double rank;
+            if(!isLocal(t))
+                rank = remoteTaskRank(loseTaskInformation.get(t.getId()), t, minCompLoad, maxCompLoad, minSucc, maxSucc, minArrivalTime, minCompletionRate, maxCompletionRate);
+            else{
+                Application app = managedApplications.get(t.getAppID());
+                rank = localTaskRank(app, previousPrioritiesPerTask,  t, minCompLoad, maxCompLoad, minSucc, maxSucc, minArrivalTime, minCompletionRate, maxCompletionRate);
+            }
+            t.setCurrentRank(rank);
+            newQ.add(t);
+        }
+        // Cycle through new applications ranking their every-tasks and re-inserting them in app # make shure to cycle through this in a way that all priorities are pre-computed.
+        // Note: Add logic to deal with the initial task!!
+        for (Application app : managedApplications.values()){
+            List<ITask> tasks = app.expandToList();
+            for (ITask t: tasks) {
+                double rank = localTaskRank(app, previousPrioritiesPerTask,  t, minCompLoad, maxCompLoad, minSucc, maxSucc, minArrivalTime, minCompletionRate, maxCompletionRate);
+                t.setCurrentRank(rank);
+                newQ.add(t);
+            }
+        }
+        queue = newQ;
     }
 
-    private int taskRank(Application app, ITask task, double minCompLoad, double maxCompLoad, int minSucc, int maxSucc){
-    // Compute Parts of the ranking function
-        // Normalized Number of Successors
-        int En = app.getSuccessors().get(task.getId()).size();
-        int normalized_En = (En - minSucc)/(maxSucc - minSucc);
+    private boolean isLocal(ITask t) {
+        return managedApplications.get(t.getAppID()) != null;
+    }
+
+    private void getDataForPriorityMetrics(Application a) {
+        if(a.getMaxComputation() > maxCompLoad) maxCompLoad = a.getMaxComputation();
+        if(a.getMinComputation() < minCompLoad) minCompLoad = a.getMinComputation();
+
+        if(a.getMaxSuccessors() > maxSucc) maxSucc = a.getMaxSuccessors();
+        if(a.getMinSuccessors() < minSucc) minSucc = a.getMinSuccessors();
+
+        if(a.getArrivalTime() < minArrivalTime) minArrivalTime = a.getArrivalTime();
+
+        if(a.getCompletionRate() > maxCompletionRate) maxCompletionRate = a.getCompletionRate();
+        if(a.getCompletionRate() < minCompletionRate) minCompletionRate = a.getCompletionRate();
+    }
+
+    private double localTaskRank(Application app, Map<String, Double> currentPriorities, ITask task, double minCompLoad, double maxCompLoad, int minSucc, int maxSucc, int minArrivalTime, double minCompletionRate, double maxCompletionRate){
+    // Compute Parts of the ranking function TODO make this methods use the fields of the class instead of parameter variables...
+        List<ITask> succ = app.getSuccessors().get(task.getId());
+        // Normalized Number of Successors#090909
+        double En = succ.size();
+        double normalized_En = (En - minSucc)/(maxSucc - minSucc);
         // Normalized Computational Load
-        double Ln = task.getTotalInstructions();
-        double normalized_Ln = (Ln - minCompLoad)/(maxCompLoad - minCompLoad);
+        double Ln = 1/task.getTotalInstructions();
+        double normalized_Ln = (Ln - minCompLoad)/(maxCompLoad - minCompLoad); // TODO make sure the computational load is 1/L_something
         // Normalized Number of Occurrences (IGNORED)
         // Normalized Urgency Metric
-        int urgency = -app.getDeadline() + CommonState.getIntTime() - app.getArrivalTime() + 1;
+        double urgency = -app.getDeadline() + CommonState.getIntTime() - app.getArrivalTime() + 1;
+        double y_normalized = (urgency - minArrivalTime)/(CommonState.getIntTime() - minArrivalTime); // Can trivially keep the latest arrival time aswell btw.
         // Normalized Completion Rate
-
+        double normalized_Completion = (app.getCompletionRate() - minCompletionRate)/(maxCompletionRate - minCompletionRate);
     // Compute the ranking function
+        double succPriority = Double.MIN_VALUE;
+        for (ITask t: succ) {
+            Double priority = currentPriorities.get(t.getId());
+            if(priority == null){
+                Log.err("This should never happen, all dependencies should be processed before the task is processed. But if this is logged then it is not happening");
+            }
+            if(priority > succPriority){
+                succPriority = priority;
+            }
+        }
+        return succPriority + normalized_Completion + normalized_En + normalized_En + y_normalized;
+    }
 
-        return -1;
+    private double remoteTaskRank(LoseTaskInfo lti, ITask task, double minCompLoad, double maxCompLoad, int minSucc, int maxSucc, int minArrivalTime, double minCompletionRate, double maxCompletionRate){
+        List<String> succ = lti.getSuccessorIDs();
+        // TODO I will assume that only tasks that have their dependencies fulfilled are elegible for offloading.
+        //  therefore no task that is offloaded will have dependencies on the offloaded node. (aka only tasks in
+        //  "parallel/same layer" from one application may be offloaded.
+
+        // Normalized Number of Successors#090909
+        double En = succ.size();
+        double normalized_En = (En - minSucc)/(maxSucc - minSucc);
+        // Normalized Computational Load
+        double Ln = 1/task.getTotalInstructions();
+        double normalized_Ln = (Ln - minCompLoad)/(maxCompLoad - minCompLoad); // TODO make sure the computational load is 1/L_something
+        // Normalized Number of Occurrences (IGNORED)
+        // Normalized Urgency Metric
+        double urgency = -lti.getDeadline() + CommonState.getIntTime() - lti.getArrivalTime() + 1;
+        double y_normalized = (urgency - minArrivalTime)/(CommonState.getIntTime() - minArrivalTime); // Can trivially keep the latest arrival time aswell btw.
+        // Normalized Completion Rate
+        double normalized_Completion = (lti.getCompletionRate() - minCompletionRate)/(maxCompletionRate - minCompletionRate);
+        // Compute the ranking function
+        double succPriority = 0; // I assume that all offloaded nodes have their priorities met, therefore there is no
+                                 // need to check for dependent nodes.
+
+        return succPriority + normalized_Completion + normalized_En + normalized_En + y_normalized;
     }
 
     /**
@@ -266,8 +410,8 @@ public class Worker implements CDProtocol, EDProtocol {
             acc += t.getTotalInstructions();
             noTasks++;
         }
-        for (ITask t: recievedApplications){
-            acc += t.getTotalInstructions();
+        for (Application t: recievedApplications){
+            acc += t.getTotalTaskSize();
             noTasks++;
         }
         return (noTasks== 0) ? 0 : acc/noTasks; // note: rounds down
@@ -277,7 +421,8 @@ public class Worker implements CDProtocol, EDProtocol {
     @Override
     public void processEvent(PeersimSimulator.peersim.core.Node node, int pid, Object event) {
         if(!active) return;
-        if(event instanceof TaskOffloadEvent ev){
+        if(event instanceof TaskOffloadEvent ev){ // TODO change this event to send a LoseTaskInfo of the task
+            // TODO Add the Task Info of the respective tasks!!!!
             // Receive Tasks Event Receives a set of new Tasks
             // The new tasks are added to the receivedRequests. This
             // is reasonable because this requests can be consumed for
@@ -310,6 +455,8 @@ public class Worker implements CDProtocol, EDProtocol {
             this.changed = true;
 
         }else if(event instanceof OffloadInstructions ev){
+            // TODO change this method to send a loseTaskInfo
+            // TODO change the offload instructions to return only the place to be offloaded.
             // Offload Tasks Event Executes Offloading of data
             int noToOffload;
             if(ev.getNoTasks() <= this.recievedApplications.size())
@@ -498,7 +645,8 @@ public class Worker implements CDProtocol, EDProtocol {
 
 
     private void resetQueue(){
-        queue = new LinkedList<>(); // Assuming no concurrency within node. If we want to handle multiple requests confirm trx safe.
+        queue = new PriorityQueue<>(); // Assuming no concurrency within node. If we want to handle multiple requests confirm trx safe.
+        loseTaskInformation = new HashMap<>();
         recievedApplications = new LinkedList<>();
         current  = null;
     }
@@ -513,6 +661,7 @@ public class Worker implements CDProtocol, EDProtocol {
         //if(active)
             Log.dbg("Worker Params: NO_CORES<" + this.CPU_NO_CORES + "> FREQ<" + this.CPU_FREQ+ "> Q_MAX<"+ this.Q_MAX+">" );
     }
+
 
 
 

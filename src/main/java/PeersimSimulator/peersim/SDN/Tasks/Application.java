@@ -2,10 +2,7 @@ package PeersimSimulator.peersim.SDN.Tasks;
 
 import PeersimSimulator.peersim.SDN.Util.Log;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Application {
 
@@ -17,6 +14,7 @@ public class Application {
 
     private Set<ITask> finishedSubtasks;
 
+    private ITask firstTask;
 
     private int deadline;
 
@@ -26,9 +24,9 @@ public class Application {
 
     private int handlerID;
 
-    private int aggregateTaskSize;
+    private double totalTaskSize;
 
-    private int aggregateProgress;
+    private double aggregateProgress;
 
     private int initialDataSize;
     private int outputDataSize;
@@ -39,7 +37,7 @@ public class Application {
     private int maxSuccessors;
     private int arrivalTime;
 
-    public Application(Map<String, ITask> tasks, Map<String, List<ITask>> predecessors, int deadline, String appID, int clientID, int initialDataSize, int outputDataSize) {
+    public Application(Map<String, ITask> tasks, Map<String, List<ITask>> predecessors, int deadline, String appID, int clientID, int initialDataSize, int outputDataSize, ITask firstTask) {
         this.tasks = tasks;
         this.predecessors = predecessors;
         this.deadline = deadline;
@@ -57,7 +55,7 @@ public class Application {
         maxSuccessors = -1;
         for(String v : tasks.keySet()) {
             PeersimSimulator.peersim.SDN.Tasks.ITask task = tasks.get(v);
-            aggregateTaskSize += task.getTotalInstructions();
+            totalTaskSize += task.getTotalInstructions();
             if(task.getTotalInstructions() > maxComputation) maxComputation = task.getTotalInstructions();
             if(task.getTotalInstructions() < minComputation) minComputation = task.getTotalInstructions();
             if(successors.get(v).size() > maxSuccessors) maxSuccessors = successors.get(v).size();
@@ -145,19 +143,19 @@ public class Application {
         this.handlerID = handlerID;
     }
 
-    public int getAggregateTaskSize() {
-        return aggregateTaskSize;
+    public double getTotalTaskSize() {
+        return totalTaskSize;
     }
 
-    public void setAggregateTaskSize(int aggregateTaskSize) {
-        this.aggregateTaskSize = aggregateTaskSize;
+    public void setTotalTaskSize(double totalTaskSize) {
+        this.totalTaskSize = totalTaskSize;
     }
 
-    public int getAggregateProgress() {
+    public double getAggregateProgress() {
         return aggregateProgress;
     }
 
-    public void setAggregateProgress(int aggregateProgress) {
+    public void setAggregateProgress(double aggregateProgress) {
         this.aggregateProgress = aggregateProgress;
     }
 
@@ -211,5 +209,47 @@ public class Application {
 
     public void setArrivalTime(int arrivalTime) {
         this.arrivalTime = arrivalTime;
+    }
+
+    public double getCompletionRate(){
+        return (double) aggregateProgress /totalTaskSize;
+    }
+
+    /**
+     * This method creates and returns an array, where a node that has dependencies on another will show up
+     * afterwards.
+     * I.E.
+     * (1,2), (2,3), (2,4), (3,5) may be expanded to:
+     * 1, 2,
+     * @return a list of nodes where dependent nodes show after their dependee
+     */
+    public List<ITask> expandToList(){
+        Set<String> alreadyExpanded = new HashSet<>();
+        List<ITask> expandedTasks = new LinkedList<>();
+
+        // Add First Task to array
+        alreadyExpanded.add(firstTask.getId());
+        expandedTasks.add(firstTask);
+        int index = 0;
+        // Loop until all nodes are expanded:
+        while(expandedTasks.size() < tasks.size() || index > expandedTasks.size()) {
+            // Get next element from array
+            ITask current = expandedTasks.get(index);
+            index++;
+            // Add Successors of element to Array
+            List<ITask> succ = successors.get(current.getId());
+            // Check if not already Expanded
+            if(succ == null || succ.isEmpty()) continue;
+            for (ITask t: succ) {
+                if(!alreadyExpanded.contains(t.getId())) {
+                    // Add Successor's ID's to Array
+                    // Add Successor's ID's to Set
+                    alreadyExpanded.add(t.getId());
+                    expandedTasks.add(t);
+                }
+            }
+        }
+        return expandedTasks;
+
     }
 }

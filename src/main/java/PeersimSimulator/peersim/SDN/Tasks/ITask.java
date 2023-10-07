@@ -30,6 +30,7 @@ public abstract class ITask {
 
     protected double progress;
 
+    private double currentRank;
     /**
      * Total Amount of instructions needed to execute task.
      *w
@@ -46,6 +47,7 @@ public abstract class ITask {
         this.clientID = clientID;
         this.originalHandlerID = originalHandlerID;
         this.applicationID = applicationID;
+        this.currentRank = -1;
     }
 
     public String getId() {
@@ -85,6 +87,14 @@ public abstract class ITask {
 
     public boolean done(){
         return this.progress == this.totalInstructions;
+    }
+
+    public double getCurrentRank() {
+        return currentRank;
+    }
+
+    public void setCurrentRank(double currentRank) {
+        this.currentRank = currentRank;
     }
 
     public abstract double addProgress(double cycles);
