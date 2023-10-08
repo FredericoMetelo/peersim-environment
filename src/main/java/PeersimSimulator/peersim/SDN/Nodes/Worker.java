@@ -1,5 +1,6 @@
 package PeersimSimulator.peersim.SDN.Nodes;
 
+import PeersimSimulator.peersim.SDN.Records.DependentTaskComparator;
 import PeersimSimulator.peersim.SDN.Records.LoseTaskInfo;
 import PeersimSimulator.peersim.SDN.Tasks.Application;
 import PeersimSimulator.peersim.SDN.Tasks.ITask;
@@ -66,7 +67,7 @@ public class Worker implements CDProtocol, EDProtocol {
      * Queue with the requests assigned to this Node.
      * This represents the Q_i.
      */
-    PriorityQueue<ITask> queue;
+    TreeSet<ITask> queue; // TODO Change this to PriorityBlockingQueue
 
     /**
      * Requests that arrived at this node and are awaiting processing.
@@ -84,6 +85,8 @@ public class Worker implements CDProtocol, EDProtocol {
      */
     private boolean changed;
 
+
+    private Controller correspondingController;
 
     /**
      * Defines f this node is working as a Worker
@@ -105,8 +108,8 @@ public class Worker implements CDProtocol, EDProtocol {
     double minCompletionRate;
     double maxCompletionRate;
 
-
-
+    DependentTaskComparator dependentTaskComparator; // Not sure if this is thread safe tbh...
+    boolean hasController;
 
     public Worker(String prefix) {
         //======== Define the Constant values from Configs ===========//
@@ -120,7 +123,7 @@ public class Worker implements CDProtocol, EDProtocol {
         printParams();
         processingPower = Math.floor(CPU_NO_CORES * CPU_FREQ);
         //======== Init Datastructures ===========//
-
+        hasController = false;
         current  = null;
         active = true;
         totalDropped = 0;
@@ -140,6 +143,9 @@ public class Worker implements CDProtocol, EDProtocol {
 
         minCompletionRate = Double.MAX_VALUE;
         maxCompletionRate = Double.MIN_VALUE;
+
+        dependentTaskComparator = new DependentTaskComparator();
+        correspondingController = null;
     }
 
     @Override
@@ -263,7 +269,7 @@ public class Worker implements CDProtocol, EDProtocol {
 
     private void applicationSerialization(){ // God, the coimplexity of this method offends me. Think of implementing this as rolling values latter on!!
         // Heap listNew = new Heap...
-        PriorityQueue<ITask> newQ = new PriorityQueue<>();
+        TreeSet<ITask> newQ = new TreeSet<>(dependentTaskComparator);
         // Compute whatever necessary metrics across all applications -> Store Metrics  in the last metrics variable
         minCompLoad = Double.MAX_VALUE;
         maxCompLoad = Double.MIN_VALUE;
@@ -454,63 +460,6 @@ public class Worker implements CDProtocol, EDProtocol {
 
             this.changed = true;
 
-        }else if(event instanceof OffloadInstructions ev){
-            // TODO change this method to send a loseTaskInfo
-            // TODO change the offload instructions to return only the place to be offloaded.
-            // Offload Tasks Event Executes Offloading of data
-            int noToOffload;
-            if(ev.getNoTasks() <= this.recievedApplications.size())
-                noToOffload = ev.getNoTasks();
-            else{
-                // Guarantee that we don't try to send more tasks than we actually can.
-                Log.err("Tried to offload more tasks than are available.");
-                // noToOffload = 0;
-                // TODO Changed behaviour from offloading 0 to all the tasks available to offload. Yes, this could be
-                //  optimized by setting the recievedRequests to as the moveTasks and creating a new recievedRequests.
-                 noToOffload = recievedApplications.size();
-            }
-            int targetNode = ev.getTargetNode();
-
-            List<ITask> moveTasks = new ArrayList<>(noToOffload);
-            Log.info("|WRK| TASK OFFLOAD SEND: SRC<"+ this.id + "> TARGET<" + targetNode + "> NO_TASKS<" + noToOffload+ ">");
-            int end = this.recievedApplications.size();
-            for(int i = 0; i < noToOffload; i++){
-                int index = end - 1 - i;
-                moveTasks.add(i, this.recievedApplications.remove(index));
-            }
-            end = this.recievedApplications.size();
-            for(int j = 0; j < end; j ++){
-                // Add whats left of the received requests to the queue.
-                this.queue.add(this.recievedApplications.remove(0));
-            }
-
-            totalTasksOffloaded += moveTasks.size();
-
-            // Send list to node
-            int linkableID = FastConfig.getLinkable(pid);
-            Linkable linkable = (Linkable) node.getProtocol(linkableID);
-            // As everyone knows each other this is should not be problematic.
-            Node target = linkable.getNeighbor(targetNode);
-
-            // Quoting the tutorial:
-            // XXX quick and dirty handling of failures
-            // (message would be lost anyway, we save time)
-            if(!target.isUp()){
-                // Send failed returning tasks.
-                this.recievedApplications.addAll(moveTasks);
-                return;
-            }
-// TODO
-            moveTasks = moveTasks.stream().peek((t) -> t.setOriginalHandlerID(targetNode)).toList();
-            ((Transport)target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
-                    send(
-                            node,
-                            target,
-                            new TaskOffloadEvent(this.id, targetNode, moveTasks),
-                            Worker.getPid()
-                    );
-            this.changed = true;
-
         } else if(event instanceof NewApplicationEvent ev){
 
             Log.info("|WRK| NEW APP RECIEVED: ID<"+this.getId()+"> APP_ID<" + ev.getAppID() +">");
@@ -575,6 +524,14 @@ public class Worker implements CDProtocol, EDProtocol {
         this.processingPower = processingPower;
     }
 
+    public boolean isHasController() {
+        return hasController;
+    }
+
+    public void setHasController(boolean hasController) {
+        this.hasController = hasController;
+    }
+
     /**
      * @return The number of dropped tasks since the last time this method was called.
      */
@@ -622,7 +579,55 @@ public class Worker implements CDProtocol, EDProtocol {
      *         -> null, if there are no tasks in the node.
      */
     public boolean selectNextTask() {
+        // Check if current task is done, if it isnt return immediatly
         if(current != null && !current.done()){
+            // Finish ongoing task. No changes to current.
+
+            return this.changed;
+        }
+
+        // First see if there is any task with all dependencies met in the queue, else Idle and set current null.
+        Iterator<ITask> iterTasks = this.queue.descendingIterator();
+        boolean waitDecision = false;
+        while(iterTasks.hasNext()){
+            ITask t = iterTasks.next();
+            if(this.loseTaskInformation.containsKey(t.getId())){
+                current = t;
+                iterTasks.remove();
+                this.changed = true;
+                waitDecision = true;
+                break;
+            }
+            Application app = this.managedApplications.get(t.getId());
+            if(app.subTaskCanAdvance(t.getId())){
+                current = t;
+                iterTasks.remove();
+                this.changed = true;
+                waitDecision = true;
+                break;
+            }
+        }
+        // If there is stop computation in a spin wait, request the local controller offload decision.
+        if(hasController && waitDecision){
+            OffloadInstructions oi = this.correspondingController.requestOffloadInstructions();
+
+            if(oi.getTargetNode() != this.getId()){
+                // Send the task to the node
+                // TODO
+                // Set current null
+                this.current = null;
+
+                // Call this method again
+                return selectNextTask(); // Will make a decision about all tasks that can progress until no
+                // more tasks are offloadable or decides to process locally.
+            }
+            return true;
+        }
+        return this.changed;
+        // If offload decision repeat the process
+        // Else change current to task to be processed
+
+        /*if(current != null && !current.done()){
             // Finish ongoing task. No changes to current.
 
             return this.changed;
@@ -638,14 +643,20 @@ public class Worker implements CDProtocol, EDProtocol {
             return true;
         }
         // Node has no tasks therefore will idle.
-        current = null;
-        return this.changed;
+        current = null;*/
     }
 
+    public Controller getCorrespondingController() {
+        return correspondingController;
+    }
 
+    public void setCorrespondingController(Controller correspondingController) {
+        this.correspondingController = correspondingController;
+    }
 
     private void resetQueue(){
-        queue = new PriorityQueue<>(); // Assuming no concurrency within node. If we want to handle multiple requests confirm trx safe.
+
+        queue = new TreeSet<>(dependentTaskComparator); // Assuming no concurrency within node. If we want to handle multiple requests confirm trx safe.
         loseTaskInformation = new HashMap<>();
         recievedApplications = new LinkedList<>();
         current  = null;
@@ -661,7 +672,63 @@ public class Worker implements CDProtocol, EDProtocol {
         //if(active)
             Log.dbg("Worker Params: NO_CORES<" + this.CPU_NO_CORES + "> FREQ<" + this.CPU_FREQ+ "> Q_MAX<"+ this.Q_MAX+">" );
     }
+/*else if(event instanceof OffloadInstructions ev){
+            // TODO change this method to send a loseTaskInfo
+            // TODO change the offload instructions to return only the place to be offloaded.
+            // Offload Tasks Event Executes Offloading of data
+            int noToOffload;
+            if(ev.getNoTasks() <= this.recievedApplications.size())
+                noToOffload = ev.getNoTasks();
+            else{
+                // Guarantee that we don't try to send more tasks than we actually can.
+                Log.err("Tried to offload more tasks than are available.");
+                // noToOffload = 0;
+                // TODO Changed behaviour from offloading 0 to all the tasks available to offload. Yes, this could be
+                //  optimized by setting the recievedRequests to as the moveTasks and creating a new recievedRequests.
+                 noToOffload = recievedApplications.size();
+            }
+            int targetNode = ev.getTargetNode();
 
+            List<ITask> moveTasks = new ArrayList<>(noToOffload);
+            Log.info("|WRK| TASK OFFLOAD SEND: SRC<"+ this.id + "> TARGET<" + targetNode + "> NO_TASKS<" + noToOffload+ ">");
+            int end = this.recievedApplications.size();
+            for(int i = 0; i < noToOffload; i++){
+                int index = end - 1 - i;
+                moveTasks.add(i, this.recievedApplications.remove(index));
+            }
+            end = this.recievedApplications.size();
+            for(int j = 0; j < end; j ++){
+                // Add whats left of the received requests to the queue.
+                this.queue.add(this.recievedApplications.remove(0));
+            }
+
+            totalTasksOffloaded += moveTasks.size();
+
+            // Send list to node
+            int linkableID = FastConfig.getLinkable(pid);
+            Linkable linkable = (Linkable) node.getProtocol(linkableID);
+            // As everyone knows each other this is should not be problematic.
+            Node target = linkable.getNeighbor(targetNode);
+
+            // Quoting the tutorial:
+            // XXX quick and dirty handling of failures
+            // (message would be lost anyway, we save time)
+            if(!target.isUp()){
+                // Send failed returning tasks.
+                this.recievedApplications.addAll(moveTasks);
+                return;
+            }
+            moveTasks = moveTasks.stream().peek((t) -> t.setOriginalHandlerID(targetNode)).toList();
+            ((Transport)target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+                    send(
+                            node,
+                            target,
+                            new TaskOffloadEvent(this.id, targetNode, moveTasks),
+                            Worker.getPid()
+                    );
+            this.changed = true;
+
+        }*/
 
 
 

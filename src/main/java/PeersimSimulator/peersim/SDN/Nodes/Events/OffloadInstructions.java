@@ -2,11 +2,10 @@ package PeersimSimulator.peersim.SDN.Nodes.Events;
 
 public class OffloadInstructions implements Message{
     private int targetNode;
-    private int noTasks;
 
-    public OffloadInstructions(int targetNode, int noTasks) {
+    public OffloadInstructions(int targetNode) {
         this.targetNode = targetNode;
-        this.noTasks = noTasks;
+
     }
 
     public int getTargetNode() {
@@ -15,14 +14,6 @@ public class OffloadInstructions implements Message{
 
     public void setTargetNode(int targetNode) {
         this.targetNode = targetNode;
-    }
-
-    public int getNoTasks() {
-        return noTasks;
-    }
-
-    public void setNoTasks(int noTasks) {
-        this.noTasks = noTasks;
     }
 
     @Override

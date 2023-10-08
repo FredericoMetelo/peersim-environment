@@ -7,7 +7,6 @@ import java.util.Comparator;
 public class DependentTaskComparator implements Comparator<ITask> {
     @Override
     public int compare(ITask application, ITask t1) {
-        // TODO
-        return 0;
+        return Double.compare(application.getCurrentRank(), t1.getCurrentRank());
     }
 }
