@@ -4,8 +4,8 @@ import java.util.UUID;
 
 public class Task extends ITask{
 
-    public Task(double sizeBytes, double totalInstructions, int originNodeId, int processingNodeId) {
-        super(sizeBytes, totalInstructions, originNodeId, processingNodeId);
+    public Task(double inputSizeBytes, double outputSizeBytes, double totalInstructions, int clientID, int originalHandlerID, String applicationID) {
+        super(inputSizeBytes, outputSizeBytes, totalInstructions, clientID, originalHandlerID, applicationID);
     }
 
     /**

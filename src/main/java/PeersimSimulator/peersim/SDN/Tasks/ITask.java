@@ -39,7 +39,7 @@ public abstract class ITask {
      */
     protected final double totalInstructions;
 
-    public ITask(double inputSizeBytes, int outputSizeBytes, double totalInstructions, int clientID, int originalHandlerID, String applicationID) {
+    public ITask(double inputSizeBytes, double outputSizeBytes, double totalInstructions, int clientID, int originalHandlerID, String applicationID) {
         this.id = UUID.randomUUID().toString();
         this.inputSizeBytes = inputSizeBytes;
         this.outputSizeBytes = outputSizeBytes;
@@ -48,6 +48,10 @@ public abstract class ITask {
         this.originalHandlerID = originalHandlerID;
         this.applicationID = applicationID;
         this.currentRank = -1;
+    }
+
+    public double getOutputSizeBytes() {
+        return outputSizeBytes;
     }
 
     public String getId() {

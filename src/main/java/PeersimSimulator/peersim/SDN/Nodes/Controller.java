@@ -60,6 +60,10 @@ public class Controller implements CDProtocol, EDProtocol {
      */
     private boolean active;
 
+    private Worker correspondingWorker;
+
+    private OffloadInstructions currentInstructions;
+
     /**
      * selectedNode represents the latest selected ID of node, between [0, N]
      * <p>
@@ -120,9 +124,9 @@ public class Controller implements CDProtocol, EDProtocol {
         // The simulation only stops if the queue is not empty. Otherwise, it continues for another 100 ticks.
         int linkableID = FastConfig.getLinkable(Controller.getPid());
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        stop = selectNextNode(linkable);
+        // stop = selectNextNode(linkable); We are not stopping every time step anymore!
         up = true;
-        awaitAction();
+        // awaitAction();
     }
 
 
@@ -137,52 +141,25 @@ public class Controller implements CDProtocol, EDProtocol {
          */
         Log.dbg(a.toString());
         Node node = Network.get(CONTROLLER_ID);
-        if(workerInfo.isEmpty()) initializeWorkerInfo(node, Controller.getPid());
-
         int linkableID = FastConfig.getLinkable(Controller.getPid());
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        if (linkable.degree() > 0) {
+        if (linkable.degree() <= 0) return WRONG_MOVE_PUNISHMENT;
+        int nodeID = a.nodeId();
+        Node selectedWorker = linkable.getNeighbor(correspondingWorker.getId());
+        if(workerInfo.isEmpty()) return WRONG_MOVE_PUNISHMENT - 1;
 
-            Node selectedWorker = linkable.getNeighbor(selectedNode);
-            Worker protocol = (Worker) selectedWorker.getProtocol(Worker.getPid());
+        int targetNode = a.nodeId();
+                 // No checks for validity of source node, logic of program guarantee correct
+        // Regular offload behaviour
+        Log.info("|CTR| SEND ACTION: SRC<" + this.getId() + "> to TARGET:<" +targetNode + "> offload (" + 1 + ")");
 
-            if(!selectedWorker.isUp() || workerInfo.isEmpty()) return WRONG_MOVE_PUNISHMENT - 1;
+        double reward = calculatReward(linkable, selectedWorker, targetNode, 1);
 
-            int targetNode = a.nodeId();
-            int noTasks = a.noTasks();
+        this.currentInstructions = new OffloadInstructions(targetNode);
 
-            // No checks for validity of source node, logic of program guarantee correct
-            if(noTasks < 0 || noTasks > Objects.requireNonNull(getWorkerInfo(selectedNode)).getTotalTasks()){
-                // When the offload instructions request to offload more tasks than are available I decided to return the negative of the utility constant.
-                // Note to self: This might be problematic as the number of tasks the node views is not ther real number
-                // of tasks the actual node has. There is a delay on the information, this might one day become a bottleneck.
-                // ¯\_(ツ)_/¯
-
-                Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> can't offload that many tasks <"+noTasks+">!");
-                // allow progress
-                stop = false;
-                return WRONG_MOVE_PUNISHMENT - 3;
-            }
-
-            // Regular offload behaviour
-            Log.info("|CTR| SEND ACTION: SRC<" + this.getId() + "> to TARGET:<" +targetNode + "> offload (" + noTasks + ")");
-
-            double reward = calculatReward(linkable, selectedWorker, targetNode, noTasks);
-
-            ((Transport)selectedWorker.getProtocol(FastConfig.getTransport(Worker.getPid()))).
-                    send(
-                            node,
-                            selectedWorker,
-                            new OffloadInstructions(targetNode, noTasks),
-                            Worker.getPid()
-                    );
-
-            // allow progress
-            stop = false;
-            // [0, 1, 2]
-            return reward;
-        }
-        return WRONG_MOVE_PUNISHMENT - 4;
+        // allow progress
+        stop = false;
+        return reward;
 
     }
 
@@ -206,9 +183,15 @@ public class Controller implements CDProtocol, EDProtocol {
         }
     }
 
+    public Worker getCorrespondingWorker() {
+        return correspondingWorker;
+    }
 
+    public void setCorrespondingWorker(Worker correspondingWorker) {
+        this.correspondingWorker = correspondingWorker;
+    }
 
-    //======================================================================================================
+//======================================================================================================
     // Private Methods
     //======================================================================================================
 
@@ -221,42 +204,22 @@ public class Controller implements CDProtocol, EDProtocol {
         while (stop) Thread.onSpinWait();
     }
 
-    /**
-     * Returns <code>true</code> if a node was selected, the selected node is stored in the <code>selectedNode</code> field. If no nodes have tasks
-     * available to be offloaded then the method returns <code>false</code>.\
-     *
-     * God! Please, clean this method up later... There is enough spaghetti to feed an entire italian province in here.
-     *
-     * @param linkable
-     * @return <code>true</code> if a suitable node was found. <code>false</code> otherwise
-     */
-    private boolean selectNextNode(Linkable linkable) {
-        // cycle = (cycle + 1) % (linkable.degree()-1);
-        // selectedNode = 1 + cycle;
-        if(nodeUpdateEventList.isEmpty()){
-            return false;
-        }
 
-        this.selectedNode = 0;
-        // this.selectedNode = -1;
-        int nodeID;
-        while(!nodeUpdateEventList.isEmpty()){
-            nodeID = nodeUpdateEventList.removeFirst();
-            // I exchanged the test from queuesize which would allow for w_i == 0, to the w_i itself.
-            // this makes sense as the Q is basically the size of the waiting nodes + the ones being processed,
-            // the nodes being processed can't be offloaded so it only makes sense to only stop if a node has stuff that
-            // could  be offloaded.
-            if(Objects.requireNonNull(getWorkerInfo(nodeID)).getW_i() > 0 && Objects.requireNonNull(getWorkerInfo(nodeID)).getId() == 0){ // Aka it's the Id of the node being played
-                this.selectedNode = 0; // nodeID; NEW
-                this.nodeUpdateEventList.removeAll(Collections.singleton(nodeID));
-                // If it has tasks available and is going to be processed no need
-                // to have more entries of the node in the queue.
-                return true;
-            }
-        }
-        nodeUpdateEventList  = new LinkedList<>(); // Memory leaks her we go!
-        return false;
+
+    public OffloadInstructions requestOffloadInstructions(){
+        // TODO this might be a concurrency nightmare...
+        // Stop execution here using the same mechanism of spin waiting with yield.
+        stop = true;
+        awaitAction();
+        // When instructions are provided (Keep them in a next instructions variable)
+        // Store the current instructions locally
+        OffloadInstructions oi = currentInstructions;
+        // Set current instructions to null
+        currentInstructions = null;
+        // Return Offload instructions (Offload instructions should only be the target Node)
+        return oi;
     }
+
     private void updateNode(WorkerInfo newWi){
         for (WorkerInfo oldWi : workerInfo) {
             if(oldWi.getId() == newWi.getId()){
@@ -466,3 +429,99 @@ public class Controller implements CDProtocol, EDProtocol {
                 workerInvariant);
     }
 }
+
+
+/* Legacy Code
+
+    public double sendAction(Action a) {
+        if(!active || a == null || a.noTasks() < 0 || a.nodeId() < 0) return WRONG_MOVE_PUNISHMENT - 10;
+
+        // Pick Node to be offloaded. Inform Python   of the WorkerInfo in question. Get the Action for that node to execute.
+        Log.dbg(a.toString());
+        Node node = Network.get(CONTROLLER_ID);
+        if(workerInfo.isEmpty()) initializeWorkerInfo(node, Controller.getPid());
+
+        int linkableID = FastConfig.getLinkable(Controller.getPid());
+        Linkable linkable = (Linkable) node.getProtocol(linkableID);
+        if (linkable.degree() > 0) {
+
+            Node selectedWorker = linkable.getNeighbor(selectedNode);
+            Worker protocol = (Worker) selectedWorker.getProtocol(Worker.getPid());
+
+            if(!selectedWorker.isUp() || workerInfo.isEmpty()) return WRONG_MOVE_PUNISHMENT - 1;
+
+            int targetNode = a.nodeId();
+            int noTasks = a.noTasks();
+
+            // No checks for validity of source node, logic of program guarantee correct
+            if(noTasks < 0 || noTasks > Objects.requireNonNull(getWorkerInfo(selectedNode)).getTotalTasks()){
+            // When the offload instructions request to offload more tasks than are available I decided to return the negative of the utility constant.
+            // Note to self: This might be problematic as the number of tasks the node views is not ther real number
+            // of tasks the actual node has. There is a delay on the information, this might one day become a bottleneck.
+            // ¯\_(ツ)_/¯
+
+            Log.info("|CTR| SEND ACTION: ILEGAL -> The target node <"+targetNode+"> can't offload that many tasks <"+noTasks+">!");
+            // allow progress
+            stop = false;
+            return WRONG_MOVE_PUNISHMENT - 3;
+        }
+
+            // Regular offload behaviour
+            Log.info("|CTR| SEND ACTION: SRC<" + this.getId() + "> to TARGET:<" +targetNode + "> offload (" + noTasks + ")");
+
+            double reward = calculatReward(linkable, selectedWorker, targetNode, noTasks);
+
+            ((Transport)selectedWorker.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+                    send(
+                    node,
+                    selectedWorker,
+                    new OffloadInstructions(targetNode, noTasks),
+                    Worker.getPid()
+            );
+
+            // allow progress
+            stop = false;
+            // [0, 1, 2]
+            return reward;
+        }
+        return WRONG_MOVE_PUNISHMENT - 4;
+
+    }
+
+
+         * Returns <code>true</code> if a node was selected, the selected node is stored in the <code>selectedNode</code> field. If no nodes have tasks
+         * available to be offloaded then the method returns <code>false</code>.\
+         *
+         * God! Please, clean this method up later... There is enough spaghetti to feed an entire italian province in here.
+         *
+         * @param linkable
+         * @return <code>true</code> if a suitable node was found. <code>false</code> otherwise
+
+    private boolean selectNextNode(Linkable linkable) {
+        // cycle = (cycle + 1) % (linkable.degree()-1);
+        // selectedNode = 1 + cycle;
+        if(nodeUpdateEventList.isEmpty()){
+            return false;
+        }
+
+        this.selectedNode = 0;
+        // this.selectedNode = -1;
+        int nodeID;
+        while(!nodeUpdateEventList.isEmpty()){
+            nodeID = nodeUpdateEventList.removeFirst();
+            // I exchanged the test from queuesize which would allow for w_i == 0, to the w_i itself.
+            // this makes sense as the Q is basically the size of the waiting nodes + the ones being processed,
+            // the nodes being processed can't be offloaded so it only makes sense to only stop if a node has stuff that
+            // could  be offloaded.
+            if(Objects.requireNonNull(getWorkerInfo(nodeID)).getW_i() > 0 && Objects.requireNonNull(getWorkerInfo(nodeID)).getId() == 0){ // Aka it's the Id of the node being played
+                this.selectedNode = 0; // nodeID; NEW
+                this.nodeUpdateEventList.removeAll(Collections.singleton(nodeID));
+                // If it has tasks available and is going to be processed no need
+                // to have more entries of the node in the queue.
+                return true;
+            }
+        }
+        nodeUpdateEventList  = new LinkedList<>(); // Memory leaks her we go!
+        return false;
+    }
+*/

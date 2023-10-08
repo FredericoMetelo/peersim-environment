@@ -5,9 +5,9 @@ import PeersimSimulator.peersim.SDN.Tasks.ITask;
 import java.util.List;
 
 public class LoseTaskInfo {
-    List<String> successorIDs;
 
     ITask task;
+    List<String> successorIDs;
 
     double deadline;
 
@@ -22,7 +22,16 @@ public class LoseTaskInfo {
     double completionRate; // Snapshot of the moment the task was offloaded.
 
 
-    public LoseTaskInfo(List<String> successorIDs, ITask task, double deadline, double minCompLoad, double maxCompLoad, int minSucc, int maxSucc, int arrivalTime, double completionRate, double maxCompletionRate) {
+    public LoseTaskInfo(List<String> successorIDs,
+                        ITask task,
+                        double deadline,
+                        double minCompLoad,
+                        double maxCompLoad,
+                        int minSucc,
+                        int maxSucc,
+                        int arrivalTime,
+                        double completionRate
+                        ) {
         this.successorIDs = successorIDs;
         this.task = task;
         this.deadline = deadline;

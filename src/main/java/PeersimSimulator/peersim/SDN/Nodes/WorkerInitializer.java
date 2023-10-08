@@ -52,7 +52,13 @@ public class WorkerInitializer implements Control {
      */
     public boolean execute() {
         // Node 0 is not a worker.
-        ((Worker) Network.get(0).getProtocol(pid)).setActive(true);
+        Worker wc = ((Worker) Network.get(0).getProtocol(pid));
+        wc.setActive(true); // This might be redundant...
+        wc.setHasController(true);
+
+        // Confirm feasibility. I believe that everything in the network is cloned before initialized. Not sure, go
+        // through code to confirm!
+        wc.setCorrespondingController((Controller) Network.get(0).getProtocol(Controller.getPid()));
         // If we want to set the controller as a worker remove the line above (start i=0 in loop)
         // Note: All Nodes have protocol Worker as True.
         for(int i = 0; i<Network.size(); i++){

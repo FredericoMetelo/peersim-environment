@@ -7,9 +7,9 @@ public class AppConcludedEvent implements Message {
 
     String taskId;
 
-    int outputSize;
+    double outputSize;
 
-    public AppConcludedEvent(int nodeId, String taskId, int outputSize) {
+    public AppConcludedEvent(int nodeId, String taskId, double outputSize) {
         this.nodeId = nodeId;
         this.taskId = taskId;
         this.outputSize = outputSize;

@@ -28,8 +28,8 @@ public class Application {
 
     private double aggregateProgress;
 
-    private int initialDataSize;
-    private int outputDataSize;
+    private double initialDataSize;
+    private double outputDataSize;
 
     private double minComputation;
     private double maxComputation;
@@ -37,14 +37,24 @@ public class Application {
     private int maxSuccessors;
     private int arrivalTime;
 
-    public Application(Map<String, ITask> tasks, Map<String, List<ITask>> predecessors, int deadline, String appID, int clientID, int initialDataSize, int outputDataSize, ITask firstTask) {
+    public Application(Map<String, ITask> tasks,
+                       Map<String, List<ITask>> predecessors,
+                       Map<String, List<ITask>> successors,
+                       int deadline,
+                       String appID,
+                       int clientID,
+                       double initialDataSize,
+                       double outputDataSize,
+                       ITask firstTask) {
         this.tasks = tasks;
         this.predecessors = predecessors;
+        this.successors = successors;
         this.deadline = deadline;
         this.appID = appID;
         this.clientID = clientID;
         this.initialDataSize = initialDataSize; // TODO this should be the input data size of the root.
         this.outputDataSize = outputDataSize; // TODO Learn this value from the leafs of the computation.
+        this.firstTask = firstTask;
 
         finishedSubtasks = new HashSet<>();
 
@@ -159,7 +169,7 @@ public class Application {
         this.aggregateProgress = aggregateProgress;
     }
 
-    public int getInitialDataSize() {
+    public double getInitialDataSize() {
         return initialDataSize;
     }
 
@@ -199,7 +209,7 @@ public class Application {
         this.maxSuccessors = maxSuccessors;
     }
 
-    public int getOutputDataSize() {
+    public double getOutputDataSize() {
         return outputDataSize;
     }
 
@@ -251,5 +261,9 @@ public class Application {
         }
         return expandedTasks;
 
+    }
+
+    public int applicationSize(){
+        return this.tasks.keySet().size();
     }
 }

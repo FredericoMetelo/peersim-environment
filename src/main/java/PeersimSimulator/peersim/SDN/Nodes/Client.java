@@ -1,10 +1,11 @@
 package PeersimSimulator.peersim.SDN.Nodes;
 
+import PeersimSimulator.peersim.SDN.Nodes.Events.NewApplicationEvent;
+import PeersimSimulator.peersim.SDN.Tasks.Application;
 import PeersimSimulator.peersim.SDN.Tasks.ITask;
-import PeersimSimulator.peersim.SDN.Util.Log;
-import PeersimSimulator.peersim.SDN.Nodes.Events.NewTaskEvent;
-import PeersimSimulator.peersim.SDN.Nodes.Events.AppConcludedEvent;
 import PeersimSimulator.peersim.SDN.Tasks.Task;
+import PeersimSimulator.peersim.SDN.Util.Log;
+import PeersimSimulator.peersim.SDN.Nodes.Events.AppConcludedEvent;
 import PeersimSimulator.peersim.cdsim.CDProtocol;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
@@ -14,10 +15,8 @@ import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.edsim.EDProtocol;
 import PeersimSimulator.peersim.transport.Transport;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Client implements CDProtocol, EDProtocol {
     public static final String DEFAULT_TASK_SIZE = "500";
@@ -25,8 +24,10 @@ public class Client implements CDProtocol, EDProtocol {
     public static final double DEFAULT_TASKARRIVALRATE = 0.01;
 
     public static final int DEFAULT_NUMBEROFTASKS = 1;
+    public static final int DEFAULT_NUMBEROFDAG = 1;
 
     private static final String PAR_BYTE_SIZE = "T";
+    public static final int DEFAULT_MAX_DEADLINE = 50;
     private double[] BYTE_SIZE; // Mbytes
     private double averageByteSize;
 
@@ -35,13 +36,36 @@ public class Client implements CDProtocol, EDProtocol {
 
     public double[] NO_INSTR;
     private static final String PAR_TASKS_WEIGHTS = "weight";
-    private double[] TASK_CUMULATIVE_PROBS;
+    private double[] taskCumulativeProbs;
+
+
+    private static final String PAR_MAX_DEADLINE = "maxDeadline";
+    private int maxDeadline;
 
     private static final String PAR_CPI = "CPI";
     public int[] CPI;
 
     private static final String PAR_NO_TASKS = "numberOfTasks";
     private final int numberOfTasks;
+
+
+    private static final String PAR_NUMBER_DAG = "numberOfDAG";
+
+    private final int numberOfDAG;
+
+    private static final String PAR_DAG_WEIGHTS = "dagWeights";
+
+    private double[] dagCumulativeProbs;
+
+
+    private static final String PAR_EDGES = "edges";
+    private List<Map<String, List<String>>> successorsPerDAGType;
+    private List<Map<String, List<String>>> predecessorsPerDAGType;
+
+
+    private static final String PAR_VERTICES = "vertices";
+    private List<Integer> numberOfVerticesPerDAGType;
+
 
 
     private static final String PAR_NAME = "name";
@@ -61,7 +85,7 @@ public class Client implements CDProtocol, EDProtocol {
     /**
      * List with Ids of the tasks awaiting response.
      */
-    List<TaskInfo> tasksAwaiting;
+    List<AppInfo> tasksAwaiting;
 
 
     private float averageLatency;
@@ -84,10 +108,15 @@ public class Client implements CDProtocol, EDProtocol {
         active = false;
 
         // Read Constants
+        maxDeadline = Configuration.getInt(prefix + "." +PAR_MAX_DEADLINE, DEFAULT_MAX_DEADLINE);
         TASK_ARRIVAL_RATE = Configuration.getDouble( prefix + "." + PAR_TASKARRIVALRATE, DEFAULT_TASKARRIVALRATE );
         numberOfTasks = Configuration.getInt( prefix + "." + PAR_NO_TASKS, DEFAULT_NUMBEROFTASKS);
+        numberOfDAG = Configuration.getInt( prefix + "." + PAR_NO_TASKS, DEFAULT_NUMBEROFDAG);
+
+
 
         getTaskMetadata(prefix);
+        computeApplicationData(prefix);
 
         printParams();
 
@@ -99,8 +128,9 @@ public class Client implements CDProtocol, EDProtocol {
         String[] _NO_INSTR = Configuration.getString( prefix + "." + PAR_NO_INSTR, DEFAULT_NO_INSTR).split(",") ;
 
         String[] _TASK_WEIGHTS_STR = Configuration.getString( prefix + "." + PAR_TASKS_WEIGHTS, DEFAULT_NO_INSTR).split(",") ;
-
-        if(_CPI.length != numberOfTasks || _NO_INSTR.length != numberOfTasks || _BYTE_SIZE.length != numberOfTasks || _TASK_WEIGHTS_STR.length != numberOfTasks){
+        String[] _DAG_WEIGHTS_STR =  Configuration.getString( prefix + "." + PAR_DAG_WEIGHTS, DEFAULT_NO_INSTR).split(";") ;
+        if(_CPI.length != numberOfTasks || _NO_INSTR.length != numberOfTasks || _BYTE_SIZE.length != numberOfTasks
+                || _TASK_WEIGHTS_STR.length != numberOfTasks || _DAG_WEIGHTS_STR.length != numberOfDAG){
              throw new RuntimeException("The number of tasks and the number of parameters for the tasks do not match");
         }
 
@@ -113,22 +143,66 @@ public class Client implements CDProtocol, EDProtocol {
         double total_weight = Arrays.stream(_WEIGHTS).sum();
         double[] _TASK_WEIGHTS = Arrays.stream(_WEIGHTS).map(num -> num/total_weight).toArray();
 
+        double[] _WEIGHTS_DAG = Arrays.stream(_DAG_WEIGHTS_STR).mapToDouble(num -> Double.parseDouble(num)).toArray();
+        double total_weight_DAG = Arrays.stream(_WEIGHTS_DAG).sum();
+        double[] _DAG_WEIGHTS = Arrays.stream(_WEIGHTS_DAG).map(num -> num/total_weight_DAG).toArray();
 
-        TASK_CUMULATIVE_PROBS = new double[numberOfTasks];
+
+        taskCumulativeProbs = new double[numberOfTasks];
 
         // First element, there must always be at least one task type.
         averageTaskSize = _TASK_WEIGHTS[0] * CPI[0] * NO_INSTR[0];
         averageByteSize = _TASK_WEIGHTS[0] * BYTE_SIZE[0];
-        TASK_CUMULATIVE_PROBS[0] = _TASK_WEIGHTS[0];
+        taskCumulativeProbs[0] = _TASK_WEIGHTS[0];
 
         for(int i = 1; i < numberOfTasks; i++){
             // Compute the average task size and the weight of each task
             averageTaskSize += _TASK_WEIGHTS[i] * CPI[i] * NO_INSTR[i];
             averageByteSize += _TASK_WEIGHTS[0] * BYTE_SIZE[i];
-            TASK_CUMULATIVE_PROBS[i] = TASK_CUMULATIVE_PROBS[i-1] + _TASK_WEIGHTS[i];
+            taskCumulativeProbs[i] = taskCumulativeProbs[i-1] + _TASK_WEIGHTS[i];
         }
 
+        System.arraycopy(_DAG_WEIGHTS, 0, dagCumulativeProbs, 0, numberOfDAG);
+
     }
+
+
+    private void computeApplicationData(String prefix){
+        String[] edgeTypes = Configuration.getString(prefix + "." + PAR_EDGES, "").split(";");
+        String[] vertices = Configuration.getString(prefix + "." + PAR_VERTICES, "1").split(";");
+        if(edgeTypes.length != DEFAULT_NUMBEROFDAG && DEFAULT_NUMBEROFDAG != vertices.length) {
+            Log.err("Wrong configs, number of DAGs does not have parity of edge and vertice types -> vertice types: " + vertices.length+ " edge types: " + edgeTypes.length);
+            return;
+        }
+        for (int i = 0; i < edgeTypes.length; i++) {
+            String[] edges = edgeTypes[i].split(",");
+            Map<String, List<String>> successors = new HashMap<>(); // Aka an entry is < predecessor, successor[] >
+            Map<String, List<String>> predecessors = new HashMap<>(); //Aka an entry is < successor, predecessor[] >
+            for (String edge : edges) {
+                String[] e = edge.split(" ");
+                String predecessor = e[0];
+                String successor = e[1];
+                addToMap(successors, predecessor, successor);
+                addToMap(predecessors, successor, predecessor);
+            }
+            this.successorsPerDAGType.add(successors);
+            this.predecessorsPerDAGType.add(predecessors);
+            this.numberOfVerticesPerDAGType.add(Integer.parseInt(vertices[i])); // This might throw exceptions: ¯\_(ツ)_/¯
+        }
+    }
+
+    private void addToMap(Map<String, List<String>> map, String key, String value){
+         if (map.containsKey(key)) {
+             // If it exists, add the value to the existing list
+             map.get(key).add(value);
+         } else {
+             // If it doesn't exist, create a new list and add the value to it
+             List<String> list = new ArrayList<>();
+             list.add(value);
+             map.put(key, list);
+         }
+     }
+
 
     @Override
     public Object clone() {
@@ -156,17 +230,17 @@ public class Client implements CDProtocol, EDProtocol {
                 Node target = linkable.getNeighbor(i);
                 if (!target.isUp()) return; // This happens task progress is lost.
 
-                int taskType = this.pickTaskType();
+
 
                 Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
-                ITask task = new Task(BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), wi.getId()); // TODO this needs to be changed to something that will properly acommodate whatever I need to implement.
-                tasksAwaiting.add(new TaskInfo(task.getId(), CommonState.getTime()));
+                Application app = generateApplication(i); // new Task(BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), wi.getId()); // TODO this needs to be changed to something that will properly acommodate whatever I need to implement.
+                tasksAwaiting.add(new AppInfo(app.getAppID(), CommonState.getTime(), app.getDeadline()));
                 Log.info("|CLT| TASK SENT to Node:<" + wi.getId() + "> FROM < " + this.getId()+">");
                 ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                         send(
                                 node,
                                 target,
-                                new NewTaskEvent(task),
+                                new NewApplicationEvent(app.getAppID(), this.id, app.getInitialDataSize(), app),
                                 Worker.getPid()
                         );
 
@@ -176,9 +250,62 @@ public class Client implements CDProtocol, EDProtocol {
 
     }
 
+    /**
+     * IMPORTANT FOR THE CONFIGS!!!!!
+     *  Task 0 must never have predecessors (aka, be the first task),
+     *  the last index task must not have any successors (aka be the last task)
+     * @param target
+     * @return
+     */
+    public Application generateApplication(int target){
+        //TODO
+        int dagType = this.pickDAGType();
+
+        Map<String, List<String>> predecessorIDs = this.predecessorsPerDAGType.get(dagType);
+        Map<String, List<String>> successorsIDs = this.successorsPerDAGType.get(dagType);
+        int noTasks = this.numberOfVerticesPerDAGType.get(dagType);
+
+        Map<String, ITask> tasks = new HashMap<>();
+        String appID = UUID.randomUUID().toString();
+
+        int taskType = this.pickTaskType();
+        ITask firstTask = new Task(BYTE_SIZE[taskType], BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), target, appID);
+        ITask lastTask = firstTask;
+        for (int i = 1; i <= noTasks; i++) {
+            taskType = this.pickTaskType(); // For convenience, I'll consider the output size the same as the input size
+            ITask task = new Task(BYTE_SIZE[taskType], BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), target, appID);
+            tasks.put(task.getId(), task);
+            if(i == noTasks){
+                lastTask = task;
+            }
+        }
+
+        Map<String, List<ITask>> successors = new HashMap<>();
+        Map<String, List<ITask>> predecessors = new HashMap<>();
+        for(String t : tasks.keySet()){
+            List<ITask> pred = predecessorIDs.get(t).stream()
+                    .map(taskID -> tasks.get(taskID))
+                    .collect(Collectors.toList());
+            List<ITask> succ = successorsIDs.get(t).stream()
+                    .map(taskID -> tasks.get(taskID))
+                    .collect(Collectors.toList());
+            successors.put(t, succ);
+            predecessors.put(t, pred);
+        }
+
+        // TODO Convert this to computing the minimum deadline required for finishing the task.
+        int deadline = CommonState.getIntTime() + CommonState.r.nextInt(maxDeadline, maxDeadline*2 );
+
+        return new Application(tasks, predecessors, successors, deadline, appID, this.getId(), firstTask.getInputSizeBytes(), lastTask.getOutputSizeBytes(), firstTask);
+
+    }
     private int pickTaskType(){ // Btw variable is a randDouble not a randInt
         double aux = CommonState.r.nextDouble();
-        return findFirstBigger(TASK_CUMULATIVE_PROBS, aux);
+        return findFirstBigger(taskCumulativeProbs, aux);
+    }
+    private int pickDAGType(){
+        double aux = CommonState.r.nextDouble();
+        return findFirstBigger(dagCumulativeProbs, aux);
     }
 
     @Override
@@ -189,7 +316,7 @@ public class Client implements CDProtocol, EDProtocol {
              long endTick = CommonState.getTime();
             for(int i = 0; i < tasksAwaiting.size(); i++){
                 if(tasksAwaiting.get(i).id.equals(ev.getTaskId())){
-                    TaskInfo t = tasksAwaiting.remove(i);
+                    AppInfo t = tasksAwaiting.remove(i);
                     long timeTaken = endTick - t.timeSent;
                     averageLatency = (averageLatency*noResults + timeTaken) / (++noResults);
                     Log.info("|CLT| TASK CONCLUDED: TaskId<" + ev.getTaskId() + "> NodeId:<" +t.id + ">");
@@ -258,11 +385,13 @@ public class Client implements CDProtocol, EDProtocol {
                 '}';
     }
 
-    private class TaskInfo{
+    private class AppInfo {
         protected String id;
         protected long timeSent;
 
-        public TaskInfo(String id, long timeSent) {
+        protected double deadline;
+
+        public AppInfo(String id, long timeSent, double deadline) {
             this.id = id;
             this.timeSent = timeSent;
         }
