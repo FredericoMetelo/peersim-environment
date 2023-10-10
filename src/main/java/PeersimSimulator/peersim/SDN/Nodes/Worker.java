@@ -24,6 +24,12 @@ public class Worker implements CDProtocol, EDProtocol {
     private static final String PAR_NAME = "name";
     private static final int RANK_EVENT_DELAY = 5;
 
+    private static final String PAR_MAX_TIME_AFTER_DEADLINE = "maxTimeAfterDeadline";
+    private static final int DEFAULT_TIME_AFTER_DEADLINE = 50;
+
+    private final int timeAfterDeadline;
+
+
 
     /**
      * Represents the frequency of the CPUs on this machine.
@@ -128,7 +134,7 @@ public class Worker implements CDProtocol, EDProtocol {
         CPU_FREQ = Configuration.getDouble(prefix + "." + PAR_CPU_FREQ, 1e7);
         CPU_NO_CORES = Configuration.getInt(prefix + "." + PAR_CPU_NO_CORES, 4);
         Q_MAX = Configuration.getInt(prefix + "." + PAR_Q_MAX, 10);
-
+        timeAfterDeadline = Configuration.getInt(prefix+"."+PAR_MAX_TIME_AFTER_DEADLINE, DEFAULT_TIME_AFTER_DEADLINE);
         printParams();
         processingPower = Math.floor(CPU_NO_CORES * CPU_FREQ);
         //======== Init Datastructures ===========//
@@ -303,9 +309,14 @@ public class Worker implements CDProtocol, EDProtocol {
         }
         for (ITask t : queue) {
 
-            previousPrioritiesPerTask.put(t.getId(), t.getCurrentRank()); // Must have a previous rank to be in the queue.
-
             Application a = managedApplications.get(t.getAppID());
+            if(a.getDeadline()  < CommonState.getIntTime()){
+                // TODO
+                a
+            }
+
+
+            previousPrioritiesPerTask.put(t.getId(), t.getCurrentRank()); // Must have a previous rank to be in the queue.
             if (a != null) {
                 getDataForPriorityMetrics(a);
             } else {
