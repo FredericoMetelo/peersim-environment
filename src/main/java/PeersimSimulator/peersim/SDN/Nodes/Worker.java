@@ -211,7 +211,7 @@ public class Worker implements CDProtocol, EDProtocol {
                     Linkable linkable = (Linkable) node.getProtocol(linkableID);
                     Node handler = linkable.getNeighbor(current.getOriginalHandlerID());
 
-                    // Clean up the data structures
+                    // Clean up the data stru ctures
                     loseTaskInformation.remove(current.getId());
 
                     if (!handler.isUp()) return; // This happens task progress is lost.
@@ -250,7 +250,7 @@ public class Worker implements CDProtocol, EDProtocol {
                     send(
                             node,
                             controller,
-                            new WorkerInfo(this.id, this.queue.size(), this.recievedApplications.size(), averageTaskSize(), processingPower),
+                            new WorkerInfo(this.id, this.queue.size(), this.recievedApplications.size(), averageTaskSize(), processingPower, Q_MAX - this.getNumberOfTasks() ),
                             Controller.getPid()
                     );
             this.changed = false;

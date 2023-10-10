@@ -27,15 +27,16 @@ public class WorkerInfo implements Message{
 
     private double nodeProcessingPower;
 
+    private int freeTaskSlots;
 
 
-
-    public WorkerInfo(int id, int queueSize, int w, double averageTaskSize, double nodeProcessingPower) {
+    public WorkerInfo(int id, int queueSize, int w, double averageTaskSize, double nodeProcessingPower, int freeTaskSlots) {
         this.id = id;
         this.queueSize = queueSize;
         this.W_i = w;
         this.averageTaskSize = averageTaskSize;
         this.nodeProcessingPower = nodeProcessingPower;
+        this.freeTaskSlots = freeTaskSlots;
     }
 
     public int getTotalTasks() {
