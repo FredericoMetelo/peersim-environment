@@ -307,12 +307,16 @@ public class Worker implements CDProtocol, EDProtocol {
             getDataForPriorityMetrics(a);
 
         }
+
+        Set<Application> removeApps = new HashSet<>();
         for (ITask t : queue) {
 
             Application a = managedApplications.get(t.getAppID());
-            if(a.getDeadline()  < CommonState.getIntTime()){
+            if(a.getDeadline() + timeAfterDeadline <= CommonState.getIntTime()){
                 // TODO
-                a
+                queue.remove(t);
+                removeApps.add(a);
+                continue;
             }
 
 
@@ -333,6 +337,9 @@ public class Worker implements CDProtocol, EDProtocol {
                 if (lti.getCompletionRate() < minCompletionRate) minCompletionRate = lti.getCompletionRate();
             }
         }
+
+        purgeApps(removeApps);
+
         // Cycle through queued tasks ranking them and re-inserting them in app
         for (ITask t : queue) {
             double rank;
@@ -358,6 +365,17 @@ public class Worker implements CDProtocol, EDProtocol {
         queue = newQ;
         recievedApplications = new LinkedList<>();
         toAddSize = 0;
+    }
+
+    private void purgeApps(Set<Application> removeApps) {
+        Iterator<Application> iterator = removeApps.iterator();
+        while (iterator.hasNext()) {
+            String id = iterator.next().getAppID();
+            if (managedApplications.containsKey(id)) {
+                managedApplications.remove(id);
+                iterator.remove(); // Remove the ID from the set as well
+            }
+        }
     }
 
     private boolean isLocal(ITask t) {

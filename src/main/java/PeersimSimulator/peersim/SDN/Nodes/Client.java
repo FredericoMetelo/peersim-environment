@@ -161,23 +161,31 @@ public class Client implements CDProtocol, EDProtocol {
             averageByteSize += _TASK_WEIGHTS[0] * BYTE_SIZE[i];
             taskCumulativeProbs[i] = taskCumulativeProbs[i-1] + _TASK_WEIGHTS[i];
         }
-
+        dagCumulativeProbs = new double[numberOfDAG];
         System.arraycopy(_DAG_WEIGHTS, 0, dagCumulativeProbs, 0, numberOfDAG);
 
     }
 
 
     private void computeApplicationData(String prefix){
+
+        this.successorsPerDAGType = new ArrayList<>(numberOfDAG);
+        this.predecessorsPerDAGType = new ArrayList<>(numberOfDAG);
+        this.numberOfVerticesPerDAGType = new ArrayList<>(numberOfDAG);
+
+
         String[] edgeTypes = Configuration.getString(prefix + "." + PAR_EDGES, "").split(";");
         String[] vertices = Configuration.getString(prefix + "." + PAR_VERTICES, "1").split(";");
-        if(edgeTypes.length != DEFAULT_NUMBEROFDAG && DEFAULT_NUMBEROFDAG != vertices.length) {
+        if(edgeTypes.length != numberOfDAG && numberOfDAG != vertices.length) {
             Log.err("Wrong configs, number of DAGs does not have parity of edge and vertice types -> vertice types: " + vertices.length+ " edge types: " + edgeTypes.length);
             return;
         }
         for (int i = 0; i < edgeTypes.length; i++) {
             String[] edges = edgeTypes[i].split(",");
-            Map<String, List<String>> successors = new HashMap<>(); // Aka an entry is < predecessor, successor[] >
-            Map<String, List<String>> predecessors = new HashMap<>(); //Aka an entry is < successor, predecessor[] >
+            // Aka an entry is < predecessor, successor[] >
+            Map<String, List<String>> successors = new HashMap<>();
+            //Aka an entry is < successor, predecessor[] >
+            Map<String, List<String>> predecessors = new HashMap<>();
             for (String edge : edges) {
                 String[] e = edge.split(" ");
                 String predecessor = e[0];
@@ -266,31 +274,48 @@ public class Client implements CDProtocol, EDProtocol {
         int noTasks = this.numberOfVerticesPerDAGType.get(dagType);
 
         Map<String, ITask> tasks = new HashMap<>();
+        Map<String, String> taskIDToVertice = new HashMap<>();
+        Map<String, String> verticesToTaskID = new HashMap<>();
         String appID = UUID.randomUUID().toString();
 
         int taskType = this.pickTaskType();
         ITask firstTask = new Task(BYTE_SIZE[taskType], BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), target, appID);
+        tasks.put(firstTask.getId(), firstTask);
+        verticesToTaskID.put("0", firstTask.getId());
+        taskIDToVertice.put(firstTask.getId(), "0");
         ITask lastTask = firstTask;
         for (int i = 1; i <= noTasks; i++) {
             taskType = this.pickTaskType(); // For convenience, I'll consider the output size the same as the input size
             ITask task = new Task(BYTE_SIZE[taskType], BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), target, appID);
+            verticesToTaskID.put(Integer.toString(i), task.getId());
+            taskIDToVertice.put(task.getId(), Integer.toString(i));
+
             tasks.put(task.getId(), task);
             if(i == noTasks){
                 lastTask = task;
             }
         }
-
+        // TODO this must have a better way of solving... This pains me to do... But I do what I must.
         Map<String, List<ITask>> successors = new HashMap<>();
         Map<String, List<ITask>> predecessors = new HashMap<>();
         for(String t : tasks.keySet()){
-            List<ITask> pred = predecessorIDs.get(t).stream()
-                    .map(taskID -> tasks.get(taskID))
-                    .collect(Collectors.toList());
-            List<ITask> succ = successorsIDs.get(t).stream()
-                    .map(taskID -> tasks.get(taskID))
-                    .collect(Collectors.toList());
-            successors.put(t, succ);
-            predecessors.put(t, pred);
+            String vertice = taskIDToVertice.get(t);
+            if(predecessorIDs.containsKey(vertice)) {
+                List<ITask> pred = predecessorIDs.get(vertice).stream()
+                        .map(verticesToTaskID::get) // Convert list of vertices into list of taskID
+                        // .filter(tasks::containsKey) redundant? // Remove from the list the taskIDs
+                        .map(tasks::get)
+                        .collect(Collectors.toList());
+                predecessors.put(t, pred);
+            }
+            if(successorsIDs.containsKey(t)){
+                List<ITask> succ = successorsIDs.get(t).stream()
+                        .map(verticesToTaskID::get) // Convert list of vertices into list of taskID
+                        // .filter(tasks::containsKey) redundant? // Remove from the list the taskIDs
+                        .map(tasks::get)
+                        .collect(Collectors.toList());
+                successors.put(t, succ);
+            }
         }
 
         // TODO Convert this to computing the minimum deadline required for finishing the task.
@@ -300,11 +325,11 @@ public class Client implements CDProtocol, EDProtocol {
 
     }
     private int pickTaskType(){ // Btw variable is a randDouble not a randInt
-        double aux = CommonState.r.nextDouble();
+        double aux = CommonState.r.nextDouble(0, numberOfTasks - 1);
         return findFirstBigger(taskCumulativeProbs, aux);
     }
     private int pickDAGType(){
-        double aux = CommonState.r.nextDouble();
+        double aux = CommonState.r.nextDouble(0, numberOfDAG - 1);
         return findFirstBigger(dagCumulativeProbs, aux);
     }
 
@@ -425,6 +450,7 @@ public class Client implements CDProtocol, EDProtocol {
                 result = mid;
                 right = mid - 1; // Continue searching in the left half
             } else {
+                result = mid;
                 left = mid + 1; // Continue searching in the right half
             }
         }
