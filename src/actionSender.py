@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # configs_dict = {"protocol.ctrl.r_u": "999", "protocol.props.B": "1"}
     # configs_dict="/home/fm/Documents/Thesis/peersim-srv/configs/examples/default-config.txt"
     configs_dict = None
-    env = gym.make("peersim_gym/PeersimEnv-v0")
+    # env = gym.make("peersim_gym/PeersimEnv-v0")
     a = ''
     while a != "quit":
         a = input(">")

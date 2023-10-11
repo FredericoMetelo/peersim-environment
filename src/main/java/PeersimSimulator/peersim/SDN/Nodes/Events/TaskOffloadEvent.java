@@ -2,7 +2,6 @@ package PeersimSimulator.peersim.SDN.Nodes.Events;
 
 import PeersimSimulator.peersim.SDN.Records.LoseTaskInfo;
 import PeersimSimulator.peersim.SDN.Tasks.ITask;
-import PeersimSimulator.peersim.SDN.Tasks.Task;
 
 import java.util.List;
 
@@ -20,7 +19,7 @@ public class TaskOffloadEvent implements Message{
     int minSucc;
     int maxSucc;
 
-    int arrivalTime;
+    double arrivalTime;
 
     double completionRate;
     ITask task;
@@ -125,7 +124,7 @@ public class TaskOffloadEvent implements Message{
         return maxSucc;
     }
 
-    public int getArrivalTime() {
+    public double getArrivalTime() {
         return arrivalTime;
     }
 

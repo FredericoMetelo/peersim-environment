@@ -30,6 +30,8 @@ public abstract class ITask {
 
     protected double progress;
 
+    private String vertice;
+
     private double currentRank;
     /**
      * Total Amount of instructions needed to execute task.
@@ -39,7 +41,7 @@ public abstract class ITask {
      */
     protected final double totalInstructions;
 
-    public ITask(double inputSizeBytes, double outputSizeBytes, double totalInstructions, int clientID, int originalHandlerID, String applicationID) {
+    public ITask(double inputSizeBytes, double outputSizeBytes, double totalInstructions, int clientID, int originalHandlerID, String applicationID, String vertice) {
         this.id = UUID.randomUUID().toString();
         this.inputSizeBytes = inputSizeBytes;
         this.outputSizeBytes = outputSizeBytes;
@@ -48,6 +50,7 @@ public abstract class ITask {
         this.originalHandlerID = originalHandlerID;
         this.applicationID = applicationID;
         this.currentRank = -1;
+        this.vertice = vertice;
     }
 
     public double getOutputSizeBytes() {
@@ -103,4 +106,16 @@ public abstract class ITask {
 
     public abstract double addProgress(double cycles);
 
+    @Override
+    public String toString() {
+        return "ITask{" +
+                "id='" + id + '\'' +
+                ", vertice='" + vertice + '\'' +
+                ", clientID=" + clientID +
+                ", currentRank=" + currentRank +
+                ", originalHandlerID=" + originalHandlerID +
+                ", applicationID='" + applicationID + '\'' +
+                ", progress=" + progress +
+                '}';
+    }
 }

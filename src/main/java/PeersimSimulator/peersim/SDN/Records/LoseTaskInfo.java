@@ -17,7 +17,7 @@ public class LoseTaskInfo {
     int minSucc;
     int maxSucc;
 
-    int arrivalTime;
+    double arrivalTime;
 
     double completionRate; // Snapshot of the moment the task was offloaded.
 
@@ -29,7 +29,7 @@ public class LoseTaskInfo {
                         double maxCompLoad,
                         int minSucc,
                         int maxSucc,
-                        int arrivalTime,
+                        double arrivalTime,
                         double completionRate
                         ) {
         this.successorIDs = successorIDs;
@@ -59,7 +59,7 @@ public class LoseTaskInfo {
         return maxSucc;
     }
 
-    public int getArrivalTime() {
+    public double getArrivalTime() {
         return arrivalTime;
     }
 

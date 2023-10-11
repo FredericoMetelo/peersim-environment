@@ -279,14 +279,15 @@ public class Client implements CDProtocol, EDProtocol {
         String appID = UUID.randomUUID().toString();
 
         int taskType = this.pickTaskType();
-        ITask firstTask = new Task(BYTE_SIZE[taskType], BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), target, appID);
+        ITask firstTask = new Task(BYTE_SIZE[taskType], BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), target, appID, "0");
         tasks.put(firstTask.getId(), firstTask);
         verticesToTaskID.put("0", firstTask.getId());
         taskIDToVertice.put(firstTask.getId(), "0");
+
         ITask lastTask = firstTask;
         for (int i = 1; i <= noTasks; i++) {
             taskType = this.pickTaskType(); // For convenience, I'll consider the output size the same as the input size
-            ITask task = new Task(BYTE_SIZE[taskType], BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), target, appID);
+            ITask task = new Task(BYTE_SIZE[taskType], BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), target, appID, Integer.toString(i));
             verticesToTaskID.put(Integer.toString(i), task.getId());
             taskIDToVertice.put(task.getId(), Integer.toString(i));
 
@@ -299,7 +300,7 @@ public class Client implements CDProtocol, EDProtocol {
         Map<String, List<ITask>> successors = new HashMap<>();
         Map<String, List<ITask>> predecessors = new HashMap<>();
         for(String t : tasks.keySet()){
-            String vertice = taskIDToVertice.get(t);
+            String vertice = taskIDToVertice.get(t); // There is a better way to do this now that I added a vertice property to the task
             if(predecessorIDs.containsKey(vertice)) {
                 List<ITask> pred = predecessorIDs.get(vertice).stream()
                         .map(verticesToTaskID::get) // Convert list of vertices into list of taskID
@@ -307,19 +308,23 @@ public class Client implements CDProtocol, EDProtocol {
                         .map(tasks::get)
                         .collect(Collectors.toList());
                 predecessors.put(t, pred);
+            }else{
+                predecessors.put(t, new ArrayList<>(0));
             }
-            if(successorsIDs.containsKey(t)){
-                List<ITask> succ = successorsIDs.get(t).stream()
+            if(successorsIDs.containsKey(vertice)){
+                List<ITask> succ = successorsIDs.get(vertice).stream()
                         .map(verticesToTaskID::get) // Convert list of vertices into list of taskID
                         // .filter(tasks::containsKey) redundant? // Remove from the list the taskIDs
                         .map(tasks::get)
                         .collect(Collectors.toList());
                 successors.put(t, succ);
+            }else{
+                successors.put(t, new ArrayList<>(0));
             }
         }
 
         // TODO Convert this to computing the minimum deadline required for finishing the task.
-        int deadline = CommonState.getIntTime() + CommonState.r.nextInt(maxDeadline, maxDeadline*2 );
+        double deadline = CommonState.getTime() + CommonState.r.nextInt(maxDeadline, maxDeadline*2 );
 
         return new Application(tasks, predecessors, successors, deadline, appID, this.getId(), firstTask.getInputSizeBytes(), lastTask.getOutputSizeBytes(), firstTask);
 

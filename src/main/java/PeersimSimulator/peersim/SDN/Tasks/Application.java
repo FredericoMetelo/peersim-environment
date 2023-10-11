@@ -16,7 +16,7 @@ public class Application {
 
     private ITask firstTask;
 
-    private int deadline;
+    private double deadline;
 
     private String appID;
 
@@ -35,12 +35,12 @@ public class Application {
     private double maxComputation;
     private int minSuccessors;
     private int maxSuccessors;
-    private int arrivalTime;
+    private double arrivalTime;
 
     public Application(Map<String, ITask> tasks,
                        Map<String, List<ITask>> predecessors,
                        Map<String, List<ITask>> successors,
-                       int deadline,
+                       double deadline,
                        String appID,
                        int clientID,
                        double initialDataSize,
@@ -68,8 +68,10 @@ public class Application {
             totalTaskSize += task.getTotalInstructions();
             if(task.getTotalInstructions() > maxComputation) maxComputation = task.getTotalInstructions();
             if(task.getTotalInstructions() < minComputation) minComputation = task.getTotalInstructions();
-            if(successors.get(v).size() > maxSuccessors) maxSuccessors = successors.get(v).size();
-            if(successors.get(v).size() < minSuccessors) minSuccessors = successors.get(v).size();
+            List<ITask> t = successors.get(v);
+            // Tasks may neither have successors nor predecessors (I.E. The first and last tasks per definition).
+            if(t != null && successors.get(v).size() > maxSuccessors) maxSuccessors = successors.get(v).size();
+            if(t != null && successors.get(v).size() < minSuccessors) minSuccessors = successors.get(v).size();
         }
 
         aggregateProgress = 0;
@@ -86,9 +88,10 @@ public class Application {
             Log.err("Somehow we are checking the wrong application for a subtask! AppID" + this.appID + " TaskID: " + task );
             return false;
         }
+
         List<ITask> d = predecessors.get(task);
         for(ITask v: d){
-
+            if(!v.done()) return false;
         }
         return true;
 
@@ -121,7 +124,7 @@ public class Application {
         this.successors = successors;
     }
 
-    public int getDeadline() {
+    public double getDeadline() {
         return deadline;
     }
 
@@ -213,11 +216,11 @@ public class Application {
         return outputDataSize;
     }
 
-    public int getArrivalTime() {
+    public double getArrivalTime() {
         return arrivalTime;
     }
 
-    public void setArrivalTime(int arrivalTime) {
+    public void setArrivalTime(double arrivalTime) {
         this.arrivalTime = arrivalTime;
     }
 
