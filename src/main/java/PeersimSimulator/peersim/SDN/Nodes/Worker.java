@@ -25,7 +25,7 @@ public class Worker implements CDProtocol, EDProtocol {
     private static final int RANK_EVENT_DELAY = 5;
 
     private static final String PAR_MAX_TIME_AFTER_DEADLINE = "maxTimeAfterDeadline";
-    private static final int DEFAULT_TIME_AFTER_DEADLINE = 50;
+    private static final int DEFAULT_TIME_AFTER_DEADLINE = 5;
 
     private final int timeAfterDeadline;
 
@@ -440,6 +440,7 @@ public class Worker implements CDProtocol, EDProtocol {
             String id = iterator.next().getAppID();
             if (managedApplications.containsKey(id)) {
                 managedApplications.remove(id);
+                if(current != null && Objects.equals(current.getAppID(), id)) this.current = null;
                 iterator.remove(); // Remove the ID from the set as well
             }
         }
@@ -474,7 +475,7 @@ public class Worker implements CDProtocol, EDProtocol {
         // Compute the ranking function
         List<ITask> succ = app.getSuccessors().get(task.getId());
         double En = succ.size();
-        double normalized_En = (En) / (this.maxSucc);
+        double normalized_En = (En) / (Math.max(this.maxSucc, 1)); // Avoid division by 0
         double Ln = 1 / task.getTotalInstructions();
         double normalized_Ln = (Ln - 1 / this.minCompLoad) / (1 / this.maxCompLoad - 1 / this.minCompLoad); // TODO make sure the computational load is 1/L_something
         double urgency = -app.getDeadline() + CommonState.getTime() - app.getArrivalTime() + 1;
@@ -504,7 +505,7 @@ public class Worker implements CDProtocol, EDProtocol {
         //  see localTaskRank for what each parameter does.
         List<String> succ = lti.getSuccessorIDs();
         double En = succ.size();
-        double normalized_En = (En) / (this.maxSucc);
+        double normalized_En = (En) /  (Math.max(this.maxSucc, 1));
         double Ln = 1 / task.getTotalInstructions();
         double normalized_Ln = (Ln - 1 / this.minCompLoad) / (1 / this.maxCompLoad - 1 / this.minCompLoad);
         double urgency = -lti.getDeadline() + CommonState.getTime() - lti.getArrivalTime() + 1;

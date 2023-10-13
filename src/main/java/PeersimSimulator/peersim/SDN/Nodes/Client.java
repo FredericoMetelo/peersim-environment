@@ -111,7 +111,7 @@ public class Client implements CDProtocol, EDProtocol {
         maxDeadline = Configuration.getInt(prefix + "." +PAR_MAX_DEADLINE, DEFAULT_MAX_DEADLINE);
         TASK_ARRIVAL_RATE = Configuration.getDouble( prefix + "." + PAR_TASKARRIVALRATE, DEFAULT_TASKARRIVALRATE );
         numberOfTasks = Configuration.getInt( prefix + "." + PAR_NO_TASKS, DEFAULT_NUMBEROFTASKS);
-        numberOfDAG = Configuration.getInt( prefix + "." + PAR_NO_TASKS, DEFAULT_NUMBEROFDAG);
+        numberOfDAG = Configuration.getInt( prefix + "." + PAR_NUMBER_DAG, DEFAULT_NUMBEROFDAG);
 
 
 
@@ -176,12 +176,18 @@ public class Client implements CDProtocol, EDProtocol {
 
         String[] edgeTypes = Configuration.getString(prefix + "." + PAR_EDGES, "").split(";");
         String[] vertices = Configuration.getString(prefix + "." + PAR_VERTICES, "1").split(";");
-        if(edgeTypes.length != numberOfDAG && numberOfDAG != vertices.length) {
+        if(edgeTypes.length != numberOfDAG || numberOfDAG != vertices.length) {
             Log.err("Wrong configs, number of DAGs does not have parity of edge and vertice types -> vertice types: " + vertices.length+ " edge types: " + edgeTypes.length);
-            return;
+            throw new RuntimeException("Wrong configs, number of DAGs does not have parity of edge and vertice types -> vertice types: " + vertices.length+ " edge types: " + edgeTypes.length);
         }
         for (int i = 0; i < edgeTypes.length; i++) {
             String[] edges = edgeTypes[i].split(",");
+            if(edges[0].isEmpty()){
+                this.predecessorsPerDAGType.add(new HashMap<>());
+                this.successorsPerDAGType.add(new HashMap<>());
+                this.numberOfVerticesPerDAGType.add(Integer.parseInt(vertices[i]));
+                continue;
+            }
             // Aka an entry is < predecessor, successor[] >
             Map<String, List<String>> successors = new HashMap<>();
             //Aka an entry is < successor, predecessor[] >
@@ -190,6 +196,10 @@ public class Client implements CDProtocol, EDProtocol {
                 String[] e = edge.split(" ");
                 String predecessor = e[0];
                 String successor = e[1];
+                int pred = Integer.parseInt(predecessor);
+                int succ = Integer.parseInt(successor);
+                int lastVertice = Integer.parseInt(vertices[i]);
+                if( pred < 0 || succ < 0 || pred >=  lastVertice ||  succ >= lastVertice) throw new RuntimeException("There are illegal vertices in the edges of dag type: " + i +" last vertice id:" + lastVertice );
                 addToMap(successors, predecessor, successor);
                 addToMap(predecessors, successor, predecessor);
             }
@@ -285,7 +295,7 @@ public class Client implements CDProtocol, EDProtocol {
         taskIDToVertice.put(firstTask.getId(), "0");
 
         ITask lastTask = firstTask;
-        for (int i = 1; i <= noTasks; i++) {
+        for (int i = 1; i < noTasks; i++) {
             taskType = this.pickTaskType(); // For convenience, I'll consider the output size the same as the input size
             ITask task = new Task(BYTE_SIZE[taskType], BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), target, appID, Integer.toString(i));
             verticesToTaskID.put(Integer.toString(i), task.getId());
@@ -330,11 +340,11 @@ public class Client implements CDProtocol, EDProtocol {
 
     }
     private int pickTaskType(){ // Btw variable is a randDouble not a randInt
-        double aux = CommonState.r.nextDouble(0, numberOfTasks - 1);
+        double aux = CommonState.r.nextDouble(0, numberOfTasks);
         return findFirstBigger(taskCumulativeProbs, aux);
     }
     private int pickDAGType(){
-        double aux = CommonState.r.nextDouble(0, numberOfDAG - 1);
+        double aux = CommonState.r.nextDouble(0, numberOfDAG);
         return findFirstBigger(dagCumulativeProbs, aux);
     }
 

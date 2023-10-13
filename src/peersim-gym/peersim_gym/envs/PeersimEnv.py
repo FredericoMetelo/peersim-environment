@@ -55,7 +55,7 @@ class PeersimEnv(gym.Env):
             {
                 "n_i": Discrete(self.number_nodes, start=1),  # Ignores the controller
                 "Q": MultiDiscrete(q_list),
-                "w": Box(high=self.max_w, low=0, dtype=np.float)
+                "w": Box(high=self.max_w, low=0, dtype=float)
                 # The authors use a Natural number to represent this, value. I use a continuous value, because the way
                 # I interpreted the W is how many tasks are bing processed by the node in one unit of time.
                 # I assume that 100 ticks makes one unit of time (100 ticks is the time it takes for all nodes to take

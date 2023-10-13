@@ -19,6 +19,13 @@ PEERSIM_DEFAULTS = {
     "protocol.clt.T": "150",
     "protocol.clt.I": "200e6",
     "protocol.clt.taskArrivalRate": "0.2",
+
+    "protocol.clt.numberOfDAG": "1",
+    "protocol.clt.dagWeights": "1",
+    "protocol.clt.edges": "",
+    "protocol.clt.maxDeadline": "10",
+    
+    "protocol.clt.vertices": "1",
     "protocol.wrk.NO_CORES": "4",
     "protocol.wrk.FREQ": "1e7",
     "protocol.wrk.Q_MAX": "10",
