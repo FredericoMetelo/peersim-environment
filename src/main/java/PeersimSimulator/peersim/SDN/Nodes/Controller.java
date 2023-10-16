@@ -200,7 +200,7 @@ public class Controller implements CDProtocol, EDProtocol {
      * Spin waits for the next action.
      */
     private void awaitAction() {
-        Log.dbg("Start Waiting");
+        Log.dbg("Start Waiting Time<"+CommonState.getTime()+">");
         while (stop) Thread.onSpinWait();
     }
 

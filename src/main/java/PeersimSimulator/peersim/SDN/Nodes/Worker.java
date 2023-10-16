@@ -242,9 +242,10 @@ public class Worker implements CDProtocol, EDProtocol {
                             );
                 }
             }
-            if ((CommonState.getTime() % RANK_EVENT_DELAY) == 0 && !this.recievedApplications.isEmpty()) {
-                applicationSerialization();
-            }
+        }
+        cleanExpiredApps();
+        if ((CommonState.getTime() % RANK_EVENT_DELAY) == 0 ) { // && !this.recievedApplications.isEmpty() // if offloaded a task and does not run this then no cleanup.
+            applicationSerialization();
         }
 
         // Then Communicate changes in Queue Size and Recieved Nodes  to Controller.
@@ -366,6 +367,7 @@ public class Worker implements CDProtocol, EDProtocol {
      * Ranks all tasks in the node and sort's them in a queue (except the one being currently processed).
      * If any applications have passed their deadline plus a grace period, this applications are removed and aren't
      * added to the queue.
+     *
      */
     private void applicationSerialization() {
 
@@ -385,16 +387,11 @@ public class Worker implements CDProtocol, EDProtocol {
             getDataForPriorityMetrics(a);
         }
 
-        Set<Application> removeApps = new HashSet<>();
-        for (ITask t : queue) {
-
+        Iterator<ITask> qiterator = queue.iterator();
+       // Set<Application> removeApps = new HashSet<>();
+        while (qiterator.hasNext()) {
+            ITask t = qiterator.next();
             Application a = managedApplications.get(t.getAppID());
-            if (a.getDeadline() + timeAfterDeadline <= CommonState.getTime()) {
-                queue.remove(t);
-                removeApps.add(a);
-                continue;
-            }
-
             previousPrioritiesPerTask.put(t.getId(), t.getCurrentRank()); // Must have a previous rank to be in the queue.
             if (a != null) {
                 getDataForPriorityMetrics(a);
@@ -403,8 +400,6 @@ public class Worker implements CDProtocol, EDProtocol {
                 getDataForPriorityMetrics(lti);
             }
         }
-
-        purgeApps(removeApps);
 
         // Cycle through queued tasks ranking them and re-inserting them in app
         for (ITask t : queue) {
@@ -434,6 +429,31 @@ public class Worker implements CDProtocol, EDProtocol {
         toAddSize = 0;
     }
 
+
+    /**
+     * This method cleans up expired apps. There must be a better way of doing this
+     */
+    private void cleanExpiredApps(){
+        Iterator<ITask> qiterator = queue.iterator();
+        Set<Application> removeApps = new HashSet<>();
+        while (qiterator.hasNext()) {
+            ITask t = qiterator.next();
+            Application a = managedApplications.get(t.getAppID());
+            if (a != null && a.getDeadline() + timeAfterDeadline <= CommonState.getTime()) {
+                qiterator.remove();
+                removeApps.add(a);
+                continue;
+            }
+            LoseTaskInfo l = loseTaskInformation.get(t.getId()); // Probably do not need to fetch taskinfo twice... Laughs in O(1)
+            if (l != null && l.getDeadline() + timeAfterDeadline <= CommonState.getTime()) {
+                loseTaskInformation.remove(t.getId());
+                qiterator.remove();
+                if (current != null && Objects.equals(current.getId(), t.getId())) this.current = null;
+                continue;
+            }
+        }
+        purgeApps(removeApps);
+    }
     private void purgeApps(Set<Application> removeApps) {
         Iterator<Application> iterator = removeApps.iterator();
         while (iterator.hasNext()) {
@@ -468,7 +488,9 @@ public class Worker implements CDProtocol, EDProtocol {
         // Compute Parts of the ranking function TODO make this methods use the fields of the class instead of parameter variables...
         // Normalized Number of Successors
         // Last task must always have 0 successors
-        // Normalized Computational Load
+        // Normalized Computational Load:
+            // Long story short: this was returning NaN when maxCompLoad = minCompLoad, the important part is the relation
+            // between the values so if minCompLoad = maxCompLoad I just call it 0.
         // Normalized Number of Occurrences (IGNORED)
         // Normalized Urgency Metric
         // Normalized Completion Rate
@@ -477,7 +499,8 @@ public class Worker implements CDProtocol, EDProtocol {
         double En = succ.size();
         double normalized_En = (En) / (Math.max(this.maxSucc, 1)); // Avoid division by 0
         double Ln = 1 / task.getTotalInstructions();
-        double normalized_Ln = (Ln - 1 / this.minCompLoad) / (1 / this.maxCompLoad - 1 / this.minCompLoad); // TODO make sure the computational load is 1/L_something
+        double normalized_Ln = (this.minCompLoad == this.maxCompLoad)? 0 : (Ln - 1 / this.minCompLoad) / (1 / this.maxCompLoad - 1 / this.minCompLoad);
+
         double urgency = -app.getDeadline() + CommonState.getTime() - app.getArrivalTime() + 1;
         double y_normalized = (urgency - this.minArrivalTime + 1) / (CommonState.getTime() - this.minArrivalTime + 1); // + 1 on both sides to avoid divisions by 0
         double normalized_Completion = (app.getCompletionRate() - this.minCompletionRate) / (this.maxCompletionRate - this.minCompletionRate);
@@ -507,7 +530,7 @@ public class Worker implements CDProtocol, EDProtocol {
         double En = succ.size();
         double normalized_En = (En) /  (Math.max(this.maxSucc, 1));
         double Ln = 1 / task.getTotalInstructions();
-        double normalized_Ln = (Ln - 1 / this.minCompLoad) / (1 / this.maxCompLoad - 1 / this.minCompLoad);
+        double normalized_Ln =  (this.minCompLoad == this.maxCompLoad)? 0 : (Ln - 1 / this.minCompLoad) / (1 / this.maxCompLoad - 1 / this.minCompLoad);
         double urgency = -lti.getDeadline() + CommonState.getTime() - lti.getArrivalTime() + 1;
         double y_normalized = (urgency - this.minArrivalTime + 1) / (CommonState.getTime() - this.minArrivalTime + 1);
         double normalized_Completion = (lti.getCompletionRate() - this.minCompletionRate) / (this.maxCompletionRate - this.minCompletionRate);
