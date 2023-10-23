@@ -11,19 +11,22 @@ public class WireSDNTopology extends WireGraph {
     // Parameters
     // ------------------------------------------------------------------------
     private static final String PAR_COORDINATES_PROT = "coord_protocol";
+    private static final String PAR_RADIUS = "r";
 
     // --------------------------------------------------------------------------
     // Fields
     // --------------------------------------------------------------------------
     /** Coordinate protocol pid. */
     private final int coordPid;
-
+    private final static int DEFAULT_R = 1000; // no radius
+    private int r;
     // --------------------------------------------------------------------------
     // Initialization
     // --------------------------------------------------------------------------
     public WireSDNTopology(String prefix) {
         super(prefix);
         coordPid = Configuration.getPid(prefix + "." + PAR_COORDINATES_PROT); // Id of the protocol with the coordiantes in the coordinates list.
+        r = Configuration.getInt(prefix + "." + PAR_RADIUS, DEFAULT_R); // Id of the protocol with the coordiantes in the coordinates list.
     }
 
     /**
@@ -37,22 +40,25 @@ public class WireSDNTopology extends WireGraph {
      */
     public void wire(Graph g) {
 
+        for (int i = 0; i < Network.size(); ++i) g.setEdge(i,i);
 
         // Link all nodes.
         for (int i = 0; i < Network.size(); ++i) {
             // Node being linked.
             Node n = (Node) g.getNode(i);
 
-            //Everybody knows the Node 0
-            //g.setEdge(0, i);
-            //g.setEdge(i, 0);
+            //Everybody knows itself
+
+            // g.setEdge(i, i);
             for (int j = 0; j < Network.size(); j++) {
                 // if(j == i) continue; Allowing Self routing, simplifies the action space.
                 Node other = (Node) g.getNode(j);
                 double value =  distance(n, other, coordPid);
-                // Everybody knows each other.
-                g.setEdge(i, j);
-                g.setEdge(j, i);
+
+                if(value < r && j != i){
+                    g.setEdge(i, j);
+                    g.setEdge(j, i);
+                }
             }
         }
     }

@@ -1,24 +1,24 @@
-SIZE 10
+SIZE 15
 CYCLE 1
 CYCLES 1000
-random.seed 8832312128
+random.seed 5174039209
 MINDELAY 0
 MAXDELAY 0
 DROP 0
 protocol.ctrl.r_u 1
 protocol.ctrl.X_d 1
 protocol.ctrl.X_o 150
-protocol.clt.numberOfTasks 1
-protocol.clt.weight 1
-protocol.clt.CPI 1
-protocol.clt.T 150
-protocol.clt.I 200e6
+protocol.clt.numberOfTasks 2
+protocol.clt.weight 1,1
+protocol.clt.CPI 1,1
+protocol.clt.T 150,200
+protocol.clt.I 200e6,250e6
 protocol.clt.taskArrivalRate 0.2
-protocol.clt.numberOfDAG 2
-protocol.clt.dagWeights 1;2
-protocol.clt.edges 0 1,1 2,1 3,1 6,2 4,3 4,6 5,4 5 ;0 1,1 2,1 3,2 4,3 4
-protocol.clt.maxDeadline 1
-protocol.clt.vertices 7;5
+protocol.clt.numberOfDAG 1
+protocol.clt.dagWeights 1
+protocol.clt.edges 
+protocol.clt.maxDeadline 10
+protocol.clt.vertices 1
 protocol.wrk.NO_CORES 4
 protocol.wrk.FREQ 1e7
 protocol.wrk.Q_MAX 10
@@ -26,6 +26,8 @@ protocol.props.B 2
 protocol.props.Beta1 0.001
 protocol.props.Beta2 4
 protocol.props.P_ti 20
+
+init.Net1.r 30
 
 #=============Define Simulation Globals
 
@@ -35,24 +37,8 @@ simulation.logtime CYCLE
 
 
 #=============Define Protocols
-#--------Define Link Protocol
-protocol.lnk PeersimSimulator.peersim.core.IdleProtocol
-
-#--------Define Transport Protocol
-protocol.urt PeersimSimulator.peersim.transport.UniformRandomTransport
-protocol.urt.mindelay (CYCLE*MINDELAY)/100
-protocol.urt.maxdelay (CYCLE*MAXDELAY)/100
-
-protocol.tr PeersimSimulator.peersim.transport.UnreliableTransport
-protocol.tr.transport urt
-protocol.tr.drop DROP
-
 #--------Define Node Protocols
 protocol.clt PeersimSimulator.peersim.SDN.Nodes.Client
-protocol.clt.linkable lnk
-protocol.clt.name clt
-protocol.clt.step CYCLE
-protocol.clt.transport tr
 protocol.clt.linkable lnk
 protocol.clt.name clt
 protocol.clt.step CYCLE
@@ -60,10 +46,6 @@ protocol.clt.transport tr
 
 
 protocol.ctrl PeersimSimulator.peersim.SDN.Nodes.Controller
-protocol.ctrl.linkable lnk
-protocol.ctrl.name ctrl
-protocol.ctrl.step CYCLE
-protocol.ctrl.transport tr
 protocol.ctrl.linkable lnk
 protocol.ctrl.name ctrl
 protocol.ctrl.step CYCLE
@@ -81,7 +63,7 @@ protocol.props PeersimSimulator.peersim.SDN.Links.SDNNodeProperties
 protocol.props.name props
 
 #--------Define Link Protocol
-protocol.lnk PeersimSimulator.peersim.core.IdleProtocol
+protocol.lnk PeersimSimulator.peersim.SDN.Links.TableProtocol
 
 #--------Define Transport Protocol
 protocol.urt PeersimSimulator.peersim.transport.UniformRandomTransport
@@ -91,13 +73,6 @@ protocol.urt.maxdelay (CYCLE*MAXDELAY)/100
 protocol.tr PeersimSimulator.peersim.transport.UnreliableTransport
 protocol.tr.transport urt
 protocol.tr.drop DROP
-
-#--------Define Node Protocols
-# protocol.clt PeersimSimulator.peersim.SDN.Nodes.Client
-
-
-# protocol.ctrl PeersimSimulator.peersim.SDN.Nodes.Controller
-
 
 
 #=============Define Initialization

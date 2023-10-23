@@ -24,7 +24,8 @@ PEERSIM_DEFAULTS = {
     "protocol.clt.dagWeights": "1",
     "protocol.clt.edges": "",
     "protocol.clt.maxDeadline": "10",
-    
+    "init.Net1.r": "30",
+
     "protocol.clt.vertices": "1",
     "protocol.wrk.NO_CORES": "4",
     "protocol.wrk.FREQ": "1e7",
@@ -32,7 +33,8 @@ PEERSIM_DEFAULTS = {
     "protocol.props.B": "2",
     "protocol.props.Beta1": "0.001",
     "protocol.props.Beta2": "4",
-    "protocol.props.P_ti": "20"
+    "protocol.props.P_ti": "20",
+
 }
 BASE_FILE_PATH = os.path.join(this_dir, "configs", "config-SDN-BASE.txt")
 TARGET_FILE_PATH = os.path.join(this_dir, "configs", "config.txt")

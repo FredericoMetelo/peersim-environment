@@ -51,7 +51,7 @@ if __name__ == "__main__":
                     "protocol.clt.numberOfDAG": "2",
                     "protocol.clt.dagWeights": "1;2",
                     "protocol.clt.edges": "0 1,1 2,1 3,1 6,2 4,3 4,6 5,4 5 ;0 1,1 2,1 3,2 4,3 4",
-                    "protocol.clt.maxDeadline": "1",
+                    "protocol.clt.maxDeadline": "10",
                     "protocol.clt.vertices": "7;5",
 
                     "protocol.wrk.NO_CORES": "4",
