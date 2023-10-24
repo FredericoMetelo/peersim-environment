@@ -15,7 +15,6 @@ import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.edsim.EDProtocol;
-import PeersimSimulator.peersim.transport.Transport;
 
 import java.util.*;
 
@@ -127,9 +126,13 @@ public class Controller implements CDProtocol, EDProtocol {
         // awaitAction();
     }
 
-
+    /**
+     * Passes the action to send to the respective worker to the Controller
+     * @param a the action tobe sent, should consist of an index in the node's neighbourhood
+     * @return the reward attributed to said action.
+     */
     public double sendAction(Action a) {
-        if (!active || a == null || a.noTasks() < 0 || a.nodeId() < 0) return WRONG_MOVE_PUNISHMENT - 10;
+        if (!active || a == null || a.noTasks() < 0 || a.neighbourIndex() < 0) return WRONG_MOVE_PUNISHMENT - 10;
 
         // Pick Node to be offloaded. Inform Python   of the WorkerInfo in question. Get the Action for that node to execute.
         /*
@@ -141,10 +144,10 @@ public class Controller implements CDProtocol, EDProtocol {
         int linkableID = FastConfig.getLinkable(Controller.getPid());
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
         // Worker and Controller should be in the same node
-        if (linkable.degree() <= 0) return WRONG_MOVE_PUNISHMENT;
+        if (linkable.degree() <= 0 || a.neighbourIndex() >=linkable.degree()) return WRONG_MOVE_PUNISHMENT;
         if (workerInfo.isEmpty()) return WRONG_MOVE_PUNISHMENT - 1;
 
-        int targetNode = a.nodeId();
+        int targetNode = a.neighbourIndex();
         Log.info("|CTR| SEND ACTION: SRC<" + this.getId() + "> to TARGET:<" + targetNode + "> offload (" + 1 + ")");
         double reward = calculatReward(linkable, node, targetNode, 1);
         this.currentInstructions = new OffloadInstructions(targetNode);
@@ -152,7 +155,6 @@ public class Controller implements CDProtocol, EDProtocol {
         // allow progress
         stop = false;
         return reward;
-
     }
 
 

@@ -1,19 +1,19 @@
 package PeersimSimulator.peersim.SDN.Nodes.Events;
 
 public class OffloadInstructions implements Message{
-    private int targetNode;
+    private int neighbourIndex;
 
-    public OffloadInstructions(int targetNode) {
-        this.targetNode = targetNode;
+    public OffloadInstructions(int neighbourIndex) {
+        this.neighbourIndex = neighbourIndex;
 
     }
 
-    public int getTargetNode() {
-        return targetNode;
+    public int getNeighbourIndex() {
+        return neighbourIndex;
     }
 
-    public void setTargetNode(int targetNode) {
-        this.targetNode = targetNode;
+    public void setNeighbourIndex(int neighbourIndex) {
+        this.neighbourIndex = neighbourIndex;
     }
 
     @Override

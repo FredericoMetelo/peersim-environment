@@ -235,9 +235,6 @@ public class Client implements CDProtocol, EDProtocol {
     @Override
     public void nextCycle(Node node, int protocolID) {
         if(!active) return;
-        // For each Node keeps a poisson distribution. Sends new request based on said distribution.
-        // Sends Task to said node.
-        // TODO Eventually use a poisson distribution
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
 
@@ -247,11 +244,8 @@ public class Client implements CDProtocol, EDProtocol {
             if (nextArrival.get(i) <= CommonState.getTime()) {
                 Node target = linkable.getNeighbor(i);
                 if (!target.isUp()) return; // This happens task progress is lost.
-
-
-
                 Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
-                Application app = generateApplication(i); // new Task(BYTE_SIZE[taskType], NO_INSTR[taskType] * CPI[taskType], this.getId(), wi.getId()); // TODO this needs to be changed to something that will properly acommodate whatever I need to implement.
+                Application app = generateApplication((int) target.getID());
                 tasksAwaiting.add(new AppInfo(app.getAppID(), CommonState.getTime(), app.getDeadline()));
                 Log.info("|CLT| TASK SENT to Node:<" + wi.getId() + "> FROM < " + this.getId()+">");
                 ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
@@ -265,7 +259,6 @@ public class Client implements CDProtocol, EDProtocol {
                 nextArrival.set(i, CommonState.getTime() + selectNextTime());
             }
         }
-
     }
 
     /**

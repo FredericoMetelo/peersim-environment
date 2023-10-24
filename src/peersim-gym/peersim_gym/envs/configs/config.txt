@@ -27,7 +27,7 @@ protocol.props.Beta1 0.001
 protocol.props.Beta2 4
 protocol.props.P_ti 20
 
-init.Net1.r 30
+init.Net1.r 50
 
 #=============Define Simulation Globals
 

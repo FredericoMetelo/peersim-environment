@@ -206,7 +206,7 @@ class PeersimEnv(gym.Env):
             return self._observation, True, self._info
 
     def __send_action(self, action):
-        payload = {"nodeId": action["target_node"], "noTasks": action["offload_amount"]}
+        payload = {"neighbourIndex": action["target_node"], "noTasks": action["offload_amount"]}
         headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
         action_url = self.url_api + self.url_action_path
         try:

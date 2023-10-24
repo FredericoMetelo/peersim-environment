@@ -90,7 +90,6 @@ public class TableProtocol implements Protocol, Linkable
 
     public Node getNeighbor(int i)
     {
-
         return neighbors.get(idPerInteger.get(i));
     }
 

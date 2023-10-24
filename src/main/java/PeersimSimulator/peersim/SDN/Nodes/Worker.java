@@ -217,29 +217,30 @@ public class Worker implements CDProtocol, EDProtocol {
 
                 if (this.id == current.getOriginalHandlerID()) {
                     // Add to application progress
-                    Application app = this.managedApplications.get(current.getAppID());
-                    app.addProgress(current.getId());
-                    if (app.isFinished()) {
-                        this.handleApplicationFinish(node, protocolID, app);
-                    }
+                    handleTaskFinish(node, protocolID, current);
 
                 } else if (this.id != current.getOriginalHandlerID()) { // I just like my ligatures... Leave me alone...
                     int linkableID = FastConfig.getLinkable(protocolID);
                     Linkable linkable = (Linkable) node.getProtocol(linkableID);
-                    Node handler = linkable.getNeighbor(current.getOriginalHandlerID());
+                    Node handler = this.getNodeFromId(current.getOriginalHandlerID(), linkable);
 
                     // Clean up the data structures
                     loseTaskInformation.remove(current.getId());
 
-                    if (!handler.isUp()) return; // This happens task progress is lost.
-                    Log.info("|WRK| TASK FINISH: SRC<" + this.getId() + "> Task <" + this.current.getId() + ">");
-                    ((Transport) handler.getProtocol(FastConfig.getTransport(Client.getPid()))).
-                            send(
-                                    node,
-                                    handler,
-                                    new TaskConcludedEvent(this.id, current.getAppID(), current.getClientID(), current.getOutputSizeBytes()),
-                                    Client.getPid()
-                            );
+
+                    if (handler == null || !handler.isUp()) {
+                        Log.err("Node <" +this.getId()+ "> does not know <"+current.getOriginalHandlerID() +"> that requested task<" +current.getId()+">, dropping task" );
+                    }else {
+                        Log.info("|WRK| TASK FINISH: SRC<" + this.getId() + "> Task <" + this.current.getId() + ">");
+                        ((Transport) handler.getProtocol(FastConfig.getTransport(Client.getPid()))).
+                                send(
+                                        node,
+                                        handler,
+                                        new TaskConcludedEvent(this.id, current.getAppID(), current.getClientID(), current.getOutputSizeBytes(), current),
+                                        Client.getPid()
+                                );
+                    }
+                    current = null;
                 }
             }
         }
@@ -249,7 +250,7 @@ public class Worker implements CDProtocol, EDProtocol {
         }
 
         // Then Communicate changes in Queue Size and Recieved Nodes  to Controller.
-        if (this.changedWorkerState) {
+        if (this.changedWorkerState) { // TODO Guarantee we inform neighbours. Guarantee no double offloading.
             int linkableID = FastConfig.getLinkable(protocolID);
             Linkable linkable = (Linkable) node.getProtocol(linkableID);
             Node controller = linkable.getNeighbor(0);
@@ -264,8 +265,14 @@ public class Worker implements CDProtocol, EDProtocol {
                     );
             this.changedWorkerState = false;
         }
+    }
 
-
+    private void handleTaskFinish(Node node, int protocolID, ITask finishedTask) {
+        Application app = this.managedApplications.get(finishedTask.getAppID());
+        app.addProgress(finishedTask.getId());
+        if (app.isFinished()) {
+            this.handleApplicationFinish(node, protocolID, app);
+        }
     }
 
     @Override
@@ -275,6 +282,10 @@ public class Worker implements CDProtocol, EDProtocol {
             handleTaskOffloadEvent(ev);
         } else if (event instanceof NewApplicationEvent ev) {
             handleNewApplicationEvent(ev);
+        }else if(event instanceof TaskConcludedEvent ev){
+            // Suspicious lack of handle offloaded task result
+            ITask finishedTask = ev.getTask();
+            handleTaskFinish(node, pid, finishedTask);
         }
 
         // Note: Updates internal state only sends data to user later
@@ -294,7 +305,7 @@ public class Worker implements CDProtocol, EDProtocol {
         // Send results to client
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        Node client = linkable.getNeighbor(app.getClientID());
+        Node client = this.getNodeFromId(app.getClientID(), linkable);
 
         if (!client.isUp()) return; // This happens task progress is lost.
         Log.info("|WRK| TASK FINISH: SRC<" + this.getId() + "> Task <" + this.current.getId() + ">");
@@ -329,9 +340,9 @@ public class Worker implements CDProtocol, EDProtocol {
             Log.err("Dropping Tasks(" + this.droppedLastCycle + ") Node " + this.getId() + " is Overloaded!");
         } else {
             LoseTaskInfo lti = ev.asLoseTaskInfo();
-            this.loseTaskInformation.put(offloadedTask.getId(), lti);
             double rank = remoteTaskRank(lti, offloadedTask);
             offloadedTask.setCurrentRank(rank);
+            this.loseTaskInformation.put(offloadedTask.getId(), lti);
             this.queue.add(offloadedTask);
 
         }
@@ -543,6 +554,9 @@ public class Worker implements CDProtocol, EDProtocol {
         return managedApplications.get(t.getAppID()) != null;
     }
 
+    private boolean validOffloadingInstructions(OffloadInstructions oi, Linkable linkable){
+        return oi.getNeighbourIndex() < 0 || oi.getNeighbourIndex() > linkable.degree();
+    }
 
     /**
      * This method selects the task to be processed next. Whenever a task is selected computation halts and awaits for
@@ -572,24 +586,28 @@ public class Worker implements CDProtocol, EDProtocol {
         if (hasController && waitDecisionRequired) {
             // Halts the simulation and awaits the offloading instructions from outside.
             OffloadInstructions oi = this.correspondingController.requestOffloadInstructions();
-            if (oi.getTargetNode() != this.getId()) {
+            if (oi.getNeighbourIndex() != this.getId()) {
                 int linkableID = FastConfig.getLinkable(pid);
                 Linkable linkable = (Linkable) node.getProtocol(linkableID);
-                Node target = linkable.getNeighbor(oi.getTargetNode());
-                if (oi.getTargetNode() < 0 || oi.getTargetNode() > linkable.degree() || !target.isUp()) {
+
+                if(!validOffloadingInstructions(oi, linkable)) return false;
+
+                Node target = linkable.getNeighbor(oi.getNeighbourIndex());
+                if ( !target.isUp()) {
                     Log.err("|WRK| The requested target node is outside the nodes known by the Worker="
-                            + (oi.getTargetNode() < 0 || oi.getTargetNode() > linkable.degree())
+                            + (oi.getNeighbourIndex() < 0 || oi.getNeighbourIndex() > linkable.degree())
                             + ". Or is down=" + target.isUp());
                     return false;
                 }
 
                 LoseTaskInfo lti = getOrGenerateLoseTaskInfo(node);
                 if (lti == null) throw new RuntimeException("Task that should not be in the node is being offloaded");
+
                 ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                         send(
                                 node,
                                 target,
-                                new TaskOffloadEvent(this.id, oi.getTargetNode(), lti),
+                                new TaskOffloadEvent(this.id, oi.getNeighbourIndex(), lti),
                                 Worker.getPid()
                         );
                 this.changedWorkerState = true;
@@ -701,6 +719,21 @@ public class Worker implements CDProtocol, EDProtocol {
     public String toString() {
         String curr = (current != null) ? current.getId() : "NULL";
         return "Worker ID<" + this.getId() + "> | Q: " + this.queue.size() + " W: " + this.recievedApplications.size() + " Current: " + curr;
+    }
+
+    /**
+     * Looks for the node with a given ID in the known nodes, stored in this node's {@link Linkable} object. If the node
+     * does not exist returns <code>null</code>
+     * @param id, id of the node to be looked for
+     * @param linkable, the {@link Linkable} object of this node
+     * @return the node with the id or null if there is no node with the given id
+     */
+    private Node getNodeFromId(int id, Linkable linkable){
+        for (int i = 0; i < linkable.degree(); i++) {
+           Node n = linkable.getNeighbor(i);
+           if(n.getID() == id) return n;
+        }
+        return null;
     }
 
     private boolean idle() {

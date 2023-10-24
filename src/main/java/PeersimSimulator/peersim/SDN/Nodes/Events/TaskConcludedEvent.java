@@ -1,5 +1,7 @@
 package PeersimSimulator.peersim.SDN.Nodes.Events;
 
+import PeersimSimulator.peersim.SDN.Tasks.ITask;
+
 public class TaskConcludedEvent implements Message{
 
     private final double outputSize;
@@ -7,12 +9,14 @@ public class TaskConcludedEvent implements Message{
     String appID;
 
     int clientID;
+    ITask task;
 
-    public TaskConcludedEvent(int handlerID, String appID, int clientID, double outputSize) {
+    public TaskConcludedEvent(int handlerID, String appID, int clientID, double outputSize, ITask task) {
         this.handlerID = handlerID;
         this.appID = appID;
         this.clientID = clientID;
         this.outputSize = outputSize;
+        this.task = task;
     }
 
     public int getHandlerID() {
@@ -25,6 +29,14 @@ public class TaskConcludedEvent implements Message{
 
     public int getClientID() {
         return clientID;
+    }
+
+    public double getOutputSize() {
+        return outputSize;
+    }
+
+    public ITask getTask() {
+        return task;
     }
 
     @Override

@@ -16,7 +16,7 @@ def get_state():
 
 
 def send_action(action):
-    payload = {"nodeId": str(action["target_node"]), "noTasks": str(action["offload_amount"])}
+    payload = {"neighbourIndex": str(action["target_node"]), "noTasks": str(action["offload_amount"])}
     headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
     action_url = url_api + url_action_path
     r = requests.post(action_url, json=payload, headers=headers_action)
