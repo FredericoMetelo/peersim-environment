@@ -26,6 +26,15 @@ public class Worker implements CDProtocol, EDProtocol {
 
     private static final String PAR_MAX_TIME_AFTER_DEADLINE = "maxTimeAfterDeadline";
     private static final int DEFAULT_TIME_AFTER_DEADLINE = 5;
+    public static final String EVENT_WORKER_INFO_SEND = "WORKER-INFO SEND";
+    public static final String EVENT_TASK_FINISH = "TASK FINISH";
+    public static final String EVENT_APP_FINISH = "APP FINISH";
+    public static final String EVENT_OFFLOADED_TASKS_ARRIVED_AT_WRONG_NODE = "Offloaded Tasks Arrived at Wrong Node";
+    public static final String EVENT_TASK_OFFLOAD_RECIEVE = "TASK OFFLOAD RECIEVE";
+    public static final String EVENT_OVERLOADED_NODE = "OVERLOADED NODE";
+    public static final String EVENT_NEW_APP_RECIEVED = "NEW APP RECIEVED";
+    public static final String EVENT_ERR_NODE_OUT_OF_BOUNDS = "NODE OUT OF BOUNDS";
+
 
     private final int timeAfterDeadline;
 
@@ -188,19 +197,20 @@ public class Worker implements CDProtocol, EDProtocol {
     //======================================================================================================
     // Methods
     //======================================================================================================
+
+    /** Behaviour of this method:
+     * 1. Process the currently selected task
+     * 2. If there is no task currently selected, select one.
+     * 3. When a task is selected, decide whether to offload it or not. This halts the progress of the simulation.
+     * 4. Whenever the task being processed is finished:
+     *      4.1 Process its removal from the relevant data-structures.
+     *      4.2 If the task finishing completes an application finishing, inform the client of the finish.
+     *      4.3 If the task finishing is handled by another node. Send the results to said node.
+     * 5. After every X time-steps or if the node is idling with applications to be processed, rank all the tasks in
+     * the node and add them to the queue.
+     */
     @Override
     public void nextCycle(PeersimSimulator.peersim.core.Node node, int protocolID) {
-        /* Behaviour of this method:
-         * 1. Process the currently selected task
-         * 2. If there is no task currently selected, select one.
-         * 3. When a task is selected, decide whether to offload it or not. This halts the progress of the simulation.
-         * 4. Whenever the task being processed is finished:
-         *      4.1 Process its removal from the relevant data-structures.
-         *      4.2 If the task finishing completes an application finishing, inform the client of the finish.
-         *      4.3 If the task finishing is handled by another node. Send the results to said node.
-         * 5. After every X time-steps or if the node is idling with applications to be processed, rank all the tasks in
-         * the node and add them to the queue.
-         */
         if (!active) return;
         // Advance Task processing and update status.
         double remainingProcessingPower = processingPower;
@@ -214,34 +224,12 @@ public class Worker implements CDProtocol, EDProtocol {
             remainingProcessingPower = current.addProgress(remainingProcessingPower);
             if (current.done()) {
                 totalTasksProcessed++;
-
                 if (this.id == current.getOriginalHandlerID()) {
-                    // Add to application progress
                     handleTaskFinish(node, protocolID, current);
-
-                } else if (this.id != current.getOriginalHandlerID()) { // I just like my ligatures... Leave me alone...
-                    int linkableID = FastConfig.getLinkable(protocolID);
-                    Linkable linkable = (Linkable) node.getProtocol(linkableID);
-                    Node handler = this.getNodeFromId(current.getOriginalHandlerID(), linkable);
-
-                    // Clean up the data structures
-                    loseTaskInformation.remove(current.getId());
-
-
-                    if (handler == null || !handler.isUp()) {
-                        Log.err("Node <" +this.getId()+ "> does not know <"+current.getOriginalHandlerID() +"> that requested task<" +current.getId()+">, dropping task" );
-                    }else {
-                        Log.info("|WRK| TASK FINISH: SRC<" + this.getId() + "> Task <" + this.current.getId() + ">");
-                        ((Transport) handler.getProtocol(FastConfig.getTransport(Worker.getPid()))).
-                                send(
-                                        node,
-                                        handler,
-                                        new TaskConcludedEvent(this.id, current.getAppID(), current.getClientID(), current.getOutputSizeBytes(), current),
-                                        Worker.getPid()
-                                );
-                    }
-                    current = null;
+                } else if (this.id != current.getOriginalHandlerID()) {
+                    handleRemoteTaskFinish(node, protocolID, current);
                 }
+                current = null;
             }
         }
         cleanExpiredApps();
@@ -251,27 +239,7 @@ public class Worker implements CDProtocol, EDProtocol {
 
         // Then Communicate changes in Queue Size and Recieved Nodes  to Controller.
         if (this.changedWorkerState) { // TODO Guarantee we inform neighbours. Guarantee no double offloading.
-            int linkableID = FastConfig.getLinkable(protocolID);
-            Linkable linkable = (Linkable) node.getProtocol(linkableID);
-            Node controller = linkable.getNeighbor(0);
-            if (!controller.isUp()) return;
-            Log.info("|WRK| WORKER-INFO SEND: SRC<" + this.getId() + "> Qi<" + this.queue.size() + "> Wi <" + this.recievedApplications.size() + "> Working: <" + !(current == null) + ">");
-            ((Transport) controller.getProtocol(FastConfig.getTransport(Controller.getPid()))).
-                    send(
-                            node,
-                            controller,
-                            new WorkerInfo(this.id, this.queue.size(), this.recievedApplications.size(), averageTaskSize(), processingPower, Q_MAX - this.getNumberOfTasks()),
-                            Controller.getPid()
-                    );
-            this.changedWorkerState = false;
-        }
-    }
-
-    private void handleTaskFinish(Node node, int protocolID, ITask finishedTask) {
-        Application app = this.managedApplications.get(finishedTask.getAppID());
-        app.addProgress(finishedTask.getId());
-        if (app.isFinished()) {
-            this.handleApplicationFinish(node, protocolID, app);
+            broadcastStateChanges(node, protocolID);
         }
     }
 
@@ -283,12 +251,62 @@ public class Worker implements CDProtocol, EDProtocol {
         } else if (event instanceof NewApplicationEvent ev) {
             handleNewApplicationEvent(ev);
         }else if(event instanceof TaskConcludedEvent ev){
-            // Suspicious lack of handle offloaded task result
             ITask finishedTask = ev.getTask();
             handleTaskFinish(node, pid, finishedTask);
         }
 
         // Note: Updates internal state only sends data to user later
+    }
+
+    private void broadcastStateChanges(Node node, int protocolID) {
+        int linkableID = FastConfig.getLinkable(protocolID);
+        Linkable linkable = (Linkable) node.getProtocol(linkableID);
+        for (int i = 0; i < linkable.degree(); i++) {
+            Node controller = linkable.getNeighbor(i);
+            if (!controller.isUp()) {
+                continue;
+            }
+            wrkInfoLog(EVENT_WORKER_INFO_SEND, "Q_size=" + this.queue.size() + " rcv_Apps=" + this.recievedApplications.size() + " working=" + !(current == null));
+            ((Transport) controller.getProtocol(FastConfig.getTransport(Controller.getPid()))).
+                    send(
+                            node,
+                            controller,
+                            new WorkerInfo(this.id, this.queue.size(), this.recievedApplications.size(), averageTaskSize(), processingPower, Q_MAX - this.getNumberOfTasks()),
+                            Controller.getPid()
+                    );
+        }
+
+        this.changedWorkerState = false;
+    }
+
+    private void handleRemoteTaskFinish(Node node, int protocolID, ITask task) {
+        int linkableID = FastConfig.getLinkable(protocolID);
+        Linkable linkable = (Linkable) node.getProtocol(linkableID);
+        Node handler = this.getNodeFromId(task.getOriginalHandlerID(), linkable);
+
+        // Clean up the data structures
+        loseTaskInformation.remove(task.getId());
+
+        if (handler == null || !handler.isUp()) {
+            Log.err("Node <" +this.getId()+ "> does not know task<"+task.getOriginalHandlerID() +"> that requested task<" +task.getId()+">, dropping task" );
+        }else {
+            wrkInfoLog(EVENT_TASK_FINISH,  "taskId=" + task.getId());
+            ((Transport) handler.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+                    send(
+                            node,
+                            handler,
+                            new TaskConcludedEvent(this.id, task.getAppID(), task.getClientID(), task.getOutputSizeBytes(), task),
+                            Worker.getPid()
+                    );
+        }
+    }
+
+    private void handleTaskFinish(Node node, int protocolID, ITask finishedTask) {
+        Application app = this.managedApplications.get(finishedTask.getAppID());
+        app.addProgress(finishedTask.getId());
+        if (app.isFinished()) {
+            this.handleApplicationFinish(node, protocolID, app);
+        }
     }
 
 
@@ -308,7 +326,7 @@ public class Worker implements CDProtocol, EDProtocol {
         Node client = this.getNodeFromId(app.getClientID(), linkable);
 
         if (!client.isUp()) return; // This happens task progress is lost.
-        Log.info("|WRK| TASK FINISH: SRC<" + this.getId() + "> Task <" + this.current.getId() + ">");
+        wrkInfoLog(EVENT_APP_FINISH, "appId=" + app.getAppID() + " deadlineWas="+app.getDeadline() + " finished=" + app.isFinished());
         ((Transport) client.getProtocol(FastConfig.getTransport(Client.getPid()))).
                 send(
                         node,
@@ -324,12 +342,11 @@ public class Worker implements CDProtocol, EDProtocol {
         // is reasonable because this requests can be consumed for
         // processing as well.
         if (this.getId() != ev.getDstNode()) {
-            Log.info("|WRK| Offloaded Tasks arrived at wrong node...");
+            wrkInfoLog(EVENT_OFFLOADED_TASKS_ARRIVED_AT_WRONG_NODE, " taskId=" + ev.getTask().getId() + " appId="+ev.getTask().getAppID()+" originalHandler=" + ev.getTask().getOriginalHandlerID());
             return;
         }
         ITask offloadedTask = ev.getTask();
-        Log.info("|WRK| TASK OFFLOAD RECIEVE: SRC<" + ev.getSrcNode() + "> TARGET<" + this.getId() + ">");
-
+        wrkInfoLog(EVENT_TASK_OFFLOAD_RECIEVE, " taskId=" + ev.getTask().getId() + " appId="+ev.getTask().getAppID()+" originalHandler=" + ev.getTask().getOriginalHandlerID());
         if (this.getNumberOfTasks() >= Q_MAX) {
 
             this.droppedLastCycle++;
@@ -359,12 +376,11 @@ public class Worker implements CDProtocol, EDProtocol {
         if (this.getNumberOfTasks() + app.applicationSize() >= Q_MAX) {
             droppedLastCycle++;
             totalDropped++;
-            Log.info("|WRK|" + "Node " + this.getId() + " is overloaded!"+" Dropping Application(" + app.getAppID() + ")");
+            wrkInfoLog(EVENT_OVERLOADED_NODE, " DroppedApp="+app.getAppID());
             return;
         }
 
-        Log.info("|WRK| NEW APP RECIEVED: ID<" + this.getId() + "> APP_ID<" + ev.getAppID() + ">");
-        //Log.info("|WRK| NEW APP RECIEVE: ID<" + this.getId() + ">TASK_ID<" + app.getAppID() + ">");
+        wrkInfoLog(EVENT_NEW_APP_RECIEVED, " appId="+ev.getAppID());
         app.setHandlerID(this.id);
         app.setArrivalTime(CommonState.getTime());
         this.managedApplications.put(app.getAppID(), app);
@@ -599,6 +615,9 @@ public class Worker implements CDProtocol, EDProtocol {
                     Log.err("|WRK| The requested target node is outside the nodes known by the Worker="
                             + (oi.getNeighbourIndex() < 0 || oi.getNeighbourIndex() > linkable.degree())
                             + ". Or is down=" + target.isUp());
+                    wrkErrLog(EVENT_ERR_NODE_OUT_OF_BOUNDS, "The requested target node is outside the nodes known by the Worker="
+                            + (oi.getNeighbourIndex() < 0 || oi.getNeighbourIndex() > linkable.degree())
+                            + ". Or is down=" + target.isUp());
                     return false;
                 }
 
@@ -827,5 +846,18 @@ public class Worker implements CDProtocol, EDProtocol {
 
     public int getTotalTasksOffloaded() {
         return totalTasksOffloaded;
+    }
+
+    public void wrkInfoLog(String event, String info){
+        String timestamp = String.format("|%04d| ", CommonState.getTime());
+        String base = String.format("|WRK ( %03d )| ", this.id);
+
+        Log.info(timestamp + base + event + info);
+    }
+    public void wrkErrLog(String event, String err){
+        String timestamp = String.format("|%04d| ", CommonState.getTime());
+        String base = String.format("|WRK ( %03d )| ", this.id);
+
+        Log.info(timestamp + base + event + err);
     }
 }

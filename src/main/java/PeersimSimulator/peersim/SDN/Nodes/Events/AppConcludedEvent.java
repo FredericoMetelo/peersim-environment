@@ -3,14 +3,14 @@ package PeersimSimulator.peersim.SDN.Nodes.Events;
 public class AppConcludedEvent implements Message {
     int tickConcluded;
 
-    int nodeId;
+    int handlerId;
 
     String taskId;
 
     double outputSize;
 
-    public AppConcludedEvent(int nodeId, String taskId, double outputSize) {
-        this.nodeId = nodeId;
+    public AppConcludedEvent(int handlerId, String taskId, double outputSize) {
+        this.handlerId = handlerId;
         this.taskId = taskId;
         this.outputSize = outputSize;
     }
@@ -23,12 +23,12 @@ public class AppConcludedEvent implements Message {
         this.tickConcluded = tickConcluded;
     }
 
-    public int getNodeId() {
-        return nodeId;
+    public int getHandlerId() {
+        return handlerId;
     }
 
-    public void setNodeId(int nodeId) {
-        this.nodeId = nodeId;
+    public void setHandlerId(int handlerId) {
+        this.handlerId = handlerId;
     }
 
     public String getTaskId() {

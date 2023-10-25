@@ -28,6 +28,8 @@ public class Client implements CDProtocol, EDProtocol {
 
     private static final String PAR_BYTE_SIZE = "T";
     public static final int DEFAULT_MAX_DEADLINE = 50;
+    public static final String EVENT_TASK_CONCLUDED = "TASK CONCLUDED";
+    public static final String EVENT_TASK_SENT = "TASK SENT";
     private double[] BYTE_SIZE; // Mbytes
     private double averageByteSize;
 
@@ -247,7 +249,7 @@ public class Client implements CDProtocol, EDProtocol {
                 Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
                 Application app = generateApplication((int) target.getID());
                 tasksAwaiting.add(new AppInfo(app.getAppID(), CommonState.getTime(), app.getDeadline()));
-                Log.info("|CLT| TASK SENT to Node:<" + wi.getId() + "> FROM < " + this.getId()+">");
+                cltInfoLog(EVENT_TASK_SENT, "target="+wi.getId());
                 ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                         send(
                                 node,
@@ -352,7 +354,7 @@ public class Client implements CDProtocol, EDProtocol {
                     AppInfo t = tasksAwaiting.remove(i);
                     long timeTaken = endTick - t.timeSent;
                     averageLatency = (averageLatency*noResults + timeTaken) / (++noResults);
-                    Log.info("|CLT| TASK CONCLUDED: TaskId<" + ev.getTaskId() + "> NodeId:<" +t.id + ">");
+                    cltInfoLog(EVENT_TASK_CONCLUDED, "taskId=" + ev.getTaskId()+" finTime="+ev.getTickConcluded() + "handlerId="+ev.getHandlerId());
                     return;
                 }
             }
@@ -406,30 +408,18 @@ public class Client implements CDProtocol, EDProtocol {
         this.id = id;
     }
 
-    @Override
-    public String toString() {
-        return "Client{" +
-
-                ", tasksAwaiting=" + tasksAwaiting.size() +
-                ", averageLatency=" + averageLatency +
-                ", noResults=" + noResults +
-                ", tick=" + CommonState.getTime() +
-                ", id=" + id +
-                '}';
-    }
-
     private class AppInfo {
+
         protected String id;
         protected long timeSent;
-
         protected double deadline;
 
         public AppInfo(String id, long timeSent, double deadline) {
             this.id = id;
             this.timeSent = timeSent;
         }
-    }
 
+    }
     private void printParams(){
         //if(active)
             Log.dbg("Client Params: CPI<" + this.CPI + "> T<" + this.BYTE_SIZE+ "> I<"+ this.NO_INSTR+">" );
@@ -465,4 +455,23 @@ public class Client implements CDProtocol, EDProtocol {
 
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "Client{" +
+
+                ", tasksAwaiting=" + tasksAwaiting.size() +
+                ", averageLatency=" + averageLatency +
+                ", noResults=" + noResults +
+                ", tick=" + CommonState.getTime() +
+                ", id=" + id +
+                '}';
+    }
+    public void cltInfoLog(String event, String info){
+        String timestamp = String.format("|%04d| ", CommonState.getTime());
+        String base = String.format("|CLT ( %03d )| ", this.id);
+
+        Log.info(timestamp + base + event + info);
+    }
+
 }

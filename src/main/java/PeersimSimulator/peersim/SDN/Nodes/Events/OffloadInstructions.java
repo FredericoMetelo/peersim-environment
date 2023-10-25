@@ -20,4 +20,11 @@ public class OffloadInstructions implements Message{
     public double getSize() {
         return 1; // 16 bytes which is two ints is 0.0016 Mbytes
     }
+
+    @Override
+    public String toString() {
+        return "<OI - " +
+                "neighbourIndex=" + neighbourIndex +
+                '>';
+    }
 }

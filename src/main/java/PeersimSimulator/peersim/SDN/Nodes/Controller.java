@@ -20,7 +20,12 @@ import java.util.*;
 
 
 public class Controller implements CDProtocol, EDProtocol {
+
+    private static final String EVENT_SEND_ACTION_RECIEVED = "SEND ACTION RECIEVED";
+
     private static final String PAR_NAME = "name";
+    public static final String EVENT_WORKER_INFO_UPDATE = "WORKER-INFO UPDATE";
+    public static final String EVENT_WORKER_INFO_ADD = "WORKER-INFO ADD";
 
     private final int UTILITY_REWARD;
     private final static String PAR_UTILITY_REWARD = "r_u";
@@ -120,10 +125,7 @@ public class Controller implements CDProtocol, EDProtocol {
     public void nextCycle(Node node, int protocolID) {
         if (!active) return;
         if (workerInfo.isEmpty()) initializeWorkerInfo(node, Controller.getPid());
-        // stop = true;
-        // The simulation only stops if the queue is not empty. Otherwise, it continues for another 100 ticks.
         up = true;
-        // awaitAction();
     }
 
     /**
@@ -148,7 +150,7 @@ public class Controller implements CDProtocol, EDProtocol {
         if (workerInfo.isEmpty()) return WRONG_MOVE_PUNISHMENT - 1;
 
         int targetNode = a.neighbourIndex();
-        Log.info("|CTR| SEND ACTION: SRC<" + this.getId() + "> to TARGET:<" + targetNode + "> offload (" + 1 + ")");
+        ctrInfoLog(EVENT_SEND_ACTION_RECIEVED, "TARGET="+targetNode );
         double reward = calculatReward(linkable, node, targetNode, 1);
         this.currentInstructions = new OffloadInstructions(targetNode);
 
@@ -200,24 +202,17 @@ public class Controller implements CDProtocol, EDProtocol {
 
 
     public OffloadInstructions requestOffloadInstructions() {
-        // TODO this might be a concurrency nightmare...
-        // Stop execution here using the same mechanism of spin waiting with yield.
         stop = true;
         awaitAction();
-        // When instructions are provided (Keep them in a next instructions variable)
-        // Store the current instructions locally
         OffloadInstructions oi = currentInstructions;
-        // Set current instructions to null
         currentInstructions = null;
-        // Return Offload instructions (Offload instructions should only be the target Node)
         return oi;
     }
 
     private void updateNode(WorkerInfo newWi) {
         for (WorkerInfo oldWi : workerInfo) {
             if (oldWi.getId() == newWi.getId()) {
-                Log.info("|CTR| WORKER-INFO UPDATE: SRC<" + newWi.getId() + "> Qi<" + oldWi.getTotalTasks() + "->" + newWi.getTotalTasks() + "> Wi <" + oldWi.getW_i() + "->" + newWi.getW_i() + ">");
-
+                ctrInfoLog(EVENT_WORKER_INFO_UPDATE, "id="+newWi.getId()+", Q_size="+ oldWi.getTotalTasks() + "->" + newWi.getTotalTasks() + "rcv_tasks=" + oldWi.getW_i() + "->" + newWi.getW_i());
                 oldWi.setW_i(newWi.getW_i());
                 oldWi.setQueueSize(newWi.getQueueSize());
                 oldWi.setNodeProcessingPower(newWi.getNodeProcessingPower());
@@ -227,7 +222,8 @@ public class Controller implements CDProtocol, EDProtocol {
                 return;
             }
         }
-        Log.info("|CTR| WORKER-INFO ADD: SRC<" + newWi.getId() + "> Qi<" + "->" + newWi.getTotalTasks() + "> Wi <" + newWi.getW_i() + ">");
+        ctrInfoLog(EVENT_WORKER_INFO_ADD, "id="+newWi.getId()+", Q_size="+ newWi.getTotalTasks() + "rcv_Apps=" + newWi.getW_i());
+
         // Means no node with given Id has sent information to the Controller yet.
         // Only happens with nodes that joined later. All nodes known from beginning are init with a 0 (?).
         workerInfo.add(newWi);
@@ -424,5 +420,25 @@ public class Controller implements CDProtocol, EDProtocol {
                 totalTasksProcessed,
                 totalTasksOffloaded,
                 workerInvariant);
+    }
+
+    @Override
+    public String toString() {
+        return "Controller{" +
+                "id=" + id +
+                ", workerInfo=" + workerInfo +
+                ", currentInstructions=" + currentInstructions +
+                ", active=" + active +
+                ", stop=" + stop +
+                ", up=" + up +
+                '}';
+    }
+
+
+    public void ctrInfoLog(String event, String info){
+        String timestamp = String.format("|%04d| ", CommonState.getTime());
+        String base = String.format("|CTR ( %03d )| ", this.id);
+
+        Log.info(timestamp + base + event + "info={"+info+"}");
     }
 }

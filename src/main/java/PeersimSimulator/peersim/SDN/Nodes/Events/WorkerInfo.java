@@ -94,7 +94,7 @@ public class WorkerInfo implements Message{
 
     @Override
     public String toString() {
-        return "<WorkerInfo - ID:" + this.id + " Q:"+this.getTotalTasks()+">";
+        return "<WI - ID:" + this.id + " Q:"+this.getTotalTasks()+">";
     }
 
     @Override

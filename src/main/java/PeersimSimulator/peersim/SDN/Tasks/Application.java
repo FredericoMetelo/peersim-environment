@@ -269,4 +269,19 @@ public class Application {
     public int applicationSize(){
         return this.tasks.keySet().size();
     }
+
+    @Override
+    public String toString() {
+        return "Application{" +
+                "tasks=" + tasks +
+                ", appID=" + appID +
+                ", arrivalTime=" + arrivalTime +
+                ", deadline=" + deadline +
+                ", finTasks=" + finishedSubtasks.size() +
+                ", clientID=" + clientID +
+                ", handlerID=" + handlerID +
+                ", totalTaskSize=" + totalTaskSize +
+                ", aggregateProgress=" + aggregateProgress +
+                '}';
+    }
 }
