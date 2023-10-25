@@ -232,12 +232,12 @@ public class Worker implements CDProtocol, EDProtocol {
                         Log.err("Node <" +this.getId()+ "> does not know <"+current.getOriginalHandlerID() +"> that requested task<" +current.getId()+">, dropping task" );
                     }else {
                         Log.info("|WRK| TASK FINISH: SRC<" + this.getId() + "> Task <" + this.current.getId() + ">");
-                        ((Transport) handler.getProtocol(FastConfig.getTransport(Client.getPid()))).
+                        ((Transport) handler.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                                 send(
                                         node,
                                         handler,
                                         new TaskConcludedEvent(this.id, current.getAppID(), current.getClientID(), current.getOutputSizeBytes(), current),
-                                        Client.getPid()
+                                        Worker.getPid()
                                 );
                     }
                     current = null;
@@ -359,7 +359,7 @@ public class Worker implements CDProtocol, EDProtocol {
         if (this.getNumberOfTasks() + app.applicationSize() >= Q_MAX) {
             droppedLastCycle++;
             totalDropped++;
-            Log.err("Dropping Application(" + app.getAppID() + "), Node " + this.getId() + " is overloaded!");
+            Log.info("|WRK|" + "Node " + this.getId() + " is overloaded!"+" Dropping Application(" + app.getAppID() + ")");
             return;
         }
 
@@ -468,9 +468,11 @@ public class Worker implements CDProtocol, EDProtocol {
     private void purgeApps(Set<Application> removeApps) {
         Iterator<Application> iterator = removeApps.iterator();
         while (iterator.hasNext()) {
-            String id = iterator.next().getAppID();
+            Application app = iterator.next();
+            String id = app.getAppID();
             if (managedApplications.containsKey(id)) {
                 managedApplications.remove(id);
+                Log.info("Cleaning Application("+id+"), Node "+this.getId()+"deadline(" + app.getDeadline() + ") expired. Curr Time:"+CommonState.getTime());
                 if(current != null && Objects.equals(current.getAppID(), id)) this.current = null;
                 iterator.remove(); // Remove the ID from the set as well
             }
@@ -555,7 +557,7 @@ public class Worker implements CDProtocol, EDProtocol {
     }
 
     private boolean validOffloadingInstructions(OffloadInstructions oi, Linkable linkable){
-        return oi.getNeighbourIndex() < 0 || oi.getNeighbourIndex() > linkable.degree();
+        return oi.getNeighbourIndex() > 0 || oi.getNeighbourIndex() < linkable.degree();
     }
 
     /**
