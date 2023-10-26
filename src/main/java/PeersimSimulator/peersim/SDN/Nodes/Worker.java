@@ -258,6 +258,12 @@ public class Worker implements CDProtocol, EDProtocol {
         // Note: Updates internal state only sends data to user later
     }
 
+
+
+
+    //======================================================================================================
+    // Private Methods
+    //======================================================================================================
     private void broadcastStateChanges(Node node, int protocolID) {
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
@@ -308,12 +314,6 @@ public class Worker implements CDProtocol, EDProtocol {
             this.handleApplicationFinish(node, protocolID, app);
         }
     }
-
-
-
-    //======================================================================================================
-    // Private Methods
-    //======================================================================================================
 
     private void handleApplicationFinish(PeersimSimulator.peersim.core.Node node, int protocolID, Application app) {
         // Send answer to client if app finished!
@@ -458,7 +458,7 @@ public class Worker implements CDProtocol, EDProtocol {
 
 
     /**
-     * This method cleans up expired apps. There must be a better way of doing this
+     * This method collects all the expired apps and removes them from the simulation.
      */
     private void cleanExpiredApps(){
         Iterator<ITask> qiterator = queue.iterator();
@@ -481,6 +481,11 @@ public class Worker implements CDProtocol, EDProtocol {
         }
         purgeApps(removeApps);
     }
+
+    /**
+     * This method remocves all apps in parameter list of apps removeApps from the simulation
+     * @param removeApps
+     */
     private void purgeApps(Set<Application> removeApps) {
         Iterator<Application> iterator = removeApps.iterator();
         while (iterator.hasNext()) {
@@ -850,14 +855,14 @@ public class Worker implements CDProtocol, EDProtocol {
 
     public void wrkInfoLog(String event, String info){
         String timestamp = String.format("|%04d| ", CommonState.getTime());
-        String base = String.format("|WRK ( %03d )| ", this.id);
+        String base = String.format("WRK ( %03d )| ", this.id);
 
-        Log.info(timestamp + base + event + info);
+        Log.info(timestamp + base + String.format(" %-20s |", event) + " info:" + info);
     }
     public void wrkErrLog(String event, String err){
         String timestamp = String.format("|%04d| ", CommonState.getTime());
-        String base = String.format("|WRK ( %03d )| ", this.id);
+        String base = String.format("WRK ( %03d )| ", this.id);
 
-        Log.info(timestamp + base + event + err);
+        Log.info(timestamp + base + String.format(" %-20s |", event) + " info:" + err);
     }
 }

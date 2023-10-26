@@ -437,8 +437,8 @@ public class Controller implements CDProtocol, EDProtocol {
 
     public void ctrInfoLog(String event, String info){
         String timestamp = String.format("|%04d| ", CommonState.getTime());
-        String base = String.format("|CTR ( %03d )| ", this.id);
+        String base = String.format("CTR ( %03d )| ", this.id);
 
-        Log.info(timestamp + base + event + "info={"+info+"}");
+        Log.info(timestamp + base + String.format(" %-20s |", event) + "  info:" + info);
     }
 }
