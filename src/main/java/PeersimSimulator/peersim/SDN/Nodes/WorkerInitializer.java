@@ -9,12 +9,6 @@ public class WorkerInitializer implements Control {
     // Constants
     // ------------------------------------------------------------------------
 
-    /**
-     * The load at the peak node.
-     *
-     * @config
-     */
-    private static final String PAR_VALUE = "value";
 
     /**
      * The protocol to operate on.

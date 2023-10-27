@@ -5,9 +5,12 @@ random.seed 5174039209
 MINDELAY 0
 MAXDELAY 0
 DROP 0
-protocol.ctrl.r_u 1
-protocol.ctrl.X_d 1
-protocol.ctrl.X_o 150
+protocol.mng.r_u 1
+protocol.mng.X_d 1
+protocol.mng.X_o 150
+protocol.mng.cycle 5
+protocol.mng.Controllers 0
+
 protocol.clt.numberOfTasks 2
 protocol.clt.weight 1,1
 protocol.clt.CPI 1,1
@@ -19,6 +22,7 @@ protocol.clt.dagWeights 1
 protocol.clt.edges 
 protocol.clt.maxDeadline 100
 protocol.clt.vertices 1
+
 protocol.wrk.NO_CORES 4
 protocol.wrk.FREQ 1e7
 protocol.wrk.Q_MAX 10
@@ -38,6 +42,10 @@ simulation.logtime CYCLE
 
 #=============Define Protocols
 #--------Define Node Protocols
+
+protocol.mng PeersimSimulator.peersim.SDN.Controllers.DiscreteTimeStepManager
+
+
 protocol.clt PeersimSimulator.peersim.SDN.Nodes.Client
 protocol.clt.linkable lnk
 protocol.clt.name clt

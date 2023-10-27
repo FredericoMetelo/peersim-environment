@@ -27,34 +27,6 @@ public class Controller implements CDProtocol, EDProtocol {
     public static final String EVENT_WORKER_INFO_UPDATE = "WORKER-INFO UPDATE";
     public static final String EVENT_WORKER_INFO_ADD = "WORKER-INFO ADD";
 
-    private final int UTILITY_REWARD;
-    private final static String PAR_UTILITY_REWARD = "r_u";
-
-    private final int DELAY_WEIGHT;
-    private final static String PAR_DELAY_WEIGHT = "X_d";
-
-    private final int WRONG_MOVE_PUNISHMENT;
-    private final int OVERLOAD_WEIGHT;
-    private final static String PAR_OVERLOAD_WEIGHT = "X_o";
-
-    public final int CYCLE_SIZE;
-    private final static String PAR_CYCLE = "CYCLE";
-
-    public final double EXPECTED_TASK_ARRIVAL_RATE;
-
-    /**
-     * The Normalized Thermal Noise power is measured in dBm/Hz. From "https://noisewave.com/faq.pdf"
-     * <p>
-     * > Noise Figure is defined as the ratio of the signal-to-noise power at the input to the signal-to-noise power
-     * > at the output of a device, in other words the degradation of the signal-to-noise ratio as the signal passes
-     * > through the device. Since the input noise level is usually thermal noise from the source the convention is
-     * > to adopt a reference temperature of 290º K. The noise figure becomes the ratio of the total noise
-     * > power output to that portion of the noise power output due to noise at input when the source is 290º
-     * > K. ...
-     * The thermal noise power  at 290º K is following the same sources is constant and equal to -174 dBm/Hz
-     */
-    public final static int NORMALIZED_THERMAL_NOISE_POWER = 174;
-
     private static final int CONTROLLER_ID = 0;
     private static int pid;
 
@@ -96,17 +68,10 @@ public class Controller implements CDProtocol, EDProtocol {
         up = false;
         stop = true;
         // Read Constants
-        DELAY_WEIGHT = Configuration.getInt(prefix + "." + PAR_DELAY_WEIGHT, 1);
-        OVERLOAD_WEIGHT = Configuration.getInt(prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
-        UTILITY_REWARD = Configuration.getInt(prefix + "." + PAR_UTILITY_REWARD, 1);
-        CYCLE_SIZE = Configuration.getInt(PAR_CYCLE, 100);
-        EXPECTED_TASK_ARRIVAL_RATE = Configuration.getDouble(prefix + "." + Client.PAR_TASKARRIVALRATE, Client.DEFAULT_TASKARRIVALRATE);
 
-        WRONG_MOVE_PUNISHMENT = -200 * UTILITY_REWARD;
         selectedNode = this.getId(); // Ignores the controller.
-        cycle = 0; // Will transverse the available nodes.
         nodeUpdateEventList = new LinkedList<>();
-        printParams();
+        // printParams();
 
     }
 
@@ -134,24 +99,15 @@ public class Controller implements CDProtocol, EDProtocol {
      * @return the reward attributed to said action.
      */
     public double sendAction(Action a) {
-        if (!active || a == null || a.noTasks() < 0 || a.neighbourIndex() < 0) return WRONG_MOVE_PUNISHMENT - 10;
-
-        // Pick Node to be offloaded. Inform Python   of the WorkerInfo in question. Get the Action for that node to execute.
-        /*
-         * This will initially be done in round-robin style across all the nodes except the controller.
-         * Updating one node per cycle.
-         */
-        Log.dbg(a.toString());
+        if (!active || a == null || a.noTasks() < 0 || a.neighbourIndex() < 0) return -1;
+        ctrDbgLog(a.toString());
         Node node = Network.get(CONTROLLER_ID);
         int linkableID = FastConfig.getLinkable(Controller.getPid());
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        // Worker and Controller should be in the same node
-        if (linkable.degree() <= 0 || a.neighbourIndex() >=linkable.degree()) return WRONG_MOVE_PUNISHMENT;
-        if (workerInfo.isEmpty()) return WRONG_MOVE_PUNISHMENT - 1;
-
+        if (linkable.degree() <= 0 || a.neighbourIndex() >=linkable.degree()) return -1;
         int targetNode = a.neighbourIndex();
         ctrInfoLog(EVENT_SEND_ACTION_RECIEVED, "TARGET="+targetNode );
-        double reward = calculatReward(linkable, node, targetNode, 1);
+        double reward = 0; //calculatReward(linkable, node, targetNode, 1);
         this.currentInstructions = new OffloadInstructions(targetNode);
 
         // allow progress
@@ -196,7 +152,7 @@ public class Controller implements CDProtocol, EDProtocol {
      * Spin waits for the next action.
      */
     private void awaitAction() {
-        Log.dbg("Start Waiting Time<" + CommonState.getTime() + ">");
+        ctrDbgLog("Start Waiting Time<" + CommonState.getTime() + ">");
         while (stop) Thread.onSpinWait();
     }
 
@@ -262,78 +218,13 @@ public class Controller implements CDProtocol, EDProtocol {
     }
 
     //=== Reward Function
-    private double calculatReward(Linkable linkable, Node n, int targetNode, int noTasks) {
-        //== Setup the variables as explained.
-        WorkerInfo initialInfo = getWorkerInfo(selectedNode);
-        WorkerInfo targetInfo = getWorkerInfo(targetNode);
 
-        // Behaviour for when the node is out of scope? Return error? Have distribution over the known nodes?
-        if (targetInfo == null || initialInfo == null) return WRONG_MOVE_PUNISHMENT;
-
-        // when number of tasks to offload is bigger than number of tasks nothing happens
-        Node t = linkable.getNeighbor(targetNode);
-        double w_o = (initialInfo.getW_i() < noTasks) ? 0 : noTasks;
-        double w_l = initialInfo.getW_i() - w_o;
-        double Q_l = initialInfo.getTotalTasks(); // This will never be 0 with my current implementation.
-        double Q_o = targetInfo.getTotalTasks(); // initial Queue size plus the tasks that stayed.
-        double miu_l = initialInfo.getW();
-        double miu_o = targetInfo.getW();
-        double Q_expected_l = initialInfo.getTotalTasks() - w_o;
-        double Q_expected_o = targetInfo.getTotalTasks() + w_o; // initial Queue size plus the tasks that stayed.
-
-        //== Computing the reward
-        Log.dbg("Acquiring Reward");
-
-        Client clt = this.getClient();
-
-        //== Immediate Utility
-        double U = UTILITY_REWARD * Math.log(1 + w_l + w_o);
-
-        //== Immediate Delay
-        //= Delay of Sitting in Queue
-        double t_w = notZero(w_l) * (Q_l / miu_l) + notZero(w_o) * ((Q_l / miu_l) + (Q_o / miu_o));
-
-
-        SDNNodeProperties propsNode = (SDNNodeProperties) n.getProtocol(SDNNodeProperties.getPid());
-        SDNNodeProperties propsTarget = (SDNNodeProperties) t.getProtocol(SDNNodeProperties.getPid());
-        double d_i_j = Math.sqrt(Math.pow(propsNode.getY() - propsTarget.getY(), 2) + Math.pow(propsNode.getX() - propsTarget.getX(), 2));
-        double r_i_j = propsNode.getBANDWIDTH() * Math.log(1 +
-                (propsTarget.getPATH_LOSS_CONSTANT() * Math.pow(d_i_j, propsNode.getPATH_LOSS_EXPONENT()) * propsNode.getTRANSMISSION_POWER()) / (propsNode.getBANDWIDTH() * NORMALIZED_THERMAL_NOISE_POWER));
-        //= Communication Delay
-        double t_c = (d_i_j == 0) ? 0 : 2 * w_o * clt.getAverageByteSize() / r_i_j; // This can be a NaN
-        // When the instruction to offload to itself is given then the cost of communication is 0. (aka d_i_j == 0)
-
-        //= Task Execution Delay
-        double t_e = clt.getAverageTaskSize() * (w_l / ((Worker) n.getProtocol(Worker.getPid())).CPU_FREQ + w_o / ((Worker) t.getProtocol(Worker.getPid())).CPU_FREQ);
-
-        double D = (w_l == 0 && w_o == 0) ? 0 : DELAY_WEIGHT * (t_w + t_c + t_e) / (w_l + w_o);
-        // If no transaction is being done and there is nothing to process locally then there is no delay. And can't divide by 0.
-
-        //== Overload ProbabilityZ
-        // Note one simplification I take is look at each node as it's own M/M/1.
-        Worker workerNode = (Worker) n.getProtocol(Worker.getPid());
-        Worker workerTarget = (Worker) t.getProtocol(Worker.getPid());
-
-        double Q_prime_l = Math.min(Math.max(0, Q_expected_l - workerNode.getProcessingPower()) + w_l, workerNode.Q_MAX); // This should technically be available in the WorkerInfo btw...
-        double Q_prime_o = Math.min(Math.max(0, Q_expected_o - workerTarget.getProcessingPower()) + w_o, workerTarget.Q_MAX);
-
-        double pOverload_l = Math.max(0, EXPECTED_TASK_ARRIVAL_RATE - Q_prime_l);
-        double pOverload_o = Math.max(0, EXPECTED_TASK_ARRIVAL_RATE - Q_prime_o);
-// Update Reward functions?
-        double O = (w_l == 0 && w_o == 0) ? 0 : OVERLOAD_WEIGHT * (w_l * pOverload_l + w_o * pOverload_o) / (w_l + w_o); // Same logic applied in calculating D.
-
-        return U - (D + O);
-    }
-
-    private double notZero(double n) {
-        return (n == 0) ? 0 : 1;
-    }
 
     //=== Logging and Debugging
-    private void printParams() {
+    /*private void printParams() {
         //if(active)
-        Log.dbg("Controller Params: r_u<" + this.UTILITY_REWARD + "> X_d<" + this.DELAY_WEIGHT + "> X_o<" + this.OVERLOAD_WEIGHT + ">");
-    }
+        // ctrDbgLog("Controller Params: r_u<" + this.UTILITY_REWARD + "> X_d<" + this.DELAY_WEIGHT + "> X_o<" + this.OVERLOAD_WEIGHT + ">");
+    }*/
 
     //======================================================================================================
     // Interface Methods
@@ -369,7 +260,7 @@ public class Controller implements CDProtocol, EDProtocol {
     }
 
     public EnvState getState() {
-        Log.dbg("Acquiring state");
+        ctrDbgLog("Acquiring state");
         // stop = true; Set the await action to block on next iter.
         WorkerInfo wi = getWorkerInfo(this.selectedNode); // TODO fix this function. Remenant of before.
         assert wi != null;
@@ -382,13 +273,6 @@ public class Controller implements CDProtocol, EDProtocol {
         return (Client) Network.get(0).getProtocol(Client.getPid());
     }
 
-    public boolean isUp() {
-        return up;
-    }
-
-    public boolean isStable() {
-        return stop;
-    }
 
     public DebugInfo getDebugInfo() {
         List<Integer> droppedFromLastCycle = new LinkedList<Integer>();
@@ -436,9 +320,13 @@ public class Controller implements CDProtocol, EDProtocol {
 
 
     public void ctrInfoLog(String event, String info){
-        String timestamp = String.format("|%04d| ", CommonState.getTime());
-        String base = String.format("CTR ( %03d )| ", this.id);
+        Log.logInfo("CTR", this.id, event, info);
 
-        Log.info(timestamp + base + String.format(" %-20s |", event) + "  info:" + info);
+    }
+    public void ctrDbgLog(String msg){
+        Log.logDbg("CTR", this.id, "DEBUG", msg);
+    }
+    public void ctrErrLog(String msg){
+        Log.logErr("CTR", this.id, "ERROR", msg);
     }
 }

@@ -102,6 +102,10 @@ public class Worker implements CDProtocol, EDProtocol {
      */
     Map<String, LoseTaskInfo> loseTaskInformation;
 
+    Set<String> tasksToBeLocallyProcessed;
+
+    int tasksWithAllDepenciesMet;
+
     /**
      * Task being currently processed. If current is null then the worker is idling
      */
@@ -216,7 +220,7 @@ public class Worker implements CDProtocol, EDProtocol {
         double remainingProcessingPower = processingPower;
         while (remainingProcessingPower > 0 && !this.idle()) {
             if (this.current == null || this.current.done()) {
-                changedWorkerState = chooseTaskProcessingStrategy(node, pid);
+                changedWorkerState = nextProcessableTask(node, pid);
                 if (current == null) {
                     break;
                 }
@@ -294,7 +298,7 @@ public class Worker implements CDProtocol, EDProtocol {
         loseTaskInformation.remove(task.getId());
 
         if (handler == null || !handler.isUp()) {
-            Log.err("Node <" +this.getId()+ "> does not know task<"+task.getOriginalHandlerID() +"> that requested task<" +task.getId()+">, dropping task" );
+            wrkErrLog("NO CTR FOR REMOTE TSK", "Node does not know Node="+task.getOriginalHandlerID() +" that requested task=" +task.getId()+", dropping task" );
         }else {
             wrkInfoLog(EVENT_TASK_FINISH,  "taskId=" + task.getId());
             ((Transport) handler.getProtocol(FastConfig.getTransport(Worker.getPid()))).
@@ -354,7 +358,7 @@ public class Worker implements CDProtocol, EDProtocol {
 
             // TODO what is the behaviour of dropping a task? Send the task back to the emitter? Only drop applications?
 
-            Log.err("Dropping Tasks(" + this.droppedLastCycle + ") Node " + this.getId() + " is Overloaded!");
+            Log.err("Dropping Tasks(" + this.droppedLastCycle + ") Node " + this.getId() + " is Overloaded!"); // TODO
         } else {
             LoseTaskInfo lti = ev.asLoseTaskInfo();
             double rank = remoteTaskRank(lti, offloadedTask);
@@ -407,7 +411,7 @@ public class Worker implements CDProtocol, EDProtocol {
         minArrivalTime = Integer.MAX_VALUE;
         minCompletionRate = Double.MAX_VALUE;
         maxCompletionRate = Double.MIN_VALUE;
-
+        this.tasksWithAllDepenciesMet = 0;
         Map<String, Double> previousPrioritiesPerTask = new HashMap<>();
         if (current != null) previousPrioritiesPerTask.put(current.getId(), current.getCurrentRank());
         for (Application a : recievedApplications) {
@@ -422,6 +426,7 @@ public class Worker implements CDProtocol, EDProtocol {
             previousPrioritiesPerTask.put(t.getId(), t.getCurrentRank()); // Must have a previous rank to be in the queue.
             if (a != null) {
                 getDataForPriorityMetrics(a);
+
             } else {
                 LoseTaskInfo lti = loseTaskInformation.get(t.getId());
                 getDataForPriorityMetrics(lti);
@@ -431,11 +436,15 @@ public class Worker implements CDProtocol, EDProtocol {
         // Cycle through queued tasks ranking them and re-inserting them in app
         for (ITask t : queue) {
             double rank;
-            if (!isTaskLocal(t))
+            if (!isTaskLocal(t)) {
                 rank = remoteTaskRank(loseTaskInformation.get(t.getId()), t);
-            else {
+                this.tasksWithAllDepenciesMet++;
+            }else {
                 Application app = managedApplications.get(t.getAppID());
                 rank = localTaskRank(app, previousPrioritiesPerTask, t);
+                if(app.subTaskCanAdvance(t.getId())) {
+                    this.tasksWithAllDepenciesMet++;
+                }
             }
             t.setCurrentRank(rank);
             newQ.add(t);
@@ -546,7 +555,7 @@ public class Worker implements CDProtocol, EDProtocol {
             for (ITask t : pred) {
                 Double priority = currentPriorities.get(t.getId());
                 if (priority == null) {
-                    Log.err("This should never happen, all dependencies should be processed before the task is processed. But if this is logged then it is not happening");
+                    wrkErrLog("ERROR","This should never happen, all dependencies should be processed before the task is processed. But if this is logged then it is not happening");
                 } else if (priority > succPriority) {
                     succPriority = priority;
                 }
@@ -586,107 +595,114 @@ public class Worker implements CDProtocol, EDProtocol {
      * the decision whether to offload or not. This method will make the decision whether to offload or not for every
      * available task by recursively calling itself. If all the processable tasks in the queue are offloaded, this method
      * sets current null. The recursion halts if a task is picked to be processed locally.
-     * TODO Better name? This method is responsible for selecting a task and choosing what happens to said task (offlaod or process locally)
      * @return Whether <code>this.current</code> changed value || if <code>changed <code/> is <code>true</code>
      */
-    public boolean chooseTaskProcessingStrategy(PeersimSimulator.peersim.core.Node node, int pid) {
+    public boolean nextProcessableTask(PeersimSimulator.peersim.core.Node node, int pid) {
         // Check if current task is done, if it isn't return immediately
         if (current != null && !current.done()) {
             return this.changedWorkerState;
         }
-
-        // If the node is done with all it's work (current and queue) and there are applications awaiting serialization. Then an early serialization is done.
-        // Regularly Scheduled serializations will happen all the same.
         if ((current == null || current.done()) && queue.isEmpty() && !recievedApplications.isEmpty()) {
             applicationSerialization();
         }
-
-        // Go through the queue, and put the first task with dependencies met in this.current. If no task has
-        // dependencies met does not change current.
-        boolean waitDecisionRequired = selectNextTaskWithDependenciesMet();
-
-        // If a new task was selected decides whether to offload or process locally.
-        if (hasController && waitDecisionRequired) {
-            // Halts the simulation and awaits the offloading instructions from outside.
-            OffloadInstructions oi = this.correspondingController.requestOffloadInstructions();
-            if (oi.getNeighbourIndex() != this.getId()) {
-                int linkableID = FastConfig.getLinkable(pid);
-                Linkable linkable = (Linkable) node.getProtocol(linkableID);
-
-                if(!validOffloadingInstructions(oi, linkable)) return false;
-
-                Node target = linkable.getNeighbor(oi.getNeighbourIndex());
-                if ( !target.isUp()) {
-                    Log.err("|WRK| The requested target node is outside the nodes known by the Worker="
-                            + (oi.getNeighbourIndex() < 0 || oi.getNeighbourIndex() > linkable.degree())
-                            + ". Or is down=" + target.isUp());
-                    wrkErrLog(EVENT_ERR_NODE_OUT_OF_BOUNDS, "The requested target node is outside the nodes known by the Worker="
-                            + (oi.getNeighbourIndex() < 0 || oi.getNeighbourIndex() > linkable.degree())
-                            + ". Or is down=" + target.isUp());
-                    return false;
-                }
-
-                LoseTaskInfo lti = getOrGenerateLoseTaskInfo(node);
-                if (lti == null) throw new RuntimeException("Task that should not be in the node is being offloaded");
-
-                ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
-                        send(
-                                node,
-                                target,
-                                new TaskOffloadEvent(this.id, oi.getNeighbourIndex(), lti),
-                                Worker.getPid()
-                        );
-                this.changedWorkerState = true;
-                this.current = null;
-                return chooseTaskProcessingStrategy(node, pid);
-
-            }
-            return true;
+        this.current = this.selectNextTaskWithDependenciesMet(false);
+        boolean taskAssigend = this.current != null;
+        if(taskAssigend) {
+            this.tasksWithAllDepenciesMet--;
         }
         return this.changedWorkerState;
+    }
+
+    public boolean offloadInstructions(Node node, int pid, OffloadInstructions oi) {
+        ITask task = this.selectNextTaskWithDependenciesMet(true);
+        // ngl, it's late... There is for sure a better way of implementing this. This boolean overloading the method
+        // does not look very good.
+        if(task == null) {
+            return false;
+        }
+
+        if (oi.getNeighbourIndex() != this.getId()) {
+            if(this.queue.isEmpty() ){
+                return false;
+            }
+
+            int linkableID = FastConfig.getLinkable(pid);
+            Linkable linkable = (Linkable) node.getProtocol(linkableID);
+            if(!validOffloadingInstructions(oi, linkable)) {
+                return false;
+            }
+
+            Node target = linkable.getNeighbor(oi.getNeighbourIndex());
+            if ( !target.isUp()) {
+                wrkErrLog(EVENT_ERR_NODE_OUT_OF_BOUNDS, "The requested target node is outside the nodes known by the Worker="
+                        + (oi.getNeighbourIndex() < 0 || oi.getNeighbourIndex() > linkable.degree())
+                        + ". Or is down=" + target.isUp());
+                return false;
+            }
+
+            LoseTaskInfo lti = getOrGenerateLoseTaskInfo(node, task);
+            if (lti == null) {
+                throw new RuntimeException("Something went wrong with tracking of lose tasks with loseTaskInfo. Killing the simulation.");
+            }
+
+            ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+                    send(
+                            node,
+                            target,
+                            new TaskOffloadEvent(this.id, oi.getNeighbourIndex(), lti),
+                            Worker.getPid()
+                    );
+            // TODO Add Datastructure to prevent nodes from being offloaded.
+            this.changedWorkerState = true;
+            this.current = null;
+        }else{
+            // oi.getNeighbourIndex() == this.getId()
+            this.tasksToBeLocallyProcessed.add(task.getId());
+        }
+        return true;
     }
 
     /**
      * First see if there is any task with all dependencies met in the queue, else Idle and set current null.
      * @return <code>true</code> if a task was selected to current, <code>false</code> if the node is idling.
      */
-    private boolean selectNextTaskWithDependenciesMet() {
+    private ITask selectNextTaskWithDependenciesMet(boolean forOffloading) {
         Iterator<ITask> iterOverQueuedTasks = this.queue.descendingIterator();
-        boolean waitDecisionRequired = false;
+        ITask selected = null;
         while (iterOverQueuedTasks.hasNext()) {
             ITask t = iterOverQueuedTasks.next();
             if (this.loseTaskInformation.containsKey(t.getId())) {
-                this. current = t;
+                selected= t;
                 iterOverQueuedTasks.remove();
                 this.changedWorkerState = true;
-                waitDecisionRequired = true;
                 break;
             }
             Application app = this.managedApplications.get(t.getAppID());
-            if (app != null && app.subTaskCanAdvance(t.getId())) {
-                this.current = t;
+            // forOffloading => subTaskCanAdvance = !forOffloading v subTaskCanAdvance
+            boolean canOffload = (!forOffloading || app.subTaskCanAdvance(t.getId()));
+            if (app != null && app.subTaskCanAdvance(t.getId()) && canOffload) {
+                selected = t;
                 iterOverQueuedTasks.remove();
                 this.changedWorkerState = true;
-                waitDecisionRequired = true;
                 break;
             }
         }
-        return waitDecisionRequired;
+        return selected;
     }
 
-    private LoseTaskInfo getOrGenerateLoseTaskInfo(Node node) {
+    private LoseTaskInfo getOrGenerateLoseTaskInfo(Node node, ITask task) {
         LoseTaskInfo lti;
-        if (this.managedApplications.get(this.current.getAppID()) != null) {
-            Application app = this.managedApplications.get(this.current.getAppID());
+        if (this.managedApplications.get(task.getAppID()) != null) {
+            Application app = this.managedApplications.get(task.getAppID());
             List<String> ids = new LinkedList<>();
-            List<ITask> succs = app.getSuccessors().get(this.current.getId());
+            List<ITask> succs = app.getSuccessors().get(task.getId());
             for (ITask t : succs) {
                 // Not the prettiest TODO improve?
                 ids.add(t.getId());
             }
             lti = new LoseTaskInfo(
                     ids,
-                    this.current,
+                    task,
                     app.getDeadline(),
                     app.getMinComputation(),
                     app.getMaxComputation(),
@@ -695,10 +711,10 @@ public class Worker implements CDProtocol, EDProtocol {
                     app.getArrivalTime(),
                     app.getCompletionRate()
             );
-        } else if (this.loseTaskInformation.containsKey(this.current.getId())) {
-            lti = this.loseTaskInformation.remove(this.current.getId());
+        } else if (this.loseTaskInformation.containsKey(task.getId())) {
+            lti = this.loseTaskInformation.remove(task.getId());
         } else {
-            Log.err("Something went terribly wrong. A task that should not be in this node is being offloaded. Node: " + node.getID() + " Timestep: " + CommonState.getIntTime());
+            wrkErrLog("ERROR","Something went terribly wrong. A task that should not be in this node is being offloaded. Node: " + node.getID() + " Timestep: " + CommonState.getIntTime());
             return null;
         }
         return lti;
@@ -710,6 +726,9 @@ public class Worker implements CDProtocol, EDProtocol {
         recievedApplications = new LinkedList<>();
         managedApplications = new HashMap<>();
         current = null;
+
+        tasksToBeLocallyProcessed = new HashSet<>();
+        tasksWithAllDepenciesMet = 0;
     }
 
     /**
@@ -734,7 +753,7 @@ public class Worker implements CDProtocol, EDProtocol {
 
     private void printParams() {
         //if(active)
-        Log.dbg("Worker Params: NO_CORES<" + this.CPU_NO_CORES + "> FREQ<" + this.CPU_FREQ + "> Q_MAX<" + this.Q_MAX + ">");
+        wrkDbgLog("Worker Params: NO_CORES<" + this.CPU_NO_CORES + "> FREQ<" + this.CPU_FREQ + "> Q_MAX<" + this.Q_MAX + ">");
     }
 
 
@@ -853,16 +872,15 @@ public class Worker implements CDProtocol, EDProtocol {
         return totalTasksOffloaded;
     }
 
+
     public void wrkInfoLog(String event, String info){
-        String timestamp = String.format("|%04d| ", CommonState.getTime());
-        String base = String.format("WRK ( %03d )| ", this.id);
+        Log.logInfo("WRK", this.id, event, info);
 
-        Log.info(timestamp + base + String.format(" %-20s |", event) + " info:" + info);
     }
-    public void wrkErrLog(String event, String err){
-        String timestamp = String.format("|%04d| ", CommonState.getTime());
-        String base = String.format("WRK ( %03d )| ", this.id);
-
-        Log.info(timestamp + base + String.format(" %-20s |", event) + " info:" + err);
+    public void wrkDbgLog(String msg){
+        Log.logDbg("WRK", this.id, "DEBUG", msg);
+    }
+    public void wrkErrLog(String event, String msg){
+        Log.logErr("WRK", this.id, event, msg);
     }
 }

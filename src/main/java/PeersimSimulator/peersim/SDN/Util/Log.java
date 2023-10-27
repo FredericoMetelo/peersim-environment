@@ -1,5 +1,7 @@
 package PeersimSimulator.peersim.SDN.Util;
 
+import PeersimSimulator.peersim.core.CommonState;
+
 public class Log {
     private static final int on = 0;
 
@@ -19,10 +21,29 @@ public class Log {
     }
     public static void dbg(String message){
         if(on <= DEBUG)
-            System.out.println(message);
+            System.out.println("\033[0;33m" + message + "\033[0m");
     }
     public static void err(String message){
         if(LOG_ERRORS)
             System.err.println(message);
+    }
+
+    public static void logDbg(String protocol, int id, String event, String msg){
+        String timestamp = String.format("|%04d| ", CommonState.getTime());
+        String base = String.format("%s ( %03d )| ", protocol, id);
+
+        Log.dbg(timestamp + base + String.format(" %-20s |", event) + " msg:" + msg);
+    }
+    public static void logInfo(String protocol, int id, String event, String msg){
+        String timestamp = String.format("|%04d| ", CommonState.getTime());
+        String base = String.format("%s ( %03d )| ", protocol, id);
+
+        Log.info(timestamp + base + String.format(" %-20s |", event) + " info:" + msg);
+    }
+    public static void logErr(String protocol, int id, String event, String msg){
+        String timestamp = String.format("|%04d| ", CommonState.getTime());
+        String base = String.format("%s ( %03d )| ", protocol, id);
+
+        Log.err(timestamp + base + String.format(" %-20s |", event) + " msg:" + msg);
     }
 }

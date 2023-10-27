@@ -8,6 +8,9 @@ simulation.logtime CYCLE
 
 #=============Define Protocols
 #--------Define Node Protocols
+
+protocol.mng PeersimSimulator.peersim.SDN.Controllers.DiscreteTimeStepManager
+
 protocol.clt PeersimSimulator.peersim.SDN.Nodes.Client
 protocol.clt.linkable lnk
 protocol.clt.name clt

@@ -38,9 +38,11 @@ if __name__ == "__main__":
                     "MINDELAY": "0",
                     "MAXDELAY": "0",
                     "DROP": "0",
-                    "protocol.ctrl.r_u": "1",
-                    "protocol.ctrl.X_d": "1",
-                    "protocol.ctrl.X_o": "150",
+
+                    "DiscreteTimeStepManager.r_u": "1",
+                    "DiscreteTimeStepManager.X_d": "1",
+                    "DiscreteTimeStepManager.X_o": "150",
+
                     "protocol.clt.numberOfTasks": "1",
                     "protocol.clt.weight": "1",
                     "protocol.clt.CPI": "1",
@@ -57,10 +59,12 @@ if __name__ == "__main__":
                     "protocol.wrk.NO_CORES": "4",
                     "protocol.wrk.FREQ": "1e7",
                     "protocol.wrk.Q_MAX": "10",
+
                     "protocol.props.B": "2",
                     "protocol.props.Beta1": "0.001",
                     "protocol.props.Beta2": "4",
-                    "protocol.props.P_ti": "20"
+                    "protocol.props.P_ti": "20",
+                    "init.Net1.r": "50"
                 })
     env.reset()
 

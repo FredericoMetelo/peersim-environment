@@ -179,7 +179,7 @@ public class Client implements CDProtocol, EDProtocol {
         String[] edgeTypes = Configuration.getString(prefix + "." + PAR_EDGES, "").split(";");
         String[] vertices = Configuration.getString(prefix + "." + PAR_VERTICES, "1").split(";");
         if(edgeTypes.length != numberOfDAG || numberOfDAG != vertices.length) {
-            Log.err("Wrong configs, number of DAGs does not have parity of edge and vertice types -> vertice types: " + vertices.length+ " edge types: " + edgeTypes.length);
+            cltErrLog("Wrong configs, number of DAGs does not have parity of edge and vertice types -> vertice types: " + vertices.length+ " edge types: " + edgeTypes.length);
             throw new RuntimeException("Wrong configs, number of DAGs does not have parity of edge and vertice types -> vertice types: " + vertices.length+ " edge types: " + edgeTypes.length);
         }
         for (int i = 0; i < edgeTypes.length; i++) {
@@ -422,7 +422,7 @@ public class Client implements CDProtocol, EDProtocol {
     }
     private void printParams(){
         //if(active)
-            Log.dbg("Client Params: CPI<" + this.CPI + "> T<" + this.BYTE_SIZE+ "> I<"+ this.NO_INSTR+">" );
+            cltDbgLog("Client Params: CPI<" + this.CPI + "> T<" + this.BYTE_SIZE+ "> I<"+ this.NO_INSTR+">" );
     }
 
     public double getAverageByteSize() {
@@ -468,10 +468,14 @@ public class Client implements CDProtocol, EDProtocol {
                 '}';
     }
     public void cltInfoLog(String event, String info){
-        String timestamp = String.format("|%04d| ", CommonState.getTime());
-        String base = String.format("CLT ( %03d )| ", this.id);
+        Log.logInfo("CLT", this.id, event, info);
 
-        Log.info(timestamp + base + String.format(" %-20s |", event) + " info:" + info);
+    }
+    public void cltDbgLog(String msg){
+        Log.logDbg("CLT", this.id, "DEBUG", msg);
+    }
+    public void cltErrLog(String msg){
+        Log.logErr("CLT", this.id, "ERROR", msg);
     }
 
 }
