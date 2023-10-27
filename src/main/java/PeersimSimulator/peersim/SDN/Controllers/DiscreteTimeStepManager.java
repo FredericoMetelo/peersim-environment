@@ -2,6 +2,7 @@ package PeersimSimulator.peersim.SDN.Controllers;
 
 import PeersimSimulator.peersim.SDN.Nodes.Client;
 import PeersimSimulator.peersim.SDN.Nodes.Controller;
+import PeersimSimulator.peersim.SDN.Nodes.Worker;
 import PeersimSimulator.peersim.SDN.Records.DebugInfo;
 import PeersimSimulator.peersim.SDN.Records.EnvState;
 import PeersimSimulator.peersim.SDN.Util.Log;
@@ -21,7 +22,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
     /**
      * The protocol to operate on.
      */
-    private static final String PAR_PROT = "protocol";
+    private static final String PAR_NAME = "name";
 
     private final static String PAR_UTILITY_REWARD = "r_u";
 
@@ -88,7 +89,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
     /////////////////////////////////////////////////////////////////////////
     public DiscreteTimeStepManager(String prefix) {
         this.name = prefix;
-        pid = Configuration.getPid(prefix + "." + PAR_PROT);
+        pid = Configuration.getPid(prefix + "." + PAR_NAME);
         up = false;
         stop = true;
         DELAY_WEIGHT = Configuration.getInt(prefix + "." + PAR_DELAY_WEIGHT, 1);
@@ -122,7 +123,12 @@ public class DiscreteTimeStepManager implements CDProtocol {
 
     @Override
     public Object clone() {
-        return null;
+        DiscreteTimeStepManager svh = null;
+        try {
+            svh = (DiscreteTimeStepManager) super.clone();
+        } catch (CloneNotSupportedException e) {
+        } // never happens
+        return svh;
     }
 
     public double sendAction(List<Action> actionList){

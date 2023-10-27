@@ -10,6 +10,10 @@ simulation.logtime CYCLE
 #--------Define Node Protocols
 
 protocol.mng PeersimSimulator.peersim.SDN.Controllers.DiscreteTimeStepManager
+protocol.mng.linkable lnk
+protocol.mng.name mng
+protocol.mng.step CYCLE
+protocol.mng.transport tr
 
 protocol.clt PeersimSimulator.peersim.SDN.Nodes.Client
 protocol.clt.linkable lnk
@@ -36,7 +40,7 @@ protocol.props PeersimSimulator.peersim.SDN.Links.SDNNodeProperties
 protocol.props.name props
 
 #--------Define Link Protocol
-protocol.lnk PeersimSimulator.peersim.SDN.Nodes.TableProtocol
+protocol.lnk PeersimSimulator.peersim.SDN.Links.TableProtocol
 
 #--------Define Transport Protocol
 protocol.urt PeersimSimulator.peersim.transport.UniformRandomTransport
@@ -68,11 +72,15 @@ init.InitClt.protocol clt
 init.InitCtrl PeersimSimulator.peersim.SDN.Nodes.ControllerInitializer
 init.InitCtrl.protocol ctrl
 
+init.InitMng PeersimSimulator.peersim.SDN.Controllers.DiscreteTimeStepManagerInitializer
+init.InitMng.protocol mng
+
+
 #--------Activate Scheduler
 init.sch PeersimSimulator.peersim.edsim.CDScheduler
-init.sch.protocol clt ctrl wrk
+init.sch.protocol clt ctrl wrk mng
 init.sch.randstart
 
 #--------Activate Initializers
-include.init sch Net0 Net1 InitWrk InitClt InitCtrl
+include.init sch Net0 Net1 InitWrk InitClt InitCtrl InitMng
 

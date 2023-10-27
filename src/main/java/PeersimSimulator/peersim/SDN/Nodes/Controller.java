@@ -109,7 +109,7 @@ public class Controller implements CDProtocol, EDProtocol {
         ctrInfoLog(EVENT_SEND_ACTION_RECIEVED, "TARGET="+targetNode );
         double reward = 0; //calculatReward(linkable, node, targetNode, 1);
         this.currentInstructions = new OffloadInstructions(targetNode);
-
+        this.correspondingWorker.offloadInstructions(node, Worker.getPid(), this.currentInstructions);
         // allow progress
         stop = false;
         return reward;

@@ -26,7 +26,7 @@ public class Worker implements CDProtocol, EDProtocol {
 
     private static final String PAR_MAX_TIME_AFTER_DEADLINE = "maxTimeAfterDeadline";
     private static final int DEFAULT_TIME_AFTER_DEADLINE = 5;
-    public static final String EVENT_WORKER_INFO_SEND = "WORKER-INFO SEND";
+    public static final String EVENT_WORKER_INFO_SEND = "WRK-INFO BROADCAST";
     public static final String EVENT_TASK_FINISH = "TASK FINISH";
     public static final String EVENT_APP_FINISH = "APP FINISH";
     public static final String EVENT_OFFLOADED_TASKS_ARRIVED_AT_WRONG_NODE = "Offloaded Tasks Arrived at Wrong Node";
@@ -34,6 +34,9 @@ public class Worker implements CDProtocol, EDProtocol {
     public static final String EVENT_OVERLOADED_NODE = "OVERLOADED NODE";
     public static final String EVENT_NEW_APP_RECIEVED = "NEW APP RECIEVED";
     public static final String EVENT_ERR_NODE_OUT_OF_BOUNDS = "NODE OUT OF BOUNDS";
+    private static final String EVENT_WORKER_INFO_SEND_FAILED = "WRK-INFO SEND FAIL";
+    public static final String EVENT_NO_TASK_PROCESS = "NO TASK FOR PROCESS";
+    public static final String EVENT_NO_TASK_OFFLOAD = "NO TASK FOR OFFLOAD";
 
 
     private final int timeAfterDeadline;
@@ -271,12 +274,13 @@ public class Worker implements CDProtocol, EDProtocol {
     private void broadcastStateChanges(Node node, int protocolID) {
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
+        wrkInfoLog(EVENT_WORKER_INFO_SEND, "Q_size=" + this.queue.size() + " rcv_Apps=" + this.recievedApplications.size() + " working=" + !(current == null));
         for (int i = 0; i < linkable.degree(); i++) {
             Node controller = linkable.getNeighbor(i);
             if (!controller.isUp()) {
+                wrkInfoLog(EVENT_WORKER_INFO_SEND_FAILED, "target="+controller.getID());
                 continue;
             }
-            wrkInfoLog(EVENT_WORKER_INFO_SEND, "Q_size=" + this.queue.size() + " rcv_Apps=" + this.recievedApplications.size() + " working=" + !(current == null));
             ((Transport) controller.getProtocol(FastConfig.getTransport(Controller.getPid()))).
                     send(
                             node,
@@ -608,9 +612,13 @@ public class Worker implements CDProtocol, EDProtocol {
         this.current = this.selectNextTaskWithDependenciesMet(false);
         boolean taskAssigend = this.current != null;
         if(taskAssigend) {
+            this.tasksToBeLocallyProcessed.remove(current.getId());
             this.tasksWithAllDepenciesMet--;
+        }else{
+            wrkInfoLog(EVENT_NO_TASK_PROCESS, "id="+this.getId());
         }
         return this.changedWorkerState;
+
     }
 
     public boolean offloadInstructions(Node node, int pid, OffloadInstructions oi) {
@@ -618,10 +626,13 @@ public class Worker implements CDProtocol, EDProtocol {
         // ngl, it's late... There is for sure a better way of implementing this. This boolean overloading the method
         // does not look very good.
         if(task == null) {
+            wrkInfoLog(EVENT_NO_TASK_OFFLOAD, "id="+this.getId());
             return false;
         }
+        // TODO this is a problem, it works because I try to leave the self in position 0 in the linkable.
+        //  It would not work with multiple Controllers.
 
-        if (oi.getNeighbourIndex() != this.getId()) {
+        if (oi.getNeighbourIndex() != 0) { // Self is always the first to be added to the linkable. And should not be changed.
             if(this.queue.isEmpty() ){
                 return false;
             }
