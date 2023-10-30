@@ -11,7 +11,9 @@ import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.core.*;
 import PeersimSimulator.peersim.SDN.Records.Action;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 public class DiscreteTimeStepManager implements CDProtocol {
@@ -30,7 +32,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
 
     private final static String PAR_OVERLOAD_WEIGHT = "X_o";
     private final static String PAR_CYCLE = "CYCLE";
-    private final static String PAR_CTR_ID = "Controllers";
+    private final static String PAR_CTR_ID = "CONTROLLERS";
 
     private final int UTILITY_REWARD;
     private final int DELAY_WEIGHT;
@@ -101,8 +103,8 @@ public class DiscreteTimeStepManager implements CDProtocol {
 
 
 
-        String _ctrIds = Configuration.getString(prefix+"."+PAR_CTR_ID, "0");
-        controllerIDs = Arrays.stream(_ctrIds.split(",")).map(Integer::parseInt).toList();
+        String _ctrIds = Configuration.getString(PAR_CTR_ID, "0");
+        controllerIDs = Arrays.stream(_ctrIds.split(";")).distinct().map(Integer::parseInt).toList();
 
     }
 
@@ -134,7 +136,11 @@ public class DiscreteTimeStepManager implements CDProtocol {
     public double sendAction(List<Action> actionList){
         mngDbgLog(actionList.toString());
         if(actionList.size() != controllerIDs.size()) throw new RuntimeException("Illegal number of Actions in joint-Action");
-        for (int i = 0; i < controllerIDs.size(); i++) {
+        for (Action a : actionList) {
+            int i = a.controllerId();
+            if(!controllerIDs.contains(i)){
+                mngErrLog("An action was sent for id " + i + "this id does not correspond to any controller. Ignoring action.");
+            }
             Controller c = (Controller) Network.get(i).getProtocol(Controller.getPid());
             if(!c.isActive()) throw new RuntimeException("Inactive Controller id=" + i);
             double result = c.sendAction(actionList.get(i));
@@ -145,8 +151,12 @@ public class DiscreteTimeStepManager implements CDProtocol {
     }
 
     public List<EnvState> getPartialStates(){
-        // TODO
-        return null;
+        List<EnvState> envStateList = new ArrayList<>(controllerIDs.size());
+        for(int id : controllerIDs) {
+            Controller c = (Controller) Network.get(id).getProtocol(Controller.getPid());
+            envStateList.add(c.getState());
+        }
+        return envStateList;
     }
 
 
@@ -196,7 +206,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
     }
 }
 
-/*private double calculatReward(Linkable linkable, Node n, int targetNode, int noTasks) {
+/*private double calculatReward(Linkable linkable, Node n, int targetNode, int controllerId) {
         //== Setup the variables as explained.
         WorkerInfo initialInfo = getWorkerInfo(selectedNode);
         WorkerInfo targetInfo = getWorkerInfo(targetNode);
@@ -206,7 +216,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
 
         // when number of tasks to offload is bigger than number of tasks nothing happens
         Node t = linkable.getNeighbor(targetNode);
-        double w_o = (initialInfo.getW_i() < noTasks) ? 0 : noTasks;
+        double w_o = (initialInfo.getW_i() < controllerId) ? 0 : controllerId;
         double w_l = initialInfo.getW_i() - w_o;
         double Q_l = initialInfo.getTotalTasks(); // This will never be 0 with my current implementation.
         double Q_o = targetInfo.getTotalTasks(); // initial Queue size plus the tasks that stayed.

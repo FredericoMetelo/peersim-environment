@@ -1,6 +1,5 @@
 package PeersimSimulator.peersim.SDN.Nodes;
 
-import PeersimSimulator.peersim.SDN.Links.SDNNodeProperties;
 import PeersimSimulator.peersim.SDN.Records.DebugInfo;
 import PeersimSimulator.peersim.SDN.Util.Log;
 import PeersimSimulator.peersim.SDN.Nodes.Events.OffloadInstructions;
@@ -99,7 +98,7 @@ public class Controller implements CDProtocol, EDProtocol {
      * @return the reward attributed to said action.
      */
     public double sendAction(Action a) {
-        if (!active || a == null || a.noTasks() < 0 || a.neighbourIndex() < 0) return -1;
+        if (!active || a == null || a.controllerId() < 0 || a.neighbourIndex() < 0) return -1;
         ctrDbgLog(a.toString());
         Node node = Network.get(CONTROLLER_ID);
         int linkableID = FastConfig.getLinkable(Controller.getPid());

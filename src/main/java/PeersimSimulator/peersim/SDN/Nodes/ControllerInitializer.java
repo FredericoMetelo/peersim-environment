@@ -4,6 +4,9 @@ import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.core.Control;
 import PeersimSimulator.peersim.core.Network;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class ControllerInitializer implements Control {
     // ------------------------------------------------------------------------
     // Constants
@@ -15,6 +18,8 @@ public class ControllerInitializer implements Control {
      * @config
      */
     private static final String PAR_VALUE = "value";
+
+    private static final String PAR_CONTROLLERS = "CONTROLLERS";
 
     /**
      * The protocol to operate on.
@@ -29,6 +34,7 @@ public class ControllerInitializer implements Control {
 
     /** Protocol identifier; obtained from config property {@link #PAR_PROT}. */
     private final int pid;
+    private List<Integer> controllers;
 
     // ------------------------------------------------------------------------
     // Constructor
@@ -39,6 +45,11 @@ public class ControllerInitializer implements Control {
      */
     public ControllerInitializer(String prefix) {
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
+        controllers = Arrays.stream(Configuration.getString(PAR_CONTROLLERS, "0")
+                .split(";"))
+                .distinct()
+                .map(Integer::parseInt)
+                .toList();
     }
 
     // ------------------------------------------------------------------------
@@ -51,13 +62,17 @@ public class ControllerInitializer implements Control {
      * @return always false
      */
     public boolean execute() {
-        // Initialize the controller (Node 0).
-        Controller c = ((Controller) Network.get(0).getProtocol(pid));
-        c.setActive(true);
-        c.setId(0);
-        c.initializeWorkerInfo(Network.get(0), Controller.getPid());
-        c.setCorrespondingWorker(((Worker) Network.get(0).getProtocol(Worker.getPid())));
+        // Initialize the controller.
+        if(controllers.size() > this.controllers.size()) throw new RuntimeException("Too many controllers!");
 
+        for (int id : controllers){
+            if(id < 0 || id > Network.size()) throw new RuntimeException("Invalid id for a controller. There are " + id + "< 0  or " + id + ">" +  Network.size());
+            Controller c = ((Controller) Network.get(id).getProtocol(pid));
+            c.setActive(true);
+            c.setId(id);
+            c.initializeWorkerInfo(Network.get(id), Controller.getPid());
+            c.setCorrespondingWorker(((Worker) Network.get(id).getProtocol(Worker.getPid())));
+        }
         return false;
     }
 }

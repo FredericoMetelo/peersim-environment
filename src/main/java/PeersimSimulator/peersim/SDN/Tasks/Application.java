@@ -37,6 +37,8 @@ public class Application {
     private int maxSuccessors;
     private double arrivalTime;
 
+    private List<ITask> expandedDAG;
+
     public Application(Map<String, ITask> tasks,
                        Map<String, List<ITask>> predecessors,
                        Map<String, List<ITask>> successors,
@@ -45,7 +47,8 @@ public class Application {
                        int clientID,
                        double initialDataSize,
                        double outputDataSize,
-                       ITask firstTask) {
+                       ITask firstTask,
+                       List<ITask> expandedDAG) {
         this.tasks = tasks;
         this.predecessors = predecessors;
         this.successors = successors;
@@ -57,6 +60,7 @@ public class Application {
         this.firstTask = firstTask;
 
         finishedSubtasks = new HashSet<>();
+        this.expandedDAG = expandedDAG;
 
 
         minComputation = Double.MAX_VALUE;
@@ -228,15 +232,24 @@ public class Application {
         return (double) aggregateProgress /totalTaskSize;
     }
 
+    public ITask getFirstTask() {
+        return firstTask;
+    }
+
     /**
      * This method creates and returns an array, where a node that has dependencies on another will show up
      * afterwards.
+     *
+     * It might be interesting to expand this once in the beginning, as this is expanded once and only once.
+     *
      * I.E.
      * (1,2), (2,3), (2,4), (3,5) may be expanded to:
      * 1, 2,
      * @return a list of nodes where dependent nodes show after their dependee
      */
     public List<ITask> expandToList(){
+        if(expandedDAG != null) return expandedDAG;
+
         Set<String> alreadyExpanded = new HashSet<>();
         List<ITask> expandedTasks = new LinkedList<>();
 
@@ -264,6 +277,11 @@ public class Application {
         }
         return expandedTasks;
 
+    }
+
+
+    public void setExpandedDAG(List<ITask> expandedDAG) {
+        this.expandedDAG = expandedDAG;
     }
 
     public int applicationSize(){

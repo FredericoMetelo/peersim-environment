@@ -355,13 +355,9 @@ public class Worker implements CDProtocol, EDProtocol {
         }
         ITask offloadedTask = ev.getTask();
         wrkInfoLog(EVENT_TASK_OFFLOAD_RECIEVE, " taskId=" + ev.getTask().getId() + " appId="+ev.getTask().getAppID()+" originalHandler=" + ev.getTask().getOriginalHandlerID());
-        if (this.getNumberOfTasks() >= Q_MAX) {
-
+        if (this.getNumberOfTasks() > Q_MAX) {
             this.droppedLastCycle++;
             this.totalDropped++;
-
-            // TODO what is the behaviour of dropping a task? Send the task back to the emitter? Only drop applications?
-
             Log.err("Dropping Tasks(" + this.droppedLastCycle + ") Node " + this.getId() + " is Overloaded!"); // TODO
         } else {
             LoseTaskInfo lti = ev.asLoseTaskInfo();
@@ -381,7 +377,7 @@ public class Worker implements CDProtocol, EDProtocol {
         this.totalTasksRecieved++;
         this.tasksRecievedSinceLastCycle++;
 
-        if (this.getNumberOfTasks() + app.applicationSize() >= Q_MAX) {
+        if (this.getNumberOfTasks() + app.applicationSize() > Q_MAX) {
             droppedLastCycle++;
             totalDropped++;
             wrkInfoLog(EVENT_OVERLOADED_NODE, " DroppedApp="+app.getAppID());
@@ -663,7 +659,6 @@ public class Worker implements CDProtocol, EDProtocol {
                             new TaskOffloadEvent(this.id, oi.getNeighbourIndex(), lti),
                             Worker.getPid()
                     );
-            // TODO Add Datastructure to prevent nodes from being offloaded.
             this.changedWorkerState = true;
             this.current = null;
         }else{

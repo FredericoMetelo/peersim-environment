@@ -63,7 +63,7 @@ public class Client implements CDProtocol, EDProtocol {
     private static final String PAR_EDGES = "edges";
     private List<Map<String, List<String>>> successorsPerDAGType;
     private List<Map<String, List<String>>> predecessorsPerDAGType;
-
+    private List<List<String>> expandedDAGs;
 
     private static final String PAR_VERTICES = "vertices";
     private List<Integer> numberOfVerticesPerDAGType;
@@ -174,7 +174,7 @@ public class Client implements CDProtocol, EDProtocol {
         this.successorsPerDAGType = new ArrayList<>(numberOfDAG);
         this.predecessorsPerDAGType = new ArrayList<>(numberOfDAG);
         this.numberOfVerticesPerDAGType = new ArrayList<>(numberOfDAG);
-
+        this.expandedDAGs = new ArrayList<>(numberOfDAG);
 
         String[] edgeTypes = Configuration.getString(prefix + "." + PAR_EDGES, "").split(";");
         String[] vertices = Configuration.getString(prefix + "." + PAR_VERTICES, "1").split(";");
@@ -194,20 +194,25 @@ public class Client implements CDProtocol, EDProtocol {
             Map<String, List<String>> successors = new HashMap<>();
             //Aka an entry is < successor, predecessor[] >
             Map<String, List<String>> predecessors = new HashMap<>();
+            int lastVertice = Integer.parseInt(vertices[i]);
             for (String edge : edges) {
                 String[] e = edge.split(" ");
                 String predecessor = e[0];
                 String successor = e[1];
                 int pred = Integer.parseInt(predecessor);
                 int succ = Integer.parseInt(successor);
-                int lastVertice = Integer.parseInt(vertices[i]);
                 if( pred < 0 || succ < 0 || pred >=  lastVertice ||  succ >= lastVertice) throw new RuntimeException("There are illegal vertices in the edges of dag type: " + i +" last vertice id:" + lastVertice );
+                // TODO: Test for cycles? Do so on the environment side?
                 addToMap(successors, predecessor, successor);
                 addToMap(predecessors, successor, predecessor);
             }
+            List<String> expandedDag = this.expandToList(new HashMap<>(successors), new HashMap<>(predecessors), lastVertice);
+
+            this.expandedDAGs.add(expandedDag);
             this.successorsPerDAGType.add(successors);
             this.predecessorsPerDAGType.add(predecessors);
             this.numberOfVerticesPerDAGType.add(Integer.parseInt(vertices[i])); // This might throw exceptions: ¯\_(ツ)_/¯
+
         }
     }
 
@@ -330,8 +335,8 @@ public class Client implements CDProtocol, EDProtocol {
 
         // TODO Convert this to computing the minimum deadline required for finishing the task.
         double deadline = CommonState.getTime() + CommonState.r.nextInt(maxDeadline, maxDeadline*2 );
-
-        return new Application(tasks, predecessors, successors, deadline, appID, this.getId(), firstTask.getInputSizeBytes(), lastTask.getOutputSizeBytes(), firstTask);
+        List<ITask> list = expandedDAGs.get(dagType).stream().map(it -> tasks.get(verticesToTaskID.get(it))).toList();
+        return new Application(tasks, predecessors, successors, deadline, appID, this.getId(), firstTask.getInputSizeBytes(), lastTask.getOutputSizeBytes(), firstTask, list);
 
     }
     private int pickTaskType(){ // Btw variable is a randDouble not a randInt
@@ -385,6 +390,44 @@ public class Client implements CDProtocol, EDProtocol {
         }
     }
 
+    /**
+     * Kahn's Algorithm for expanding an App
+     */
+    public List<String> expandToList(Map<String, List<String>> successors, Map<String, List<String>> predecessors, int size){
+        List<String> result = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        Queue<String> queue = new LinkedList<>();
+
+        // Initialize the queue with vertex 0 (the root with no predecessors)
+        queue.offer("0");
+        visited.add("0");
+
+        while (!queue.isEmpty()) {
+            String vertex = queue.poll();
+            result.add(vertex);
+
+            List<String> adjacentVertices = successors.get(vertex);
+            if (adjacentVertices != null) {
+                for (String successor : adjacentVertices) {
+                    // Remove the current vertex from the predecessors of the successor.
+                    predecessors.get(successor).remove(vertex);
+                    if (predecessors.get(successor).isEmpty() && !visited.contains(successor)) {
+                        // If by removing the vertice all predecessors are met we add it to result, because by now all it's dependencies have been met.
+                        queue.offer(successor);
+                        visited.add(successor);
+                    }
+                }
+            }
+        }
+
+        if (result.size() != size) {
+            // Graph contains a cycle
+            throw new IllegalArgumentException("The graph has a cycle.");
+        }
+
+        return result;
+
+    }
     public boolean isActive() {
         return active;
     }
