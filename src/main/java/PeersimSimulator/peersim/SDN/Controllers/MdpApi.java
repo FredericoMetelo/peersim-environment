@@ -37,8 +37,13 @@ public class MdpApi implements Control {
         return i;
     }
 
+    @GetMapping("/done")
+    public boolean isDone(){
+        DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
+        return CommonState.getEndTime() <= CommonState.getTime() + c.CYCLE_SIZE;
+    }
     @PostMapping("/action")
-    public double postAction(@RequestBody List<Action> a){
+    public List<Double> postAction(@RequestBody List<Action> a){
 
         DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
         return c.sendAction(a);
@@ -46,6 +51,7 @@ public class MdpApi implements Control {
 
     @GetMapping("/up")
     public boolean isUp(){
+        if(Network.get(0) == null) return false;
         DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
         return !(CommonState.getPhase() == CommonState.POST_SIMULATION) && c.isUp();
     }

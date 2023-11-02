@@ -1,3 +1,4 @@
+#!/bin/bash
 echo "Setup djep"
 mvn install:install-file -Dfile=Setup/external/peersim-repo/djep/1.0.0/djep-1.0.0.jar -DgroupId=peersim-repo -DartifactId=djep -Dversion=1.0.0 -Dpackaging=jar -DcreateChecksum=true
 echo "Setup jep"

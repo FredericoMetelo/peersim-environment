@@ -34,10 +34,10 @@ public class DiscreteTimeStepManager implements CDProtocol {
     private final static String PAR_CYCLE = "CYCLE";
     private final static String PAR_CTR_ID = "CONTROLLERS";
 
-    private final int UTILITY_REWARD;
-    private final int DELAY_WEIGHT;
-    private final int WRONG_MOVE_PUNISHMENT;
-    private final int OVERLOAD_WEIGHT;
+    public final int UTILITY_REWARD;
+    public final int DELAY_WEIGHT;
+    public final int WRONG_MOVE_PUNISHMENT;
+    public final int OVERLOAD_WEIGHT;
 
 
     /**
@@ -105,7 +105,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
 
         String _ctrIds = Configuration.getString(PAR_CTR_ID, "0");
         controllerIDs = Arrays.stream(_ctrIds.split(";")).distinct().map(Integer::parseInt).toList();
-
+        mngDbgLog(this.controllersToString());
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -133,8 +133,9 @@ public class DiscreteTimeStepManager implements CDProtocol {
         return svh;
     }
 
-    public double sendAction(List<Action> actionList){
+    public List<Double> sendAction(List<Action> actionList){
         mngDbgLog(actionList.toString());
+        List<Double> results = new ArrayList<>(actionList.size());
         if(actionList.size() != controllerIDs.size()) throw new RuntimeException("Illegal number of Actions in joint-Action");
         for (Action a : actionList) {
             int i = a.controllerId();
@@ -144,10 +145,10 @@ public class DiscreteTimeStepManager implements CDProtocol {
             Controller c = (Controller) Network.get(i).getProtocol(Controller.getPid());
             if(!c.isActive()) throw new RuntimeException("Inactive Controller id=" + i);
             double result = c.sendAction(actionList.get(i));
-
+            results.add(result);
         }
         stop = false;
-        return 0;
+        return results;
     }
 
     public List<EnvState> getPartialStates(){
@@ -187,7 +188,15 @@ public class DiscreteTimeStepManager implements CDProtocol {
         return (n == 0) ? 0 : 1;
     }
 
-
+    private String controllersToString(){
+        StringBuilder s = new StringBuilder("[ ");
+        for (int id: controllerIDs
+             ) {
+            s.append(id).append(" ");
+        }
+        s.append("]");
+        return s.toString();
+    }
     public void mngInfoLog(String event, String info){
         Log.logInfo("MNG", -1, event, info);
 
@@ -204,9 +213,8 @@ public class DiscreteTimeStepManager implements CDProtocol {
         // TODO
         return null;
     }
-}
-
-/*private double calculatReward(Linkable linkable, Node n, int targetNode, int controllerId) {
+    /*
+    private double calculatReward(Linkable linkable, Node n, int targetNode, int controllerId) {
         //== Setup the variables as explained.
         WorkerInfo initialInfo = getWorkerInfo(selectedNode);
         WorkerInfo targetInfo = getWorkerInfo(targetNode);
@@ -228,7 +236,6 @@ public class DiscreteTimeStepManager implements CDProtocol {
         //== Computing the reward
         ctrDbgLog("Acquiring Reward");
 
-        Client clt = this.getClient();
 
         //== Immediate Utility
         double U = UTILITY_REWARD * Math.log(1 + w_l + w_o);
@@ -267,4 +274,6 @@ public class DiscreteTimeStepManager implements CDProtocol {
         double O = (w_l == 0 && w_o == 0) ? 0 : OVERLOAD_WEIGHT * (w_l * pOverload_l + w_o * pOverload_o) / (w_l + w_o); // Same logic applied in calculating D.
 
         return U - (D + O);
-    }*/
+    }
+*/
+}

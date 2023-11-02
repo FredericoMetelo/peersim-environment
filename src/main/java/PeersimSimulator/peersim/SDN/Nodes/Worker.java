@@ -285,7 +285,7 @@ public class Worker implements CDProtocol, EDProtocol {
                     send(
                             node,
                             controller,
-                            new WorkerInfo(this.id, this.queue.size(), this.recievedApplications.size(), averageTaskSize(), processingPower, Q_MAX - this.getNumberOfTasks()),
+                            compileWorkerInfo(),
                             Controller.getPid()
                     );
         }
@@ -588,6 +588,11 @@ public class Worker implements CDProtocol, EDProtocol {
 
     private boolean validOffloadingInstructions(OffloadInstructions oi, Linkable linkable){
         return oi.getNeighbourIndex() > 0 || oi.getNeighbourIndex() < linkable.degree();
+    }
+
+    public WorkerInfo compileWorkerInfo(){
+        return new WorkerInfo(this.id, this.queue.size(), this.recievedApplications.size(), averageTaskSize(), processingPower, Q_MAX - this.getNumberOfTasks());
+
     }
 
     /**
