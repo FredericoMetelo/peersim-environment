@@ -1,13 +1,16 @@
 package PeersimSimulator.peersim.SDN.Controllers;
 
+import PeersimSimulator.peersim.SDN.Links.SDNNodeProperties;
 import PeersimSimulator.peersim.SDN.Nodes.Client;
 import PeersimSimulator.peersim.SDN.Nodes.Controller;
 import PeersimSimulator.peersim.SDN.Nodes.Worker;
 import PeersimSimulator.peersim.SDN.Records.DebugInfo;
 import PeersimSimulator.peersim.SDN.Records.EnvState;
+import PeersimSimulator.peersim.SDN.Records.SimulationData;
 import PeersimSimulator.peersim.SDN.Util.Log;
 import PeersimSimulator.peersim.cdsim.CDProtocol;
 import PeersimSimulator.peersim.config.Configuration;
+import PeersimSimulator.peersim.config.FastConfig;
 import PeersimSimulator.peersim.core.*;
 import PeersimSimulator.peersim.SDN.Records.Action;
 
@@ -133,9 +136,9 @@ public class DiscreteTimeStepManager implements CDProtocol {
         return svh;
     }
 
-    public List<Double> sendAction(List<Action> actionList){
+    public List<SimulationData> sendAction(List<Action> actionList){
         mngDbgLog(actionList.toString());
-        List<Double> results = new ArrayList<>(actionList.size());
+        List<SimulationData> results = new ArrayList<>(actionList.size());
         if(actionList.size() != controllerIDs.size()) throw new RuntimeException("Illegal number of Actions in joint-Action");
         for (Action a : actionList) {
             int i = a.controllerId();
@@ -145,7 +148,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
             Controller c = (Controller) Network.get(i).getProtocol(Controller.getPid());
             if(!c.isActive()) throw new RuntimeException("Inactive Controller id=" + i);
             double result = c.sendAction(actionList.get(i));
-            results.add(result);
+            results.add(compileSimulationData(a.neighbourIndex(), a.controllerId()));
         }
         stop = false;
         return results;
@@ -166,6 +169,17 @@ public class DiscreteTimeStepManager implements CDProtocol {
         while (stop) Thread.onSpinWait();
     }
 
+    private SimulationData compileSimulationData(int neighbourIndex, int sourceID){
+        int srcLinkableId = FastConfig.getLinkable(Worker.getPid());
+        Linkable srcLinkable = (Linkable) Network.get(sourceID).getProtocol(srcLinkableId);
+
+        Controller controller = (Controller) Network.get(sourceID).getProtocol(Controller.getPid());
+        SDNNodeProperties propsNode = (SDNNodeProperties) Network.get(sourceID).getProtocol(SDNNodeProperties.getPid());
+        SDNNodeProperties propsTarget = (SDNNodeProperties) srcLinkable.getNeighbor(neighbourIndex).getProtocol(SDNNodeProperties.getPid());
+
+        double d_i_j = Math.sqrt(Math.pow(propsNode.getY() - propsTarget.getY(), 2) + Math.pow(propsNode.getX() - propsTarget.getX(), 2));
+        return new SimulationData(sourceID, d_i_j, controller.getWorkerInfo().get(neighbourIndex));
+    }
 
     public boolean isActive() {
         return active;

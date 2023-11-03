@@ -207,9 +207,9 @@ public class Controller implements CDProtocol, EDProtocol {
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
         for (int i = 0; i < linkable.degree(); i++) {
             Node target = linkable.getNeighbor(i);
-            if(target.getID() == this.getId()){
+            /*if(target.getID() == this.getId()){
                 workerInfo.add(correspondingWorker.compileWorkerInfo());
-            }
+            }*/
             if (!target.isUp()) return; // This happens task progress is lost.
 
             Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
@@ -264,7 +264,7 @@ public class Controller implements CDProtocol, EDProtocol {
     public EnvState getState() {
         ctrDbgLog("Acquiring state");
         // stop = true; Set the await action to block on next iter.
-        WorkerInfo wi = getWorkerInfo(this.selectedNode); // TODO fix this function. Remenant of before.
+        WorkerInfo wi = getWorkerInfo(this.selectedNode); // TODO fix this function. Remnant of before.
         double w = (wi==null)? 0 : wi.getW();
         //int offloadable_tasks = wi.getW_i();
         return new EnvState(this.selectedNode, this.getQ(), w);

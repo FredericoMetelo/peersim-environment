@@ -105,6 +105,7 @@ PeersimSimulator/peersim/edsim/EDSimulator.class
 PeersimSimulator/peersim/core/MaliciousProtocol.class
 PeersimSimulator/peersim/SDN/Nodes/Events/NewTaskEvent.class
 PeersimSimulator/peersim/SDN/Nodes/Events/OffloadInstructions.class
+PeersimSimulator/peersim/SDN/Records/SimulationData.class
 PeersimSimulator/example/edaggregation/AverageED.class
 PeersimSimulator/peersim/core/OverlayGraph.class
 PeersimSimulator/peersim/SDN/Nodes/ControllerInitializer.class

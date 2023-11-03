@@ -3,6 +3,7 @@ package PeersimSimulator.peersim.SDN.Controllers;
 import PeersimSimulator.peersim.SDN.Records.Action;
 import PeersimSimulator.peersim.SDN.Records.DebugInfo;
 import PeersimSimulator.peersim.SDN.Records.EnvState;
+import PeersimSimulator.peersim.SDN.Records.SimulationData;
 import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Control;
 import PeersimSimulator.peersim.core.Network;
@@ -43,7 +44,7 @@ public class MdpApi implements Control {
         return CommonState.getEndTime() <= CommonState.getTime() + c.CYCLE_SIZE;
     }
     @PostMapping("/action")
-    public List<Double> postAction(@RequestBody List<Action> a){
+    public List<SimulationData> postAction(@RequestBody List<Action> a){
 
         DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
         return c.sendAction(a);

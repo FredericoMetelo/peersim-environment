@@ -80,6 +80,7 @@
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/reports/GraphStats.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/dynamics/NodeInitializer.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/example/newscast/SimpleNewscast.java
+/home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/SDN/Records/SimulationData.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/graph/PrefixSubGraph.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/graph/BitMatrixGraph.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/util/IncrementalStats.java

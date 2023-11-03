@@ -1,5 +1,6 @@
 from peersim_gym.envs.PeersimEnv import PeersimEnv
 import gymnasium as gym
+
 import requests
 
 url_api = "http://localhost:8080"
@@ -15,12 +16,27 @@ def get_state():
     print(s)
 
 
-def send_action(action):
-    payload = {"neighbourIndex": str(action["target_node"]), "controllerId": str(action["offload_amount"])}
+def send_action(env, action):
+    payload = {
+        env.agents[i]: {
+            "neighbourIndex": str(action[i]),
+            "controllerId": str(action[i])
+        } for i in range(len(env.agents))
+    }
     headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
     action_url = url_api + url_action_path
     r = requests.post(action_url, json=payload, headers=headers_action)
     return r
+
+def _make_ctr(controllers):
+    s = ""
+    for i in range(len(controllers)):
+        s += controllers[i]
+        if i < len(controllers) - 1:
+            s +=";"
+    return s
+
+controllers = ["0", "1"]
 
 
 if __name__ == "__main__":
@@ -29,9 +45,7 @@ if __name__ == "__main__":
     #    p.generate_config_file()
     # configs_dict = {"protocol.ctrl.r_u": "999", "protocol.props.B": "1"}
     # configs_dict="/home/fm/Documents/Thesis/peersim-srv/configs/examples/default-config.txt"
-    configs_dict = None
-    env = gym.make("peersim_gym/PeersimEnv-v0")
-    env.env.init(configs={
+    env = PeersimEnv(configs={
         "SIZE": "10",
         "CYCLE": "1",
         "CYCLES": "1000",
@@ -39,7 +53,7 @@ if __name__ == "__main__":
         "MINDELAY": "0",
         "MAXDELAY": "0",
         "DROP": "0",
-        "CONTROLLERS": "0;1",
+        "CONTROLLERS": _make_ctr(controllers),
 
         "protocol.mng.r_u": "1",
         "protocol.mng.X_d": "1",
@@ -80,13 +94,19 @@ if __name__ == "__main__":
         elif a == 's':
             get_state()
         else:
-            action = {}
-            if a.isdigit():
-                target = int(a)
-                action["neighbourIndex"] = target  # I am aware of the back and fort between string and int...
-                action["controllerId"] = 1
+            actions = {}
+            if a.isdigit(): # does not work!!!
+                target = a
+                actions = {
+                    agent: {
+                        env.ACTION_HANDLER_ID_FIELD: agent.split("_")[1],
+                        env.ACTION_NEIGHBOUR_IDX_FIELD: target
+                    } for agent in env.agents
+                }
             else:
-                action = env.action_space.sample()
-            print(action)
-            r = send_action(action)
-            print(r)
+                actions = {agent: env.action_space(agent).sample() for agent in env.agents}
+            print(actions)
+            # r = send_action(env, actions)
+            # print(r)
+            observations, rewards, terminations, truncations, infos = env.step(actions)
+            print(rewards)

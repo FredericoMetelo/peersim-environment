@@ -1,6 +1,7 @@
 import os
+
 this_dir, this_filename = os.path.split(__file__)
-print(this_dir +  "    " + this_filename)
+print(this_dir + "    " + this_filename)
 PEERSIM_DEFAULTS = {
     "SIZE": "10",
     "CYCLE": "1",
@@ -44,8 +45,10 @@ PEERSIM_DEFAULTS = {
 BASE_FILE_PATH = os.path.join(this_dir, "configs", "config-SDN-BASE.txt")
 TARGET_FILE_PATH = os.path.join(this_dir, "configs", "config.txt")
 
+
 def generate_config_file(config_dict, explicit_lines=False):
     print("GENERATING CONFIG FILE")
+    controllers = []
     if config_dict is None:
         config_dict = {}
     if type(config_dict) is not dict:
@@ -61,6 +64,8 @@ def generate_config_file(config_dict, explicit_lines=False):
             line = key + " " + value + "\n"
             if explicit_lines:
                 print(line)
+            if key == "CONTROLLERS":
+                controllers = [int(s) for s in value.strip().split(";")]
             newFile.write(line)
         # Append the baselines
         for line in fileoutput:
@@ -69,3 +74,22 @@ def generate_config_file(config_dict, explicit_lines=False):
                 print(line)
         baseFile.close()
         newFile.close()
+        return controllers
+
+def compile_dict(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            _dict = {}
+            for line in file:
+                if 'CONTROLLERS' in line:
+                    # Find the position of "CONTROLLERS" in the line
+                    # Extract everything after "CONTROLLERS"
+                    result = line[len('CONTROLLERS'):].strip()
+                    controllers = [int(s) for s in result.strip().split(";")]
+                else:
+                    result = line.split(" ")
+                    if result[0] in PEERSIM_DEFAULTS:
+                        _dict[result[0]] = line[len(result[0]):].strip()
+            return controllers, _dict
+    except FileNotFoundError:
+        return "File not found"
