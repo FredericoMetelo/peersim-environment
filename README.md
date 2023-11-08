@@ -32,18 +32,30 @@ We build a simulation based on the Network used in the paper by J.-y. Baek, G. K
 Learning Based Load Balancing Algorithm](https://ieeexplore.ieee.org/document/8885745)". The tool we use to support our simulation is the [Peersim Simulation Tool](https://peersim.sourceforge.net/).
 
 **Simulation Components**<br>
-We simulate a static network (we are planning to make the topology configurable like in an actual SDN in later updates). All the Nodes in the Network know each other from the start and communicate through a reliable (can be configured to be unreliable) link.
+We simulate a static network (we are planning to make the topology configurable like in an actual SDN in later updates (Still not implemented!)). All the Nodes in the Network know each other from the start and communicate through a reliable (can be configured to be unreliable) link.
 The Network simulated has three types of nodes, that are:
 
 - Worker Nodes: Simulate the execution of tasks, offload tasks on request by the controller and communicate status messages to the controller.
+  - Controller Node: Some worker nodes have the controller function. This allows them to keep information on the status of each node in their
+  neighbourhood and receive offload instructions from the agents outside the simulation, and subsequently pass them to the relevant worker node. The worker node to be offloaded to is selected on a round robin style across all nodes.
 - Client Nodes: Only one client that will for each node generate and request tasks following a poisson process. the Client also keeps an
   average of the time the requests took to be processed in the time internal to the simulator.
-- Controller Node: The controller nodes keep information of the status of each node and recieve the offload instructions from the outside to pass 
-  them to the relevant worker node. The worker node to be offloaded to is selected on a round robin style across all nodes.
 
 **Simulating the passage of time**<br>
-We use the Peersim CDScheduler class to simulate the passage of time. Each simulation tick represents one second, and at each tick every worker will proccess part of the taks it has attributed, and each client will send a taks to the nodes following a Poisson Process.
-For convenience at every 100 ticks the simulation is blocked to await the offload instructions from the Agent.
+
+To simulate the passage of time we make use of the built-in schedulling properties of the Peersim simulation tool, by utilizing 
+having our protocols extend the CDScheduler Class and execute something at each time-step, each simulation time-step represents
+a second, and all the protocols execute at each time-step.
+We have a special protocol, DiscreteTimeStepManager that controls the stopping of the simulation, so that the agents can send
+their offloading instructions to the simulation.
+The other protocols also execute every time-step, but none of them affects the flow of the simulation. Their functions encopass
+
+The worker at each time-step processes the tasks it has received by how many instructions per second it can do. If any changes 
+to its internal state happened it will broadcast its state information to its neighbourhood. 
+
+The clients will generate and send tasks to the nodes following a Poisson Process, every time-step they check what workers
+are scheduled to receive a task. They then generate that task and send it to the worker. For every worker that was sent a task the client node will use the poisson process to
+see on how many time-steps it will have to send the next task to said worker.
 
 **Communication between the agent and the environment.**<br>
 To allow communicating with external agents we wrap the agent up in a Local Spring Server that exposes a REST API for the agent to send actions to the environment and observe it's state.
@@ -52,6 +64,9 @@ To allow communicating with external agents we wrap the agent up in a Local Spri
 ### MDP 
 
 ```
+TODO: This has basically not changed, except there is a list of states and actions in the action space instead! I didn't
+ alter this yet as I'm execting it will change a lot in the future.
+
 TODO: This part of the explanation is basically paraphrasing (and times directly quoting) what the authors have said
 in the paper "Managing Fog Networks using Reinforcement Learning Based Load Balancing Algorithm".
  
@@ -105,16 +120,22 @@ The MDP is defined as a tuple <S, A, P, R>, the explanaition the authors give to
   and $P_{overload, l} =  \frac{max(0, \lamba_i - (Q_{i, max} - Q'_i))}{\lamba_i }$, where $\lamba_i$ is the task arrival rate of the poisson proccess governing task arrival
   $Q'_i$ is the state of the queue at node i after taking action a ($Q'_i = min(max(0 - Q_i - \bar{\mu^i}) + w^i, Q_{i, max})$, this means that the next queue state considers the number of tasks proccessed and is capped by the maximum number of tasks in the queue.)
 <a name="NetworkTopology"></a>
+
 ### The Network Topology
-In the network used in the paper, the nodes all can access each other directly and are distributed in a 100x100m area.
-<a name="RESTAPI"></a>
+The network we use is static and defined when the simulation is created. The nodes will be able to communicate with any
+node within a circle around it which we call its neighbourhood, the size of the neighbourhood is defined in the configurations.
+
+The nodes can't communicate with any nodes outside its neighbourhood. Although we allow direct communication to the clients.
+
+TODO: Confirm if this behaviour is acceptable, otherwise, I'll implement a multi-hop mechanism.
+
 ### REST API
 To allow receiving instructions from the model in python we wrap the simulator in a simple REST API built on top of a Spring Server. The API has provides
 two endpoints:
 
-- GET: http://localhost:8080/state - This endpoint will return the state of the simulation at request time. 
-- POST: http://localhost:8080/action -  This endpoint will send the offloading action specified in the body of the request to the simulator.
-  and send the reward of taking the action in the response.
+- GET: http://localhost:8080/state - This endpoint will return the list of states with the state of every controller in the simulation at request time. 
+- POST: http://localhost:8080/action -  This endpoint will send a list of the offloading instructions  each of the agents picked to the simulator.
+  and returns a set of information complementary to the state, for purposes of computing the reward.
 
 <a name="Quickstart"></a>
 # Quickstart
@@ -131,7 +152,7 @@ This section will focus on two things. How to set up and utilize the environment
 I provide a yml file to automatically install the necessary dependencies, see `Setup/PeersimGym.yml`. To create an environment from this specification run:
 This environment is missing the PeersimGym module, which needs to be installed to use the environment in other projects. 
 ```
-conda env create -f Setup/PeersimGym.yml
+conda env create -f Setup/environement.yml
 ```
 
 After creating the environment you need to activate it. This step may need to be repeated everytime you open the project
@@ -149,30 +170,13 @@ conda develop . -n PeersimGym
 <a name="UsingTheEnvironment"></a>
 #### Utilization Example
 To start the simulation all you need to do is create a PeersimEnv object in your python code. This environment can then be used 
-like a regular Gym environment. 
+like a regular PettingZoo environment. 
 ```python
-import peersim_gym.envs.PeersimEnv import PeersimEnv 
+import peersim_gym.envs.PeersimEnv import PeersimEnv
 
-# Note: Need to add the PeersimEnv module to environment for this version
-import gym
-# Two options to create the environment
-# Option 1:
-env = gym.make("peersim_gym/PeersimEnv-v0")
-env.env.init(configs=None) # TODO Untested
-# Option 2:
-env = PeersimEnv(configs=None) 
-# Default config, the guide to configuring the env is further on tutorial
-
-# Start the Environment, env.reset() launches the JVM environment and returns the
-# initial state
-state, info = env.reset() # note: info is None
-# Passing an action to the environment
-action = env.action_space.sample()
-observation, reward, terminated, truncated, info = env.step(action)
-
-# At the end of the simulation call the env.close() to guarantee the resources used 
-# by the environment are  freed
-env.close()
+env = PeersimEnv(configs={...})
+actions = {agent: env.action_space(agent).sample() for agent in env.agents}
+observations, rewards, terminations, truncations, infos = env.step(actions)
 
 ```
 It is possible to have a custom configuration for the Peersim Simulator. To configure the environment set the configs parameter on the Peersim Environment Constructor to wither the path of the file with the configs (See the `src/peersim-gym/peersim_gym/envs/configs/config-SDN-BASE.txt` for the base file, and the config file must always include the Simulation Definitions, which are not set on the base config file), or pass a dictionary with the key the config name and the value wanted (as a string).
@@ -182,7 +186,7 @@ from peersim_gym.envs.PeersimEnv import PeersimEnv
 # There are 3 options to configure the environment.
 
 # Option 1: Passing a Dictionary with the key as the property being configured and the value a string with the value of the property.
-configs_dict = {"protocol.ctrl.r_u": "999", "protocol.props.B": "1"}
+configs_dict = {"protocol.mng.r_u": "999", "protocol.props.B": "1"}
 
 # Option 2: Passing a Path to a configuration file. 
 configs_dict="/home/fm/Documents/Thesis/peersim-srv/configs/examples/default-config.txt"
@@ -237,42 +241,118 @@ Note: Entries without the format <protocol|init|control>.string_id.parameter_nam
   DROP 0
   ```
 <a name="ConfiguringTheController"></a>
-### Configurations of the Controller
+### Configurations of the DiscreteTimeStepManager and PettingZoo Environemnt
 - **Utility Reward, r_u**, a parameter of the reward function acts as a weight in the expression that computes the utility of a reward.
-  This parameter recieves an int, the default value is 1.
+  This parameter recieves an int, the default value is 1. It is directly used by the Environment.
     ```
-    protocol.ctrl.r_u 1
+    protocol.mng.r_u 1
     ```
 - **Delay Weight, X_d**, a parameter of the reward function acts as a weight in the expression that computes the cost associated with the delay induced by taking an action.
-  This parameter recieves an int, the default value is 1.
+  This parameter recieves an int, the default value is 1. It is directly used by the Environment.
     ``` 
-    protocol.ctrl.X_d 1
+    protocol.mng.X_d 1
     ```
 - **Overload Weight, X_o**, a parameter of the reward function acts as a weight in the expression that computes the cost associated with a node overloading (overloading of a node happens when the node has too many tasks assigned, and starts losing tasks) induced by taking an action.
-  This parameter recieves an int, the default value is 1.
+  This parameter recieves an int, the default value is 1. It is directly used by the Environment.
     ``` 
-    protocol.ctrl.X_o 150
+    protocol.mng.X_o 150
     ```
+- **Cycles between Stops**, a parameter that defines the number of time-steps it takes for the simulation to stop and await an 
+    action from the agents.
+    ```
+    protocol.mng.cycle 5
+    ``` 
 <a name="ConfiguringTheClient"></a>
 ### Configurations of the Client
-- **Average Number of Cycles in a Instruction, CPI**. This parameter is used in two ways:
+The clients have multiple DAG types that can be selected when creating a task, and there can also be multiple options for 
+each task on the DAG. For each of the DAG or task types all the configurations must be specified, otherwise an error is thrown on environment creation.
+
+#### Global to Client
+- **Task Arrival Rate per Client**. This parameter is only specified once and is global to the client. At each time step a Client will with probability of taskArrivalRate send a task for each node.
+    ```
+    protocol.clt.taskArrivalRate 0.01
+    ```
+
+#### Task Parameters
+- **Number of Tasks**, this parameter specifies the total number of task types on the simulation.
+    ``` 
+    protocol.clt.numberOfTasks: 2
+    ```
+- **Ratios of each task type, taskWeights**, the ratio of each task type must be separated by a ',' without any spaces.
+The parameter represents the probability of a generated task being of each of the types. The values of each task type
+will be divided by the total of the weights total to compute the ratios of generating each of the tasks.
+  ```
+  protocol.clt.weight 4,6
+  ```
+- **Average Number of Cycles in a Instruction, CPI**, the number of cycles per instruction of each task type must be separated by a ',' without any spaces. This parameter is used in two ways:
     - In computing the reward function. Specifically, affects the delay function and represents the execution cost of the tasks.
     - It considered in computing the time it takes for a simulation to finish a task.
-    ``` 
-    protocol.clt.CPI 1
     ```
-- **Byte Size of Task, T**. This parameter is measured in Mbytes and used in computing the communication cost in time of offloading tasks in the Reward function.
-    ``` 
-    protocol.clt.T 150
+    protocol.clt.CPI 1,1
     ```
-- **Number of Instructions per Task, B**. This parameter, same as CPI, is used in two ways:
+- **Byte Size of Task, T**, the byte sizes of a task of each task type must be separated by a ',' without any spaces. This parameter is measured in Mbytes and used in computing the communication cost in time of offloading tasks in the Reward function.
+    ``` 
+    protocol.clt.T 150,100
+    ```
+- **Number of Instructions per Task, B**, the byte sizes of a task of each task type must be separated by a ',' without any spaces. This parameter, same as CPI, is used in two ways:
     - In computing the reward function. Specifically, affects the delay function and represents the execution cost of the tasks.
     - It considered in computing the time it takes for a simulation to finish a task.
   ``` 
-  protocol.clt.I 200e6
+  protocol.clt.I 200e6,250e6
   ```
-- ** Task Arrival Rate per Client **. At each time step a Client will with probability of taskArrivalRate send a task for each node.
-``` protocol.clt.taskArrivalRate 0.01```
+
+A simulation started on the definitions of the examples, would have two task types:
+```
+1st type: {CPI:1, T:150, I:200e6} -> A task will be generated with type 1 40% of the time (4/(4+6))
+2nd type: {CPI:1, T:100, I:250e6} -> A task will be generated with type 2 60% of the time (6/(4+6))
+```
+  
+#### DAG Parameters 
+ **TODO**: Specify restrictions on DAGs
+- **Number of DAGs**, this parameter specifies the total number of DAG types on the simulation.
+    ``` 
+    protocol.clt.numberOfDAG: 2
+    ```
+- **Ratios of each DAG type**, the ratio of each DAG type must be separated by a ',' without any spaces.
+  The parameter represents the probability of a generated DAG being of each of the types. The values of each DAG type
+  will be divided by the total of the weights total to compute the ratios of generating each of the tasks.
+  ```
+  protocol.clt.dagWeights 4,6
+  ```
+- **Edges**, this parameter specifies the edge configurations of each of the DAG types.
+    an edge is represented by a string `predecessorVertice successorVertice` and different edges are separated by a ','. 
+The different DAGs edges are separated by a ';'.
+    ```
+    protocol.clt.edges 0 1,1 2,1 3,2 4,3 4,4 5;0 1,1 2,1 3,1 7,2 4,3 4,7 5,4 5
+    ```
+- **Byte Size of Task, T**, the byte sizes of a task of each task type must be separated by a ',' without any spaces. This parameter is measured in Mbytes and used in computing the communication cost in time of offloading tasks in the Reward function.
+    ``` 
+    protocol.clt.T 150,100
+    ```
+- **Number of Instructions per Task, B**, the byte sizes of a task of each task type must be separated by a ',' without any spaces. This parameter, same as CPI, is used in two ways:
+    - In computing the reward function. Specifically, affects the delay function and represents the execution cost of the tasks.
+    - It considered in computing the time it takes for a simulation to finish a task.
+  ``` 
+  protocol.clt.I 200e6,250e6
+  ```
+
+A simulation created with the specifications above would have two DAG types
+```
+1. Vertices: {0,1,2,3,4,5}, noVertices 6
+     Edges: {(0,1),(1,2),(1,3),(2,4)(3,4)(4,5)}
+
+       /2\
+    0-1   4-5
+       \3/
+
+2. Vertices: {0,1,2,3,4,5,6,7} noVertices = 8
+     Edges: {(0,1),(1,2),(1,3),(1,7),(2,4)(3,4),(7,5),(4,5)}
+
+       /2\
+    0-1   4-5-6
+       \\3//
+        \7/
+  ```
 
 ### Configurations of the Worker
 <a name="ConfigurationOfTheWorker"></a>

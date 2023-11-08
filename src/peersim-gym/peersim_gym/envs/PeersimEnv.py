@@ -157,10 +157,11 @@ class PeersimEnv(ParallelEnv):
             self.agents = []
             return {}, {}, {}, {}, {}
         original_obs = self.state
+        mask = self._validateAction(original_obs, actions)
         result = self.__send_action(actions)
         observations, done, info = self.__get_obs()
 
-        rewards = self._compute_rewards(original_obs, observations, actions, result)
+        rewards = self._compute_rewards(original_obs, observations, actions, result, mask)
 
         terminations = {agent: done for agent in self.agents}
         self.num_moves += 1
@@ -274,16 +275,18 @@ class PeersimEnv(ParallelEnv):
         n = randint(1000000000, 9999999999)
         return str(n)
 
-    def _compute_rewards(self, original_obs, obs, actions, result) -> dict[float]:
+    def _compute_rewards(self, original_obs, obs, actions, result, mask) -> dict[float]:
         rewards = {}
         for agent in self.agents:
-            if agent in actions:
+            if agent in actions and not mask[agent]:
                 rewards[agent] = self._compute_agent_reward(
                     agent_og_obs=original_obs[agent],
                     agent_obs=obs[agent],
                     action=actions[agent],
                     agent_result=result[agent]
                 )
+            elif mask[agent]:
+                rewards[agent] = -self.UTILITY_REWARD
             else:
                 print(f"Action of agent {agent} was not found in the actions sent.")
         return rewards
@@ -298,6 +301,9 @@ class PeersimEnv(ParallelEnv):
         source_node_info = agent_obs
         target_node_worker_info = agent_result[self.RESULT_WORKER_INFO_FIELD]
         locally_processed = agent_obs[self.STATE_NODE_ID_FIELD] == target_node_worker_info["id"]
+
+        if target_node_worker_info["queueSize"] < target_of_task or target_of_task < 0:
+            return -self.UTILITY_REWARD
 
         q_l = len(source_node_og_info[self.STATE_Q_FIELD])
         q_o = target_node_worker_info["queueSize"]
@@ -357,3 +363,16 @@ class PeersimEnv(ParallelEnv):
         average_no_cores = self.config_archive["protocol.wrk.NO_CORES"]
         average_max_Q = self.config_archive["protocol.wrk.Q_MAX"]
         return float(average_no_cores) * float(average_frequency), int(average_max_Q)
+
+    def _validateAction(self, original_obs, actions):
+        failed = {}
+
+        for agent in self.agents:
+            obs = original_obs[agent]
+            Q = obs[self.STATE_Q_FIELD]
+            neighbour = actions[agent][self.ACTION_NEIGHBOUR_IDX_FIELD]
+            if len(Q) <= neighbour or neighbour < 0:
+                failed[agent] = True
+            else:
+                failed[agent] = False
+        return failed

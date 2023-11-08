@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
         "protocol.clt.numberOfDAG": "1",
         "protocol.clt.dagWeights": "1",
-        "protocol.clt.edges": "0 1,1 2,2 3,3 4,4 5,5 6,6 7,0 8,8 7,7 9",
+        "protocol.clt.edges": "0->1,1->2,2->3,3->4,4->5,5->6,6->7,0->8,8->7,7->9",
         "protocol.clt.maxDeadline": "100",
         "protocol.clt.vertices": "10",
 

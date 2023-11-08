@@ -196,7 +196,7 @@ public class Client implements CDProtocol, EDProtocol {
             Map<String, List<String>> predecessors = new HashMap<>();
             int lastVertice = Integer.parseInt(vertices[i]);
             for (String edge : edges) {
-                String[] e = edge.split(" ");
+                String[] e = edge.split("->");
                 String predecessor = e[0];
                 String successor = e[1];
                 int pred = Integer.parseInt(predecessor);

@@ -145,6 +145,18 @@ public class DiscreteTimeStepManager implements CDProtocol {
             if(!controllerIDs.contains(i)){
                 mngErrLog("An action was sent for id " + i + "this id does not correspond to any controller. Ignoring action.");
             }
+
+            int neigh = a.neighbourIndex();
+            Linkable l = (Linkable) Network.get(i).getProtocol(FastConfig.getLinkable(Controller.getPid()));
+            if(neigh < 0 || neigh >= l.degree()){
+                mngErrLog("An action failed because the specified index of the neighbourhood is out of bounds");
+                continue;
+            }
+            if(!l.getNeighbor(neigh).isUp()){
+                mngErrLog("An action failed because the node of the specified index of the neighbourhood is down");
+                continue;
+            }
+
             Controller c = (Controller) Network.get(i).getProtocol(Controller.getPid());
             if(!c.isActive()) throw new RuntimeException("Inactive Controller id=" + i);
             double result = c.sendAction(actionList.get(i));
