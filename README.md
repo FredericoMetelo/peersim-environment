@@ -240,6 +240,10 @@ Note: Entries without the format <protocol|init|control>.string_id.parameter_nam
   ```
   DROP 0
   ```
+- **CONTROLLERS**, sepcifies the indexes of the controllers on the global network.
+```
+CONTROLLERS 0,1,2
+```
 <a name="ConfiguringTheController"></a>
 ### Configurations of the DiscreteTimeStepManager and PettingZoo Environemnt
 - **Utility Reward, r_u**, a parameter of the reward function acts as a weight in the expression that computes the utility of a reward.
@@ -272,7 +276,12 @@ each task on the DAG. For each of the DAG or task types all the configurations m
     ```
     protocol.clt.taskArrivalRate 0.01
     ```
-
+- **Max Possible deadline**, this parameter allows defining the maximum deadline over a base time (TODO: This time is a 
+hardcoded value, for each task I will compute the total number of instructions it takes to finish the app and divide it
+by the average computing power).
+    ``` 
+    protocol.clt.maxDeadline 100
+    ```
 #### Task Parameters
 - **Number of Tasks**, this parameter specifies the total number of task types on the simulation.
     ``` 
@@ -320,21 +329,19 @@ A simulation started on the definitions of the examples, would have two task typ
   protocol.clt.dagWeights 4,6
   ```
 - **Edges**, this parameter specifies the edge configurations of each of the DAG types.
-    an edge is represented by a string `predecessorVertice successorVertice` and different edges are separated by a ','. 
+    an edge is represented by a string `predecessorVertice->successorVertice` and different edges are separated by a ','. 
 The different DAGs edges are separated by a ';'.
-    ```
-    protocol.clt.edges 0 1,1 2,1 3,2 4,3 4,4 5;0 1,1 2,1 3,1 7,2 4,3 4,7 5,4 5
-    ```
-- **Byte Size of Task, T**, the byte sizes of a task of each task type must be separated by a ',' without any spaces. This parameter is measured in Mbytes and used in computing the communication cost in time of offloading tasks in the Reward function.
-    ``` 
-    protocol.clt.T 150,100
-    ```
-- **Number of Instructions per Task, B**, the byte sizes of a task of each task type must be separated by a ',' without any spaces. This parameter, same as CPI, is used in two ways:
-    - In computing the reward function. Specifically, affects the delay function and represents the execution cost of the tasks.
-    - It considered in computing the time it takes for a simulation to finish a task.
-  ``` 
-  protocol.clt.I 200e6,250e6
+  - Task 0 must be predecessor to all tasks, and have no predecessors of it's own.
+  - If there are n+1 vertices the vertice of index n, must be a successor to all tasks and have no successors of it's own. 
+
   ```
+  protocol.clt.edges 0->1,1->2,2->3,3->4,4->5,5->6,6->7,0->8,8->7,7->9
+  ```
+- **Number of veritces in the DAG**, Represents the total amount of vertices in the DAG. This value must be the value of
+  the biggest vertice in the edges + 1.
+    ``` 
+    "protocol.clt.vertices": "10",
+    ```
 
 A simulation created with the specifications above would have two DAG types
 ```
@@ -354,6 +361,9 @@ A simulation created with the specifications above would have two DAG types
         \7/
   ```
 
+### Configuring the topologie
+- **Radius of neighbourhood**, this parameter defines the radius of the neighbourhood of a node, the area in which a node knows all other nodes.
+  ```init.Net1.r 50```
 ### Configurations of the Worker
 <a name="ConfigurationOfTheWorker"></a>
 - **Number of Cores in Worker CPU**. This parameter is used in two ways:
