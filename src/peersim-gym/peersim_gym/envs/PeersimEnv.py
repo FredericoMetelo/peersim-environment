@@ -370,7 +370,7 @@ class PeersimEnv(ParallelEnv):
         for agent in self.agents:
             obs = original_obs[agent]
             Q = obs[self.STATE_Q_FIELD]
-            neighbour = actions[agent][self.ACTION_NEIGHBOUR_IDX_FIELD]
+            neighbour = int(actions[agent][self.ACTION_NEIGHBOUR_IDX_FIELD])
             if len(Q) <= neighbour or neighbour < 0:
                 failed[agent] = True
             else:
