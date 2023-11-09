@@ -96,7 +96,7 @@ if __name__ == "__main__":
         else:
             actions = {}
             if a.isdigit(): # does not work!!!
-                target = a
+                target = str(a)
                 actions = {
                     agent: {
                         env.ACTION_HANDLER_ID_FIELD: agent.split("_")[1],
