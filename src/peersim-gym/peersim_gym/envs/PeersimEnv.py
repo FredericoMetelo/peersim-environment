@@ -302,7 +302,6 @@ class PeersimEnv(ParallelEnv):
         target_node_worker_info = agent_result[self.RESULT_WORKER_INFO_FIELD]
         locally_processed = agent_obs[self.STATE_NODE_ID_FIELD] == target_node_worker_info["id"]
 
-        # aDding this so I can push
         if int(target_node_worker_info["queueSize"]) < int(target_of_task) or int(target_of_task) < 0:
             return -self.UTILITY_REWARD
 
