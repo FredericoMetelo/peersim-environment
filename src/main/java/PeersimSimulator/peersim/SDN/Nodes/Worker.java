@@ -45,12 +45,10 @@ public class Worker implements CDProtocol, EDProtocol {
     /**
      * Represents the frequency of the CPUs on this machine.
      */
-    public final double CPU_FREQ;
-    private static final String PAR_CPU_FREQ = "FREQ";
-    public final int CPU_NO_CORES;
-    private static final String PAR_CPU_NO_CORES = "NO_CORES";
-    public final int Q_MAX;
-    private static final String PAR_Q_MAX = "Q_MAX";
+    public double cpuFreq;
+    public int cpuNoCores;
+    public int qMAX;
+    public int layer;
     //======================================================================================================
     // Variables
     //======================================================================================================
@@ -155,12 +153,8 @@ public class Worker implements CDProtocol, EDProtocol {
         // TODO make this definable from the configs.
         // TODO in future have multiple classes of nodes?
         pid = Configuration.getPid(prefix + "." + PAR_NAME);
-        CPU_FREQ = Configuration.getDouble(prefix + "." + PAR_CPU_FREQ, 1e7);
-        CPU_NO_CORES = Configuration.getInt(prefix + "." + PAR_CPU_NO_CORES, 4);
-        Q_MAX = Configuration.getInt(prefix + "." + PAR_Q_MAX, 10);
         timeAfterDeadline = Configuration.getInt(prefix + "." + PAR_MAX_TIME_AFTER_DEADLINE, DEFAULT_TIME_AFTER_DEADLINE);
         printParams();
-        processingPower = Math.floor(CPU_NO_CORES * CPU_FREQ);
         //======== Init Datastructures ===========//
         hasController = false;
         current = null;
@@ -187,6 +181,14 @@ public class Worker implements CDProtocol, EDProtocol {
 
         dependentTaskComparator = new DependentTaskComparator();
         correspondingController = null;
+    }
+
+    public void workerInit(double cpuFreq, int noCores, int qMax, int layer){
+        this.processingPower = Math.floor(noCores * cpuFreq);
+        this.cpuFreq = cpuFreq;
+        this.cpuNoCores = noCores;
+        this.qMAX = qMax;
+        this.layer = layer;
     }
 
     @Override
@@ -355,7 +357,7 @@ public class Worker implements CDProtocol, EDProtocol {
         }
         ITask offloadedTask = ev.getTask();
         wrkInfoLog(EVENT_TASK_OFFLOAD_RECIEVE, " taskId=" + ev.getTask().getId() + " appId="+ev.getTask().getAppID()+" originalHandler=" + ev.getTask().getOriginalHandlerID());
-        if (this.getNumberOfTasks() > Q_MAX) {
+        if (this.getNumberOfTasks() > qMAX) {
             this.droppedLastCycle++;
             this.totalDropped++;
             Log.err("Dropping Tasks(" + this.droppedLastCycle + ") Node " + this.getId() + " is Overloaded!"); // TODO
@@ -377,7 +379,7 @@ public class Worker implements CDProtocol, EDProtocol {
         this.totalTasksRecieved++;
         this.tasksRecievedSinceLastCycle++;
 
-        if (this.getNumberOfTasks() + app.applicationSize() > Q_MAX) {
+        if (this.getNumberOfTasks() + app.applicationSize() > qMAX) {
             droppedLastCycle++;
             totalDropped++;
             wrkInfoLog(EVENT_OVERLOADED_NODE, " DroppedApp="+app.getAppID());
@@ -591,7 +593,7 @@ public class Worker implements CDProtocol, EDProtocol {
     }
 
     public WorkerInfo compileWorkerInfo(){
-        return new WorkerInfo(this.id, this.queue.size(), this.recievedApplications.size(), averageTaskSize(), processingPower, Q_MAX - this.getNumberOfTasks());
+        return new WorkerInfo(this.id, this.queue.size(), this.recievedApplications.size(), averageTaskSize(), processingPower, qMAX - this.getNumberOfTasks());
 
     }
 
@@ -764,7 +766,7 @@ public class Worker implements CDProtocol, EDProtocol {
 
     private void printParams() {
         //if(active)
-        wrkDbgLog("Worker Params: NO_CORES<" + this.CPU_NO_CORES + "> FREQ<" + this.CPU_FREQ + "> Q_MAX<" + this.Q_MAX + ">");
+        wrkDbgLog("Worker Params: NO_CORES<" + this.cpuNoCores + "> FREQ<" + this.cpuFreq + "> Q_MAX<" + this.qMAX + ">");
     }
 
 

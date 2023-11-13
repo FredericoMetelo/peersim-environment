@@ -214,7 +214,7 @@ public class Controller implements CDProtocol, EDProtocol {
 
             Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
             workerInfo.add(
-                    new WorkerInfo(wi.getId(), 0, 0, default_task_size, Math.floor(default_CPU_NO_CORES * default_CPU_FREQ), wi.Q_MAX) // This should technically be a request...
+                    new WorkerInfo(wi.getId(), 0, 0, default_task_size, Math.floor(default_CPU_NO_CORES * default_CPU_FREQ), wi.qMAX) // This should technically be a request...
             );
         }
     }
