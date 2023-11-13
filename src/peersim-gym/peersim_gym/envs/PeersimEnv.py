@@ -366,7 +366,6 @@ class PeersimEnv(ParallelEnv):
 
     def _validateAction(self, original_obs, actions):
         failed = {}
-
         for agent in self.agents:
             obs = original_obs[agent]
             Q = obs[self.STATE_Q_FIELD]
