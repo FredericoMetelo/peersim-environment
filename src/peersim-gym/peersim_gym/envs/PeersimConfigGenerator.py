@@ -12,6 +12,13 @@ PEERSIM_DEFAULTS = {
     "DROP": "0",
     "CONTROLLERS": "0;1",
 
+    "NO_LAYERS": "2",
+    "NO_NODES_PER_LAYERS": "6,4",
+    "FREQS": "1e7,3e7",
+    "NO_CORES": "4,8",
+    "Q_MAX": "10,50",
+    "VARIATIONS": "1e3,1e3",
+
     "init.Net1.r": "50",
 
     "protocol.mng.r_u": "1",

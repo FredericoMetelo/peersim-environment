@@ -1,4 +1,4 @@
-SIZE 10
+SIZE 13
 CYCLE 1
 CYCLES 1000
 random.seed 1234567890
@@ -6,6 +6,14 @@ MINDELAY 0
 MAXDELAY 0
 DROP 0
 CONTROLLERS 0;1
+
+NO_LAYERS            3
+NO_NODES_PER_LAYERS  6,4,3
+FREQS                1e7,3e7,10e7
+NO_CORES             4,8,16
+Q_MAX                10,50,100
+VARIATIONS           1e3,1e3,1e4
+
 init.Net1.r 50
 protocol.mng.r_u 1
 protocol.mng.X_d 1
@@ -19,12 +27,14 @@ protocol.clt.I 200e6
 protocol.clt.taskArrivalRate 0.2
 protocol.clt.numberOfDAG 1
 protocol.clt.dagWeights 1
-protocol.clt.edges 0->1,1->2,2->3,3->4,4->5,5->6,6->7,0->8,8->7,7->9
+protocol.clt.edges 0->1,1->2
 protocol.clt.maxDeadline 100
-protocol.clt.vertices 10
+protocol.clt.vertices 3
+
 protocol.wrk.NO_CORES 4
 protocol.wrk.FREQ 1e7
 protocol.wrk.Q_MAX 10
+
 protocol.props.B 2
 protocol.props.Beta1 0.001
 protocol.props.Beta2 4
