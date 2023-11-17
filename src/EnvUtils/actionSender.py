@@ -55,6 +55,13 @@ if __name__ == "__main__":
         "DROP": "0",
         "CONTROLLERS": _make_ctr(controllers),
 
+        "NO_LAYERS": "2",
+        "NO_NODES_PER_LAYERS": "6,4",
+        "FREQS": "1e7,3e7",
+        "NO_CORES": "4,8",
+        "Q_MAX": "10,50",
+        "VARIATIONS": "1e3,1e3",
+
         "protocol.mng.r_u": "1",
         "protocol.mng.X_d": "1",
         "protocol.mng.X_o": "150",

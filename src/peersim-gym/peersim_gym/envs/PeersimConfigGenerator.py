@@ -49,7 +49,7 @@ PEERSIM_DEFAULTS = {
     "protocol.props.P_ti": "20"
 }
 
-BASE_FILE_PATH = os.path.join(this_dir, "configs", "config-SDN-BASE.txt")
+BASE_FILE_PATH = os.path.join(this_dir, "configs", "config-env-BASE.txt")
 TARGET_FILE_PATH = os.path.join(this_dir, "configs", "config.txt")
 
 

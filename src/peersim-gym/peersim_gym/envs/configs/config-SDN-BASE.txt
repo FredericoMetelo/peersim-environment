@@ -9,38 +9,38 @@ simulation.logtime CYCLE
 #=============Define Protocols
 #--------Define Node Protocols
 
-protocol.mng PeersimSimulator.peersim.SDN.Controllers.DiscreteTimeStepManager
+protocol.mng PeersimSimulator.peersim.env.Controllers.DiscreteTimeStepManager
 protocol.mng.linkable lnk
 protocol.mng.name mng
 protocol.mng.step CYCLE
 protocol.mng.transport tr
 
-protocol.clt PeersimSimulator.peersim.SDN.Nodes.Client
+protocol.clt PeersimSimulator.peersim.env.Nodes.Client
 protocol.clt.linkable lnk
 protocol.clt.name clt
 protocol.clt.step CYCLE
 protocol.clt.transport tr
 
 
-protocol.ctrl PeersimSimulator.peersim.SDN.Nodes.Controller
+protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controller
 protocol.ctrl.linkable lnk
 protocol.ctrl.name ctrl
 protocol.ctrl.step CYCLE
 protocol.ctrl.transport tr
 
 
-protocol.wrk PeersimSimulator.peersim.SDN.Nodes.Worker
+protocol.wrk PeersimSimulator.peersim.env.Nodes.Worker
 protocol.wrk.linkable lnk
 protocol.wrk.name wrk
 protocol.wrk.step CYCLE
 protocol.wrk.transport tr
 
 #--------Define Topology Protocols
-protocol.props PeersimSimulator.peersim.SDN.Links.SDNNodeProperties
+protocol.props PeersimSimulator.peersim.env.Links.SDNNodeProperties
 protocol.props.name props
 
 #--------Define Link Protocol
-protocol.lnk PeersimSimulator.peersim.SDN.Links.TableProtocol
+protocol.lnk PeersimSimulator.peersim.env.Links.TableProtocol
 
 #--------Define Transport Protocol
 protocol.urt PeersimSimulator.peersim.transport.UniformRandomTransport
@@ -55,24 +55,24 @@ protocol.tr.drop DROP
 #=============Define Initialization
 #--------Define Topology Initialization
 
-init.Net1  PeersimSimulator.peersim.SDN.Links.WireSDNTopology
+init.Net1  PeersimSimulator.peersim.env.Links.WireSDNTopology
 init.Net1.protocol lnk
 init.Net1.coord_protocol props
 
-init.Net0 PeersimSimulator.peersim.SDN.Links.SDNInitializer
+init.Net0 PeersimSimulator.peersim.env.Links.SDNInitializer
 init.Net0.protocol props
 
 #--------Define Node Initialization
-init.InitWrk PeersimSimulator.peersim.SDN.Nodes.WorkerInitializer
+init.InitWrk PeersimSimulator.peersim.env.Nodes.WorkerInitializer
 init.InitWrk.protocol wrk
 
-init.InitClt PeersimSimulator.peersim.SDN.Nodes.ClientInitializer
+init.InitClt PeersimSimulator.peersim.env.Nodes.ClientInitializer
 init.InitClt.protocol clt
 
-init.InitCtrl PeersimSimulator.peersim.SDN.Nodes.ControllerInitializer
+init.InitCtrl PeersimSimulator.peersim.env.Nodes.ControllerInitializer
 init.InitCtrl.protocol ctrl
 
-init.InitMng PeersimSimulator.peersim.SDN.Controllers.DiscreteTimeStepManagerInitializer
+init.InitMng PeersimSimulator.peersim.env.Controllers.DiscreteTimeStepManagerInitializer
 init.InitMng.protocol mng
 
 
