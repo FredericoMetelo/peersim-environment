@@ -75,6 +75,8 @@ public class WireSDNTopology extends WireGraph {
                 // Node being linked.
                 if(this.layerCloudAccess(l)) {
                     g.setEdge(i, Network.size() - 1);
+                    g.setEdge(Network.size() - 1, i);
+
                 }
 
                 for (int j = s; j < e; j++) {

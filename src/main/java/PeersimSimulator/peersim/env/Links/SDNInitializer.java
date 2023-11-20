@@ -6,6 +6,8 @@ import PeersimSimulator.peersim.core.Control;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 
+import java.util.Arrays;
+
 public class SDNInitializer implements Control {
     // ------------------------------------------------------------------------
     // Parameters
@@ -13,6 +15,15 @@ public class SDNInitializer implements Control {
     private static final String PAR_PROT = "protocol";
     private static final String PAR_HAS_CLOUD = "CLOUD_EXISTS";
     private final int hasCloud;
+
+    private static final String PAR_NETWORK_SIZE = "SIZE";
+
+    private final int noLayers;
+    private static final String PAR_NO_LAYERS = "NO_LAYERS";
+
+    private final int[] numberOfNodesPerLayer;
+    public static final String PAR_NO_NODES_PER_LAYERS = "NO_NODES_PER_LAYERS";
+
     // ------------------------------------------------------------------------
     // Fields
     // ------------------------------------------------------------------------
@@ -25,6 +36,16 @@ public class SDNInitializer implements Control {
     public SDNInitializer(String prefix) {
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
         hasCloud = Configuration.getInt(PAR_HAS_CLOUD, 0);
+        noLayers = Configuration.getInt(PAR_NO_LAYERS, 1);
+
+        int size = Configuration.getInt(PAR_NETWORK_SIZE);
+
+        String[] _NO_NODES_PER_LAYERS = Configuration.getString(PAR_NO_NODES_PER_LAYERS, Integer.toString(size)).split(",");
+        numberOfNodesPerLayer = Arrays.stream(_NO_NODES_PER_LAYERS).mapToInt(Integer::parseInt).toArray();
+
+        if((Arrays.stream(numberOfNodesPerLayer).sum() + hasCloud) != size){
+            throw new RuntimeException("Configurations are incorrect. There are not enough nodes for all the layers and the Cloud.");
+        }
 
     }
 
