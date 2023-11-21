@@ -5,6 +5,7 @@ import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Control;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
+import PeersimSimulator.peersim.env.Nodes.Worker;
 
 import java.util.Arrays;
 
@@ -60,19 +61,18 @@ public class SDNInitializer implements Control {
     @Override
     public boolean execute() {
         // The 0 node is the controller. We position the controller in the middle of all the nodes.
-        Node n = Network.get(0);
-        SDNNodeProperties prot = (SDNNodeProperties) n
-                .getProtocol(pid);
-        prot.setX(50);
-        prot.setY(50);
-
+        Node n;
+        SDNNodeProperties prot;
+        Worker w;
         // Set coordinates x,y
-        for (int i = 1; i < Network.size() - hasCloud; i++) {
+        for (int i = 0; i < Network.size() - hasCloud; i++) {
             n = Network.get(i);
+            w = (Worker) n.getProtocol(Worker.getPid());
             prot = (SDNNodeProperties) n.getProtocol(pid);
             // Nodes Coordinates are in 100x100 m²
             prot.setX(CommonState.r.nextDouble()*100);
             prot.setY(CommonState.r.nextDouble()*100);
+            w.setProps(prot);
         }
         if(hasCloud == 1){
             Node cloud = Network.get(Network.size() - 1);

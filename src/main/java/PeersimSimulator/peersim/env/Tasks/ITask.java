@@ -35,7 +35,7 @@ public abstract class ITask {
     private double currentRank;
     /**
      * Total Amount of instructions needed to execute task.
-     *w
+     *processingPower
      * I should note that this value would usually be tied to the type of request being done and would be an estimated
      * average value.
      */

@@ -85,7 +85,7 @@ public WeightedRandPerm( Random r, double[] weights ) {
 	for(int i=0; i<w.length; ++i)
 	{
 		if( w[i] <= 0.0 ) throw new IllegalArgumentException(
-			"weights should be positive: w["+i+"]="+w[i]);
+			"weights should be positive: processingPower["+i+"]="+w[i]);
 	}
 	
 	for(int i=1; i<w.length; ++i) wsum[i]+=wsum[i-1];
@@ -174,10 +174,10 @@ public static void main( String pars[] ) throws Exception {
 	
 
 	int k = pars.length;
-	double w[] = new double[k];
-	for(int i=0; i<k; ++i) w[i] = Double.parseDouble(pars[i]);
+	double processingPower[] = new double[k];
+	for(int i=0; i<k; ++i) processingPower[i] = Double.parseDouble(pars[i]);
 	
-	WeightedRandPerm rp = new WeightedRandPerm(new Random(),w);
+	WeightedRandPerm rp = new WeightedRandPerm(new Random(),processingPower);
 	rp.reset(k);
 	for(int i=0; i<1000; ++i)
 	{

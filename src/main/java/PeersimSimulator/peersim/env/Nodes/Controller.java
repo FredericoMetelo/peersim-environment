@@ -1,11 +1,13 @@
 package PeersimSimulator.peersim.env.Nodes;
 
+import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
+import PeersimSimulator.peersim.env.Records.Coordinates;
 import PeersimSimulator.peersim.env.Records.DebugInfo;
 import PeersimSimulator.peersim.env.Util.Log;
 import PeersimSimulator.peersim.env.Nodes.Events.OffloadInstructions;
 import PeersimSimulator.peersim.env.Nodes.Events.WorkerInfo;
 import PeersimSimulator.peersim.env.Records.Action;
-import PeersimSimulator.peersim.env.Records.EnvState;
+import PeersimSimulator.peersim.env.Records.PartialState;
 import PeersimSimulator.peersim.cdsim.CDProtocol;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
@@ -38,6 +40,8 @@ public class Controller implements CDProtocol, EDProtocol {
     private Worker correspondingWorker;
 
     private OffloadInstructions currentInstructions;
+
+    SDNNodeProperties props;
 
     /**
      * selectedNode represents the latest selected ID of node, between [0, N]
@@ -256,18 +260,21 @@ public class Controller implements CDProtocol, EDProtocol {
         return pid;
     }
 
+
+
     public List<Integer> getQ() {
         //int start = 1; // By definition can't have less than 3 nodes. For convenience
         return this.workerInfo.stream().map(WorkerInfo::getTotalTasks).toList();
     }
 
-    public EnvState getState() {
+    public PartialState getState() {
         ctrDbgLog("Acquiring state");
         // stop = true; Set the await action to block on next iter.
-        WorkerInfo wi = getWorkerInfo(this.selectedNode); // TODO fix this function. Remnant of before.
-        double w = (wi==null)? 0 : wi.getW();
+        SDNNodeProperties props = correspondingWorker.getProps();
+        // TODO deal with the fact wi might be null!!!! Btw I need to compute distance, I'm not entirely sure how to best do this. AS the
+         // workers may be moving and there is no way they broadcast their position to the neighbourhood. I could have the controller
         //int offloadable_tasks = wi.getW_i();
-        return new EnvState(this.selectedNode, this.getQ(), w);
+        return new PartialState(this.selectedNode, this.getQ(), correspondingWorker.getProcessingPower(), correspondingWorker.getAverageWaitingTime(), correspondingWorker.getLayer(), new Coordinates(props.getX(), props.getY()), props.getBANDWIDTH(), props.getTRANSMISSION_POWER());
     }
 
     public DebugInfo getDebugInfo() {

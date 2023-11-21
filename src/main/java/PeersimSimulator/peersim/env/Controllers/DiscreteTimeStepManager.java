@@ -4,15 +4,12 @@ import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
 import PeersimSimulator.peersim.env.Nodes.Client;
 import PeersimSimulator.peersim.env.Nodes.Controller;
 import PeersimSimulator.peersim.env.Nodes.Worker;
-import PeersimSimulator.peersim.env.Records.DebugInfo;
-import PeersimSimulator.peersim.env.Records.EnvState;
-import PeersimSimulator.peersim.env.Records.SimulationData;
+import PeersimSimulator.peersim.env.Records.*;
 import PeersimSimulator.peersim.env.Util.Log;
 import PeersimSimulator.peersim.cdsim.CDProtocol;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
 import PeersimSimulator.peersim.core.*;
-import PeersimSimulator.peersim.env.Records.Action;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -168,13 +165,49 @@ public class DiscreteTimeStepManager implements CDProtocol {
         return results;
     }
 
-    public List<EnvState> getPartialStates(){
-        List<EnvState> envStateList = new ArrayList<>(controllerIDs.size());
+    public State getState() {
+        List<PartialState> partialStates = getPartialStates();
+        GlobalState globalState = getGlobalState();
+        return new State(partialStates, globalState);
+    }
+
+    public List<PartialState> getPartialStates(){
+        List<PartialState> partialStateList = new ArrayList<>(controllerIDs.size());
         for(int id : controllerIDs) {
             Controller c = (Controller) Network.get(id).getProtocol(Controller.getPid());
-            envStateList.add(c.getState());
+            partialStateList.add(c.getState());
         }
-        return envStateList;
+        return partialStateList;
+    }
+
+    private GlobalState getGlobalState() {
+        List<Integer> nodeIds = new ArrayList<>(Network.size());
+        List<Integer> queues = new ArrayList<>(Network.size());
+        List<Double>  processingPowers = new ArrayList<>(Network.size());
+        List<Integer> layers = new ArrayList<>(Network.size());
+        List<Integer> noCores  = new ArrayList<>(Network.size());
+        List<Coordinates> positions = new ArrayList<>(Network.size());
+        List<Double> bandwidths = new ArrayList<>(Network.size());
+        List<Double> transmissionPowers = new ArrayList<>(Network.size());
+
+        for (int i = 0; i < Network.size(); i++) {
+            Node n = Network.get(i);
+            if (n.isUp()) {
+                Linkable linkable = (Linkable) n.getProtocol(FastConfig.getLinkable(Worker.getPid()));
+                Worker worker = (Worker) n.getProtocol(Worker.getPid());
+                nodeIds.add(worker.getId());
+                queues.add(worker.getNumberOfTasks());
+                processingPowers.add(worker.getProcessingPower());
+                layers.add(worker.getLayer());
+                noCores.add(worker.getCpuNoCores());
+                SDNNodeProperties props = worker.getProps();
+                positions.add(new Coordinates(props.getX(), props.getY()));
+                bandwidths.add(props.getBANDWIDTH());
+                transmissionPowers.add(props.getTRANSMISSION_POWER());
+
+            }
+        }
+        return new GlobalState(nodeIds, queues, processingPowers, layers, noCores, positions, bandwidths, transmissionPowers);
     }
 
 
@@ -194,20 +227,20 @@ public class DiscreteTimeStepManager implements CDProtocol {
         double d_i_j = Math.sqrt(Math.pow(propsNode.getY() - propsTarget.getY(), 2) + Math.pow(propsNode.getX() - propsTarget.getX(), 2));
         return new SimulationData(sourceID, d_i_j, controller.getWorkerInfo().get(neighbourIndex));
     }
-
     public boolean isActive() {
         return active;
     }
     public static int getPid() {
         return pid;
     }
+
     public boolean isUp() {
         return up;
     }
-
     public boolean isStable() {
         return stop;
     }
+
     public void setActive(boolean active) {
         this.active = active;
     }
@@ -215,7 +248,6 @@ public class DiscreteTimeStepManager implements CDProtocol {
     private double notZero(double n) {
         return (n == 0) ? 0 : 1;
     }
-
     private String controllersToString(){
         StringBuilder s = new StringBuilder("[ ");
         for (int id: controllerIDs
@@ -229,6 +261,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
         Log.logInfo("MNG", -1, event, info);
 
     }
+
     public void mngDbgLog(String msg){
         Log.logDbg("MNG", -1, "DEBUG", msg);
     }

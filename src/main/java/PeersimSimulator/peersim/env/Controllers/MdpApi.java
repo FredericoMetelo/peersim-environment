@@ -1,9 +1,6 @@
 package PeersimSimulator.peersim.env.Controllers;
 
-import PeersimSimulator.peersim.env.Records.Action;
-import PeersimSimulator.peersim.env.Records.DebugInfo;
-import PeersimSimulator.peersim.env.Records.EnvState;
-import PeersimSimulator.peersim.env.Records.SimulationData;
+import PeersimSimulator.peersim.env.Records.*;
 import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Control;
 import PeersimSimulator.peersim.core.Network;
@@ -33,7 +30,8 @@ public class MdpApi implements Control {
             return new Information(lastInfo.state(), true, lastInfo.info());
         }
         while (!c.isStable()) Thread.onSpinWait(); // await the 100 ticks.
-        Information i = new Information(c.getPartialStates(), CommonState.getEndTime() <= CommonState.getTime() + c.CYCLE_SIZE, c.getDebugInfo());
+        State gs = c.getState();
+        Information i = new Information(c.getState(), CommonState.getEndTime() <= CommonState.getTime() + c.CYCLE_SIZE, c.getDebugInfo());
         this.lastInfo = i;
         return i;
     }
@@ -68,5 +66,5 @@ public class MdpApi implements Control {
 
 
 
-    private record Information(List<EnvState> state, boolean done, DebugInfo info){}
+    private record Information(State state, boolean done, DebugInfo info){}
 }

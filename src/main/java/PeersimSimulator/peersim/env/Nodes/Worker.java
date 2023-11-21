@@ -1,5 +1,6 @@
 package PeersimSimulator.peersim.env.Nodes;
 
+import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
 import PeersimSimulator.peersim.env.Records.DependentTaskComparator;
 import PeersimSimulator.peersim.env.Records.LoseTaskInfo;
 import PeersimSimulator.peersim.env.Tasks.Application;
@@ -147,6 +148,7 @@ public class Worker implements CDProtocol, EDProtocol {
      * This variable keeps track of the number of tasks that are in the tasks that require insertion in  the queue.
      */
     int toAddSize;
+    private SDNNodeProperties props;
 
     public Worker(String prefix) {
         //======== Define the Constant values from Configs ===========//
@@ -827,7 +829,13 @@ public class Worker implements CDProtocol, EDProtocol {
     public static int getPid() {
         return pid;
     }
+    public SDNNodeProperties getProps() {
+        return props;
+    }
 
+    public void setProps(SDNNodeProperties props) {
+        this.props = props;
+    }
     public void setProcessingPower(double processingPower) {
         this.processingPower = processingPower;
     }
@@ -899,5 +907,17 @@ public class Worker implements CDProtocol, EDProtocol {
     }
     public void wrkErrLog(String event, String msg){
         Log.logErr("WRK", this.id, event, msg);
+    }
+
+
+    public int getCpuNoCores() {
+        return cpuNoCores;
+    }
+
+    public double getAverageWaitingTime() {
+        // TODO add the part corresponding to the waiting time of the tasks in the managed app.
+        double managedAvgWaitTime = this.recievedApplications.stream().mapToDouble(Application::getTotalTaskSize).average().orElse(0);
+        double queueAvgWaitTime = this.queue.stream().mapToDouble(ITask::getTotalInstructions).average().orElse(0);
+        return (managedAvgWaitTime +queueAvgWaitTime ) / processingPower;
     }
 }

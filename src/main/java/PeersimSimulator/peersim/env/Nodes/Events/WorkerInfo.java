@@ -94,6 +94,9 @@ public class WorkerInfo implements Message{
         this.nodeProcessingPower = nodeProcessingPower;
     }
 
+    public double getAverageWaitingTime(){
+        return averageTaskSize/nodeProcessingPower;
+    }
 
     public int getLayer() {
         return layer;

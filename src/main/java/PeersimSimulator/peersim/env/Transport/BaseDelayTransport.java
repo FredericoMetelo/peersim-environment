@@ -95,7 +95,7 @@ public final class BaseDelayTransport implements Transport
     {
         // avoid calling nextLong if possible
         // I will base myself on the expression proposed by the authors of the Fog Paper for the delay.
-        // t^c = \frac{2 * T * w^o}{r_{l,o}}
+        // t^c = \frac{2 * T * processingPower^o}{r_{l,o}}
         // $r_{l,o} = B*\log(1 + \frac{g_{i,j}P_{t_x, i}}{BN_0})$
         SDNNodeProperties srcProps = (SDNNodeProperties) src.getProtocol(SDNNodeProperties.getPid());
         SDNNodeProperties dstProps = (SDNNodeProperties) dest.getProtocol(SDNNodeProperties.getPid());
