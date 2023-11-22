@@ -2,6 +2,7 @@ package PeersimSimulator.peersim.env.Links;
 
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.core.Protocol;
+import PeersimSimulator.peersim.env.Records.Coordinates;
 
 public class SDNNodeProperties implements Protocol {
 
@@ -90,5 +91,19 @@ public class SDNNodeProperties implements Protocol {
 
     public static int getPid() {
         return pid;
+    }
+
+    public Coordinates getCoordinates(){
+        return new Coordinates(this.getX(), this.getY());
+    }
+
+    /**
+     * Returns distance between this node and the coordinates given. IF said coordinates are null, returns MAX_VALUE.
+     * @param other
+     * @return distance between this node and the coordinates given. IF said coordinates are null, returns MAX_VALUE.
+     */
+    public double distanceTo(Coordinates other){
+        if(other == null || this.getCoordinates() == null) return Double.MAX_VALUE;
+        return Math.sqrt(Math.pow(this.getX() - other.X(), 2) + Math.pow(this.getY() - other.Y(), 2));
     }
 }

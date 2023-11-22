@@ -2,6 +2,7 @@ package PeersimSimulator.peersim.env.Nodes.Events;
 
 import PeersimSimulator.peersim.env.Nodes.Client;
 import PeersimSimulator.peersim.core.Network;
+import PeersimSimulator.peersim.env.Records.Coordinates;
 
 public class WorkerInfo implements Message{
 
@@ -21,7 +22,7 @@ public class WorkerInfo implements Message{
     /**
      * Number of Requests that arrived at this node and are awaiting processing.
      */
-    private int W_i;
+    private int unprocessedApplications;
 
     private double averageTaskSize;
 
@@ -29,20 +30,24 @@ public class WorkerInfo implements Message{
 
     private int freeTaskSlots;
 
+    private Coordinates lastKnownPosition;
+
+
     private int layer;
 
-    public WorkerInfo(int id, int queueSize, int w, double averageTaskSize, double nodeProcessingPower, int freeTaskSlots, int layer) {
+    public WorkerInfo(int id, int queueSize, int w, double averageTaskSize, double nodeProcessingPower, int freeTaskSlots, int layer, Coordinates lastKnownPosition) {
         this.id = id;
         this.queueSize = queueSize;
-        this.W_i = w;
+        this.unprocessedApplications = w;
         this.averageTaskSize = averageTaskSize;
         this.nodeProcessingPower = nodeProcessingPower;
         this.freeTaskSlots = freeTaskSlots;
         this.layer = layer;
+        this.lastKnownPosition = lastKnownPosition;
     }
 
     public int getTotalTasks() {
-        return this.getQueueSize() + getW_i();
+        return this.getQueueSize() + getUnprocessedApplications();
     }
 
     public int getQueueSize() {
@@ -62,12 +67,21 @@ public class WorkerInfo implements Message{
         return (averageTaskSize == 0) ? nodeProcessingPower/(clt.getAverageTaskSize()) : nodeProcessingPower/(averageTaskSize);
     }
 
-    public void setW_i(int w_i) {
-        W_i = w_i;
+
+    public Coordinates getLastKnownPosition() {
+        return lastKnownPosition;
     }
 
-    public int getW_i() {
-        return W_i;
+    public void setLastKnownPosition(Coordinates lastKnownPosition) {
+        this.lastKnownPosition = lastKnownPosition;
+    }
+
+    public void setUnprocessedApplications(int unprocessedApplications) {
+        this.unprocessedApplications = unprocessedApplications;
+    }
+
+    public int getUnprocessedApplications() {
+        return unprocessedApplications;
     }
 
     public int getId() {

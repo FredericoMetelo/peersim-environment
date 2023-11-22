@@ -9,6 +9,7 @@ public record PartialState(
         double averageWaitingTime,
         int layer,
         Coordinates position,
+        List<Double> distancesToNeighbours,
         double bandwidth,
         double transmissionPower
 ) {

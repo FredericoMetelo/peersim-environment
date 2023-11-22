@@ -16,6 +16,7 @@ import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.edsim.EDProtocol;
+import jdk.incubator.vector.DoubleVector;
 
 import java.util.*;
 
@@ -171,8 +172,8 @@ public class Controller implements CDProtocol, EDProtocol {
     private void updateNode(WorkerInfo newWi) {
         for (WorkerInfo oldWi : workerInfo) {
             if (oldWi.getId() == newWi.getId()) {
-                ctrInfoLog(EVENT_WORKER_INFO_UPDATE, "id="+newWi.getId()+", Q_size="+ oldWi.getTotalTasks() + "->" + newWi.getTotalTasks() + " rcv_tasks=" + oldWi.getW_i() + "->" + newWi.getW_i());
-                oldWi.setW_i(newWi.getW_i());
+                ctrInfoLog(EVENT_WORKER_INFO_UPDATE, "id="+newWi.getId()+", Q_size="+ oldWi.getTotalTasks() + "->" + newWi.getTotalTasks() + " rcv_tasks=" + oldWi.getUnprocessedApplications() + "->" + newWi.getUnprocessedApplications());
+                oldWi.setUnprocessedApplications(newWi.getUnprocessedApplications());
                 oldWi.setQueueSize(newWi.getQueueSize());
                 oldWi.setNodeProcessingPower(newWi.getNodeProcessingPower());
                 oldWi.setAverageTaskSize(newWi.getAverageTaskSize());
@@ -181,7 +182,7 @@ public class Controller implements CDProtocol, EDProtocol {
                 return;
             }
         }
-        ctrInfoLog(EVENT_WORKER_INFO_ADD, "id="+newWi.getId()+", Q_size="+ newWi.getTotalTasks() + "rcv_Apps=" + newWi.getW_i());
+        ctrInfoLog(EVENT_WORKER_INFO_ADD, "id="+newWi.getId()+", Q_size="+ newWi.getTotalTasks() + "rcv_Apps=" + newWi.getUnprocessedApplications());
 
         // Means no node with given Id has sent information to the Controller yet.
         // Only happens with nodes that joined later. All nodes known from beginning are init with a 0 (?).
@@ -218,7 +219,7 @@ public class Controller implements CDProtocol, EDProtocol {
 
             Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
             workerInfo.add(
-                    new WorkerInfo(wi.getId(), 0, 0, default_task_size, Math.floor(default_CPU_NO_CORES * default_CPU_FREQ), wi.qMAX, -2) // This should technically be a request...
+                    new WorkerInfo(wi.getId(), 0, 0, default_task_size, Math.floor(default_CPU_NO_CORES * default_CPU_FREQ), wi.qMAX, -2, null) // This should technically be a request...
             );
         }
     }
@@ -266,6 +267,10 @@ public class Controller implements CDProtocol, EDProtocol {
         //int start = 1; // By definition can't have less than 3 nodes. For convenience
         return this.workerInfo.stream().map(WorkerInfo::getTotalTasks).toList();
     }
+    private List<Double> computeDistancesToNeighbours() {
+        return this.workerInfo.stream().map(wi -> props.distanceTo(wi.getLastKnownPosition())).toList();
+    }
+
 
     public PartialState getState() {
         ctrDbgLog("Acquiring state");
@@ -274,8 +279,18 @@ public class Controller implements CDProtocol, EDProtocol {
         // TODO deal with the fact wi might be null!!!! Btw I need to compute distance, I'm not entirely sure how to best do this. AS the
          // workers may be moving and there is no way they broadcast their position to the neighbourhood. I could have the controller
         //int offloadable_tasks = wi.getW_i();
-        return new PartialState(this.selectedNode, this.getQ(), correspondingWorker.getProcessingPower(), correspondingWorker.getAverageWaitingTime(), correspondingWorker.getLayer(), new Coordinates(props.getX(), props.getY()), props.getBANDWIDTH(), props.getTRANSMISSION_POWER());
+        return new PartialState(this.selectedNode,
+                this.getQ(),
+                correspondingWorker.getProcessingPower(),
+                correspondingWorker.getAverageWaitingTime(),
+                correspondingWorker.getLayer(),
+                new Coordinates(props.getX(), props.getY()),
+                this.computeDistancesToNeighbours(),
+                props.getBANDWIDTH(),
+                props.getTRANSMISSION_POWER());
     }
+
+
 
     public DebugInfo getDebugInfo() {
         List<Integer> droppedFromLastCycle = new LinkedList<Integer>();

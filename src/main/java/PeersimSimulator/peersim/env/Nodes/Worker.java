@@ -595,7 +595,7 @@ public class Worker implements CDProtocol, EDProtocol {
     }
 
     public WorkerInfo compileWorkerInfo(){
-        return new WorkerInfo(this.id, this.queue.size(), this.recievedApplications.size(), averageTaskSize(), processingPower, qMAX - this.getNumberOfTasks(), this.getLayer());
+        return new WorkerInfo(this.id, this.queue.size(), this.unprocessedTasksInApps() , averageTaskSize(), processingPower, qMAX - this.getNumberOfTasks(), this.getLayer(), this.getProps().getCoordinates());
 
     }
 
@@ -814,6 +814,10 @@ public class Worker implements CDProtocol, EDProtocol {
         this.active = active;
     }
 
+
+    public int unprocessedTasksInApps(){
+        return this.recievedApplications.stream().map(Application::applicationSize).reduce(0, Integer::sum);
+    }
     public boolean isActive() {
         return active;
     }
