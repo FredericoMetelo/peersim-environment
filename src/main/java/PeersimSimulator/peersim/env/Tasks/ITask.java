@@ -1,6 +1,8 @@
 package PeersimSimulator.peersim.env.Tasks;
 
-import java.util.UUID;
+import PeersimSimulator.peersim.core.CommonState;
+
+import java.util.*;
 
 public abstract class ITask {
     /**
@@ -28,11 +30,16 @@ public abstract class ITask {
 
     protected final double outputSizeBytes;
 
+    TaskHistory events;
+
     protected double progress;
 
     private String vertice;
 
     private double currentRank;
+
+    Stack<Integer> path;
+
     /**
      * Total Amount of instructions needed to execute task.
      *processingPower
@@ -51,6 +58,8 @@ public abstract class ITask {
         this.applicationID = applicationID;
         this.currentRank = -1;
         this.vertice = vertice;
+        this.path = new Stack<>();
+        this.addEvent(TaskHistory.TaskEvenType.CREATED, originalHandlerID, CommonState.getTime());
     }
 
     public double getOutputSizeBytes() {
@@ -105,6 +114,43 @@ public abstract class ITask {
     }
 
     public abstract double addProgress(double cycles);
+
+    /**
+     * Adds an event to the task history. When the task is added to the node. If the task changes nodes by offloading, it will also add
+     * the node to the path. If the task is completed, it will remove the last node from the path.
+     * @param type
+     * @param nodeId
+     * @param time
+     */
+    public void addEvent(TaskHistory.TaskEvenType type, int nodeId, double time){
+        if(this.events == null){
+            this.events = new TaskHistory();
+        }
+        switch (type){
+            case CREATED -> {
+                this.events.created(nodeId, time);
+                this.path.push(nodeId);
+                break;
+            }
+            case SELECTED_FOR_PROCESSING -> this.events.selectedForProcessing(nodeId, time);
+            case OFFLOADED -> {
+                this.events.offloaded(nodeId, time);
+                path.push(nodeId);
+                break;
+            }
+            case COMPLETED -> {
+                this.events.completed(nodeId, time);
+                if(!path.isEmpty())
+                    path.pop();
+                break;
+            }
+            case DROPPED -> this.events.dropped(nodeId, time);
+        }
+    }
+
+    public Integer pollLastConnectionId(){
+        return this.path.pop();
+    }
 
     @Override
     public String toString() {

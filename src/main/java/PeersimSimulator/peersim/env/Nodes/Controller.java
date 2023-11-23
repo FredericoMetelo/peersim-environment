@@ -3,6 +3,7 @@ package PeersimSimulator.peersim.env.Nodes;
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
 import PeersimSimulator.peersim.env.Records.Coordinates;
 import PeersimSimulator.peersim.env.Records.DebugInfo;
+import PeersimSimulator.peersim.env.Tasks.ITask;
 import PeersimSimulator.peersim.env.Util.Log;
 import PeersimSimulator.peersim.env.Nodes.Events.OffloadInstructions;
 import PeersimSimulator.peersim.env.Nodes.Events.WorkerInfo;
@@ -16,7 +17,6 @@ import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.edsim.EDProtocol;
-import jdk.incubator.vector.DoubleVector;
 
 import java.util.*;
 
@@ -105,18 +105,22 @@ public class Controller implements CDProtocol, EDProtocol {
     public double sendAction(Action a) {
         if (!active || a == null || a.controllerId() < 0 || a.neighbourIndex() < 0) return -1;
         ctrDbgLog(a.toString());
-        Node node = Network.get(CONTROLLER_ID);
+        Node node = Network.get(this.getId());
         int linkableID = FastConfig.getLinkable(Controller.getPid());
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
         if (linkable.degree() <= 0 || a.neighbourIndex() >=linkable.degree()) return -1;
-        int targetNode = a.neighbourIndex();
-        ctrInfoLog(EVENT_SEND_ACTION_RECIEVED, "TARGET="+targetNode );
+        int neighbourIndex = a.neighbourIndex();
+        ctrInfoLog(EVENT_SEND_ACTION_RECIEVED, "TARGET_INDEX="+neighbourIndex );
         double reward = 0; //calculatReward(linkable, node, targetNode, 1);
-        this.currentInstructions = new OffloadInstructions(targetNode);
-        this.correspondingWorker.offloadInstructions(node, Worker.getPid(), this.currentInstructions);
+        this.currentInstructions = new OffloadInstructions(neighbourIndex);
+        this.correspondingWorker.offloadInstructions(Worker.getPid(), this.currentInstructions);
         // allow progress
         stop = false;
         return reward;
+    }
+
+    public List<ITask> extractCompletedTasks(){
+        return this.correspondingWorker.extractCompletedTasks();
     }
 
 
@@ -268,7 +272,7 @@ public class Controller implements CDProtocol, EDProtocol {
         return this.workerInfo.stream().map(WorkerInfo::getTotalTasks).toList();
     }
     private List<Double> computeDistancesToNeighbours() {
-        return this.workerInfo.stream().map(wi -> props.distanceTo(wi.getLastKnownPosition())).toList();
+        return this.workerInfo.stream().map(wi -> props.distanceTo(wi.getLastKnownPosition())).toList(); // TODO this is also broken...
     }
 
 
@@ -326,14 +330,15 @@ public class Controller implements CDProtocol, EDProtocol {
 
     @Override
     public String toString() {
-        return "Controller{" +
+        return (active)?"Controller{" +
                 "id=" + id +
                 ", workerInfo=" + workerInfo +
                 ", currentInstructions=" + currentInstructions +
                 ", active=" + active +
                 ", stop=" + stop +
                 ", up=" + up +
-                '}';
+                '}'
+                : "Controller{inactive}";
     }
 
 

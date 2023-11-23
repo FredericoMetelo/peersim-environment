@@ -79,14 +79,15 @@ public class WorkerInitializer implements Control {
         qmaxPerLayer = Arrays.stream(_Q_MAX).mapToInt(Integer::parseInt).toArray();
         variations = Arrays.stream(_VARIATIONS).mapToDouble(Double::parseDouble).toArray();
 
-        if((Arrays.stream(numberOfNodesPerLayer).sum() + hasCloud) != size
+        if((Arrays.stream(numberOfNodesPerLayer).sum() + hasCloud) != (size + hasCloud)
             || (noLayers != numberOfNodesPerLayer.length && Arrays.stream(numberOfNodesPerLayer).noneMatch(i -> i == 0) )
             || (noLayers != cpuFreqsPerLayer.length && Arrays.stream(cpuFreqsPerLayer).noneMatch(i -> i == 0) )
             || (noLayers != coresPerLayer.length && Arrays.stream(coresPerLayer).noneMatch(i -> i == 0) )
             || (noLayers != qmaxPerLayer.length && Arrays.stream(qmaxPerLayer).noneMatch(i -> i == 0) )
             || (noLayers != variations.length)
-        )
+        ) {
             throw new RuntimeException("Mismatched number of nodes in the network and number of parameters off each layer.");
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -110,7 +111,7 @@ public class WorkerInitializer implements Control {
         // If we want to set the controller as a worker remove the line above (start i=0 in loop)
         // Note: All Nodes have protocol Worker as True.
         int offset = 0;
-        for(int i = 0; i < noLayers &&  offset < Network.size(); i++){
+        for(int i = 0; i < noLayers &&  offset < Network.size() - hasCloud; i++){
             int noNodes = numberOfNodesPerLayer[i];
             int noCores = coresPerLayer[i];
             double cpuFreq = cpuFreqsPerLayer[i] - sampleVariation(variations[i]);
@@ -129,7 +130,6 @@ public class WorkerInitializer implements Control {
     }
 
     private double sampleVariation(double maxVariation){
-        // TODO
         return CommonState.r.nextDouble(-maxVariation, maxVariation);
     }
 
@@ -139,7 +139,7 @@ public class WorkerInitializer implements Control {
         String header = String.format("| %-4s | %-5s | %-5s | %-3s | %-4s | %-25s |%n",
                 "NODE", "LAYER", "FREQS", "NO CORES", "Q SIZES", "NEIGHBOURS");
         StringBuilder rows = new StringBuilder(header);
-        for (int i = 0; i < Network.size() ; i++) {
+        for (int i = 0; i < Network.size() - 1; i++) {
             Node n = Network.get(i);
             Worker w = (Worker) n.getProtocol(Worker.getPid());
             int linkableID = FastConfig.getLinkable(Worker.getPid());

@@ -140,13 +140,13 @@ public class DiscreteTimeStepManager implements CDProtocol {
             return null;
         }
         for (Action a : actionList) {
-            int i = a.controllerId();
-            if(!controllerIDs.contains(i)){
-                mngErrLog("An action was sent for id " + i + "this id does not correspond to any controller. Ignoring action.");
+            int controllerId = a.controllerId();
+            if(!controllerIDs.contains(controllerId)){
+                mngErrLog("An action was sent for id " + controllerId + "this id does not correspond to any controller. Ignoring action.");
             }
 
             int neigh = a.neighbourIndex();
-            Linkable l = (Linkable) Network.get(i).getProtocol(FastConfig.getLinkable(Controller.getPid()));
+            Linkable l = (Linkable) Network.get(controllerId).getProtocol(FastConfig.getLinkable(Controller.getPid()));
             if(neigh < 0 || neigh >= l.degree()){
                 mngErrLog("An action failed because the specified index of the neighbourhood is out of bounds");
                 continue;
@@ -156,9 +156,9 @@ public class DiscreteTimeStepManager implements CDProtocol {
                 continue;
             }
 
-            Controller c = (Controller) Network.get(i).getProtocol(Controller.getPid());
-            if(!c.isActive()) throw new RuntimeException("Inactive Controller id=" + i);
-            double result = c.sendAction(actionList.get(i));
+            Controller c = (Controller) Network.get(controllerId).getProtocol(Controller.getPid());
+            if(!c.isActive()) throw new RuntimeException("Inactive Controller id=" + controllerId);
+            double result = c.sendAction(actionList.get(controllerId));
             results.add(compileSimulationData(a.neighbourIndex(), a.controllerId()));
         }
         stop = false;
@@ -225,7 +225,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
         SDNNodeProperties propsTarget = (SDNNodeProperties) srcLinkable.getNeighbor(neighbourIndex).getProtocol(SDNNodeProperties.getPid());
 
         double d_i_j = Math.sqrt(Math.pow(propsNode.getY() - propsTarget.getY(), 2) + Math.pow(propsNode.getX() - propsTarget.getX(), 2));
-        return new SimulationData(sourceID, d_i_j, controller.getWorkerInfo().get(neighbourIndex));
+        return new SimulationData(sourceID, d_i_j, controller.getWorkerInfo().get(neighbourIndex), controller.extractCompletedTasks());
     }
     public boolean isActive() {
         return active;

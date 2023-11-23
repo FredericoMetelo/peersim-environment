@@ -5,6 +5,7 @@ import PeersimSimulator.peersim.env.Records.DependentTaskComparator;
 import PeersimSimulator.peersim.env.Records.LoseTaskInfo;
 import PeersimSimulator.peersim.env.Tasks.Application;
 import PeersimSimulator.peersim.env.Tasks.ITask;
+import PeersimSimulator.peersim.env.Tasks.TaskHistory;
 import PeersimSimulator.peersim.env.Util.Log;
 import PeersimSimulator.peersim.env.Nodes.Events.*;
 
@@ -23,7 +24,7 @@ public class Worker implements CDProtocol, EDProtocol {
     // Constants/Immutable values
     //======================================================================================================
     private static final String PAR_NAME = "name";
-    private static final int RANK_EVENT_DELAY = 5;
+    private static final int RANK_EVENT_DELAY = 3;
 
     private static final String PAR_MAX_TIME_AFTER_DEADLINE = "maxTimeAfterDeadline";
     private static final int DEFAULT_TIME_AFTER_DEADLINE = 5;
@@ -38,6 +39,7 @@ public class Worker implements CDProtocol, EDProtocol {
     private static final String EVENT_WORKER_INFO_SEND_FAILED = "WRK-INFO SEND FAIL";
     public static final String EVENT_NO_TASK_PROCESS = "NO TASK FOR PROCESS";
     public static final String EVENT_NO_TASK_OFFLOAD = "NO TASK FOR OFFLOAD";
+    private static final String EVENT_ERR_NO_TARGET_PID_AVAILABLE = "NO TARGET PID ACTIVE";
 
 
     private final int timeAfterDeadline;
@@ -130,6 +132,8 @@ public class Worker implements CDProtocol, EDProtocol {
     // invariant: totalTasksReceived = totalTasksProcessed + totalTasksDropped + totalTasksOffloaded + getQueueSize()
 
 
+    private List<ITask> tasksCompletedSinceLastCycle;
+
     double minCompLoad;
     double maxCompLoad;
 
@@ -160,7 +164,7 @@ public class Worker implements CDProtocol, EDProtocol {
         //======== Init Datastructures ===========//
         hasController = false;
         current = null;
-        active = true;
+        active = false;
         totalDropped = 0;
         droppedLastCycle = 0;
         totalTasksRecieved = 0;
@@ -191,6 +195,9 @@ public class Worker implements CDProtocol, EDProtocol {
         this.cpuNoCores = noCores;
         this.qMAX = qMax;
         this.layer = layer;
+        this.active = true;
+        // TODO Was currently testing the behaviour of the worker activation. Need to gurarantee that
+        //  the cloud does not initialize as a Worker.
     }
 
     @Override
@@ -235,16 +242,12 @@ public class Worker implements CDProtocol, EDProtocol {
             remainingProcessingPower = current.addProgress(remainingProcessingPower);
             if (current.done()) {
                 totalTasksProcessed++;
-                if (this.id == current.getOriginalHandlerID()) {
-                    handleTaskFinish(node, protocolID, current);
-                } else if (this.id != current.getOriginalHandlerID()) {
-                    handleRemoteTaskFinish(node, protocolID, current);
-                }
+                handleTaskConcludedEvent(node, pid, current);
                 current = null;
             }
         }
         cleanExpiredApps();
-        if ((CommonState.getTime() % RANK_EVENT_DELAY) == 0 ) { // && !this.recievedApplications.isEmpty() // if offloaded a task and does not run this then no cleanup.
+        if ((CommonState.getTime() % RANK_EVENT_DELAY) == 0 || this.awaitingSerialization() ) { // && !this.recievedApplications.isEmpty() // if offloaded a task and does not run this then no cleanup.
             applicationSerialization();
         }
 
@@ -254,16 +257,20 @@ public class Worker implements CDProtocol, EDProtocol {
         }
     }
 
+    private boolean awaitingSerialization() {
+        return this.queue.isEmpty() && !this.recievedApplications.isEmpty();
+    }
+
     @Override
     public void processEvent(PeersimSimulator.peersim.core.Node node, int pid, Object event) {
         if (!active) return;
         if (event instanceof TaskOffloadEvent ev) {
             handleTaskOffloadEvent(ev);
         } else if (event instanceof NewApplicationEvent ev) {
-            handleNewApplicationEvent(ev);
+            handleNewApplicationEvent(ev); // TODO this is considered overloaded when it shouldn't be overloaded.
         }else if(event instanceof TaskConcludedEvent ev){
             ITask finishedTask = ev.getTask();
-            handleTaskFinish(node, pid, finishedTask);
+            handleTaskConcludedEvent(node, pid, finishedTask);
         }
 
         // Note: Updates internal state only sends data to user later
@@ -285,7 +292,7 @@ public class Worker implements CDProtocol, EDProtocol {
                 wrkInfoLog(EVENT_WORKER_INFO_SEND_FAILED, "target="+controller.getID());
                 continue;
             }
-            ((Transport) controller.getProtocol(FastConfig.getTransport(Controller.getPid()))).
+            ((Transport) node.getProtocol(FastConfig.getTransport(Controller.getPid()))).
                     send(
                             node,
                             controller,
@@ -300,7 +307,7 @@ public class Worker implements CDProtocol, EDProtocol {
     private void handleRemoteTaskFinish(Node node, int protocolID, ITask task) {
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        Node handler = this.getNodeFromId(task.getOriginalHandlerID(), linkable);
+        Node handler = this.getNodeFromId(task.pollLastConnectionId(), linkable);
 
         // Clean up the data structures
         loseTaskInformation.remove(task.getId());
@@ -309,7 +316,7 @@ public class Worker implements CDProtocol, EDProtocol {
             wrkErrLog("NO CTR FOR REMOTE TSK", "Node does not know Node="+task.getOriginalHandlerID() +" that requested task=" +task.getId()+", dropping task" );
         }else {
             wrkInfoLog(EVENT_TASK_FINISH,  "taskId=" + task.getId());
-            ((Transport) handler.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+            ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                     send(
                             node,
                             handler,
@@ -322,8 +329,18 @@ public class Worker implements CDProtocol, EDProtocol {
     private void handleTaskFinish(Node node, int protocolID, ITask finishedTask) {
         Application app = this.managedApplications.get(finishedTask.getAppID());
         app.addProgress(finishedTask.getId());
+        finishedTask.addEvent(TaskHistory.TaskEvenType.COMPLETED, this.id, CommonState.getTime());
+        tasksCompletedSinceLastCycle.add(finishedTask);
         if (app.isFinished()) {
             this.handleApplicationFinish(node, protocolID, app);
+        }
+    }
+
+    private void handleTaskConcludedEvent(Node node, int protocolID, ITask finishedTask) {
+        if(finishedTask.getOriginalHandlerID()  != this.id){
+            handleRemoteTaskFinish(node, protocolID, finishedTask);
+        }else{
+            handleTaskFinish(node, protocolID, finishedTask);
         }
     }
 
@@ -339,7 +356,7 @@ public class Worker implements CDProtocol, EDProtocol {
 
         if (!client.isUp()) return; // This happens task progress is lost.
         wrkInfoLog(EVENT_APP_FINISH, "appId=" + app.getAppID() + " deadlineWas="+app.getDeadline() + " finished=" + app.isFinished());
-        ((Transport) client.getProtocol(FastConfig.getTransport(Client.getPid()))).
+        ((Transport) node.getProtocol(FastConfig.getTransport(Client.getPid()))).
                 send(
                         node,
                         client,
@@ -354,10 +371,11 @@ public class Worker implements CDProtocol, EDProtocol {
         // is reasonable because this requests can be consumed for
         // processing as well.
         if (this.getId() != ev.getDstNode()) {
-            wrkInfoLog(EVENT_OFFLOADED_TASKS_ARRIVED_AT_WRONG_NODE, " taskId=" + ev.getTask().getId() + " appId="+ev.getTask().getAppID()+" originalHandler=" + ev.getTask().getOriginalHandlerID());
+            wrkErrLog(EVENT_OFFLOADED_TASKS_ARRIVED_AT_WRONG_NODE, " taskId=" + ev.getTask().getId() + " appId="+ev.getTask().getAppID()+" originalHandler=" + ev.getTask().getOriginalHandlerID() +" arrivedAt=" + this.getId() + " supposedToArriveAt=" + ev.getDstNode());
             return;
         }
         ITask offloadedTask = ev.getTask();
+        offloadedTask.addEvent(TaskHistory.TaskEvenType.OFFLOADED, this.id, CommonState.getTime());
         wrkInfoLog(EVENT_TASK_OFFLOAD_RECIEVE, " taskId=" + ev.getTask().getId() + " appId="+ev.getTask().getAppID()+" originalHandler=" + ev.getTask().getOriginalHandlerID());
         if (this.getNumberOfTasks() > qMAX) {
             this.droppedLastCycle++;
@@ -406,6 +424,8 @@ public class Worker implements CDProtocol, EDProtocol {
      */
     private void applicationSerialization() {
 
+        if(recievedApplications.isEmpty()) return ;
+        wrkInfoLog("SERIALIZING EVENT", "Q_size=" + this.queue.size() + " rcv_Apps=" + this.recievedApplications.size() + " working=" + !(current == null));
         TreeSet<ITask> newQ = new TreeSet<>(dependentTaskComparator);
 
         minCompLoad = Double.MAX_VALUE;
@@ -480,6 +500,8 @@ public class Worker implements CDProtocol, EDProtocol {
             ITask t = qiterator.next();
             Application a = managedApplications.get(t.getAppID());
             if (a != null && a.getDeadline() + timeAfterDeadline <= CommonState.getTime()) {
+                t.addEvent(TaskHistory.TaskEvenType.DROPPED, this.id, CommonState.getTime());
+                tasksCompletedSinceLastCycle.add(t);
                 qiterator.remove();
                 removeApps.add(a);
                 continue;
@@ -617,6 +639,7 @@ public class Worker implements CDProtocol, EDProtocol {
         this.current = this.selectNextTaskWithDependenciesMet(false);
         boolean taskAssigend = this.current != null;
         if(taskAssigend) {
+            this.current.addEvent(TaskHistory.TaskEvenType.SELECTED_FOR_PROCESSING, this.id, CommonState.getTime());
             this.tasksToBeLocallyProcessed.remove(current.getId());
             this.tasksWithAllDepenciesMet--;
         }else{
@@ -626,7 +649,9 @@ public class Worker implements CDProtocol, EDProtocol {
 
     }
 
-    public boolean offloadInstructions(Node node, int pid, OffloadInstructions oi) {
+    public boolean offloadInstructions(int pid, OffloadInstructions oi) {
+        if(this.awaitingSerialization()) applicationSerialization();
+
         ITask task = this.selectNextTaskWithDependenciesMet(true);
         // ngl, it's late... There is for sure a better way of implementing this. This boolean overloading the method
         // does not look very good.
@@ -638,10 +663,12 @@ public class Worker implements CDProtocol, EDProtocol {
         //  It would not work with multiple Controllers.
 
         if (oi.getNeighbourIndex() != 0) { // Self is always the first to be added to the linkable. And should not be changed.
+/*
             if(this.queue.isEmpty() ){
                 return false;
             }
-
+*/
+            Node node = Network.get(this.getId());
             int linkableID = FastConfig.getLinkable(pid);
             Linkable linkable = (Linkable) node.getProtocol(linkableID);
             if(!validOffloadingInstructions(oi, linkable)) {
@@ -661,12 +688,13 @@ public class Worker implements CDProtocol, EDProtocol {
                 throw new RuntimeException("Something went wrong with tracking of lose tasks with loseTaskInfo. Killing the simulation.");
             }
 
-            ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+            wrkInfoLog("OFFLOADING TASK", "taskId=" + task.getId() + " appId=" + task.getAppID() + " originalHandler=" + task.getOriginalHandlerID() + " to=" + target.getID());
+            ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                     send(
                             node,
                             target,
-                            new TaskOffloadEvent(this.id, oi.getNeighbourIndex(), lti),
-                            Worker.getPid()
+                            new TaskOffloadEvent(this.id, target.getIndex(), lti),
+                            selectOffloadTargetPid(oi.getNeighbourIndex(), target)
                     );
             this.changedWorkerState = true;
             this.current = null;
@@ -694,7 +722,8 @@ public class Worker implements CDProtocol, EDProtocol {
             }
             Application app = this.managedApplications.get(t.getAppID());
             // forOffloading => subTaskCanAdvance = !forOffloading v subTaskCanAdvance
-            boolean canOffload = (!forOffloading || app.subTaskCanAdvance(t.getId()));
+            boolean canOffload = (!forOffloading ||
+                    (app.subTaskCanAdvance(t.getId()) && !this.tasksToBeLocallyProcessed.contains(t.getId())));
             if (app != null && app.subTaskCanAdvance(t.getId()) && canOffload) {
                 selected = t;
                 iterOverQueuedTasks.remove();
@@ -703,6 +732,19 @@ public class Worker implements CDProtocol, EDProtocol {
             }
         }
         return selected;
+    }
+
+    private int selectOffloadTargetPid(int targetIndex, Node target){
+        int pid;
+        if(((Worker) target.getProtocol(Worker.getPid())).isActive()){
+            pid = Worker.getPid();
+        }else if(((Cloud) target.getProtocol(Cloud.getPid())).isActive()){
+            pid = Cloud.getPid();
+        }else{
+            wrkErrLog(EVENT_ERR_NO_TARGET_PID_AVAILABLE,"The target node is not a Worker nor a Cloud. This should not happen. Killing the simulation.");
+            throw new RuntimeException("The target node is not a Worker nor a Cloud. This should not happen. Killing the simulation.");
+        }
+        return pid;
     }
 
     private LoseTaskInfo getOrGenerateLoseTaskInfo(Node node, ITask task) {
@@ -742,6 +784,7 @@ public class Worker implements CDProtocol, EDProtocol {
         managedApplications = new HashMap<>();
         current = null;
 
+        tasksCompletedSinceLastCycle = new LinkedList<>();
         tasksToBeLocallyProcessed = new HashSet<>();
         tasksWithAllDepenciesMet = 0;
     }
@@ -778,7 +821,8 @@ public class Worker implements CDProtocol, EDProtocol {
     @Override
     public String toString() {
         String curr = (current != null) ? current.getId() : "NULL";
-        return "Worker ID<" + this.getId() + "> | Q: " + this.queue.size() + " W: " + this.recievedApplications.size() + " Current: " + curr;
+        return (this.active) ? "Worker ID<" + this.getId() + "> | Q: " + this.queue.size() + " W: " + this.recievedApplications.size() + " Current: " + curr
+                : "Worker <INACTIVE>";
     }
 
     /**
@@ -906,9 +950,15 @@ public class Worker implements CDProtocol, EDProtocol {
         Log.logInfo("WRK", this.id, event, info);
 
     }
+    public List<ITask> extractCompletedTasks() {
+        List<ITask> aux = tasksCompletedSinceLastCycle;
+        tasksCompletedSinceLastCycle = new LinkedList<>();
+        return aux;
+    }
     public void wrkDbgLog(String msg){
         Log.logDbg("WRK", this.id, "DEBUG", msg);
     }
+
     public void wrkErrLog(String event, String msg){
         Log.logErr("WRK", this.id, event, msg);
     }

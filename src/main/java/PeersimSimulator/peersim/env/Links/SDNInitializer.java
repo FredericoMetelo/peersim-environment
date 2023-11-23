@@ -44,7 +44,7 @@ public class SDNInitializer implements Control {
         String[] _NO_NODES_PER_LAYERS = Configuration.getString(PAR_NO_NODES_PER_LAYERS, Integer.toString(size)).split(",");
         numberOfNodesPerLayer = Arrays.stream(_NO_NODES_PER_LAYERS).mapToInt(Integer::parseInt).toArray();
 
-        if((Arrays.stream(numberOfNodesPerLayer).sum() + hasCloud) != size){
+        if((Arrays.stream(numberOfNodesPerLayer).sum()) != size){
             throw new RuntimeException("Configurations are incorrect. There are not enough nodes for all the layers and the Cloud.");
         }
 

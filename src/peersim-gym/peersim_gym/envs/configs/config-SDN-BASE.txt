@@ -1,7 +1,7 @@
 
 #=============Define Simulation Globals
 
-network.size SIZE
+network.size SIZE+CLOUD_EXISTS
 simulation.endtime CYCLE*CYCLES
 simulation.logtime CYCLE
 
@@ -14,6 +14,13 @@ protocol.mng.linkable lnk
 protocol.mng.name mng
 protocol.mng.step CYCLE
 protocol.mng.transport tr
+
+protocol.cld PeersimSimulator.peersim.env.Nodes.Cloud
+protocol.cld.linkable lnk
+protocol.cld.name cld
+protocol.cld.step CYCLE
+protocol.cld.transport tr
+
 
 protocol.clt PeersimSimulator.peersim.env.Nodes.Client
 protocol.clt.linkable lnk
@@ -69,6 +76,9 @@ init.InitWrk.protocol wrk
 init.InitClt PeersimSimulator.peersim.env.Nodes.ClientInitializer
 init.InitClt.protocol clt
 
+init.InitCld PeersimSimulator.peersim.env.Nodes.CloudInitializer
+init.InitCld.protocol cld
+
 init.InitCtrl PeersimSimulator.peersim.env.Nodes.ControllerInitializer
 init.InitCtrl.protocol ctrl
 
@@ -78,9 +88,9 @@ init.InitMng.protocol mng
 
 #--------Activate Scheduler
 init.sch PeersimSimulator.peersim.edsim.CDScheduler
-init.sch.protocol clt ctrl wrk mng
+init.sch.protocol clt ctrl wrk cld mng
 init.sch.randstart
 
 #--------Activate Initializers
-include.init sch Net0 Net1 InitWrk InitClt InitCtrl InitMng
+include.init sch Net0 Net1 InitWrk InitClt InitCtrl InitCld InitMng
 

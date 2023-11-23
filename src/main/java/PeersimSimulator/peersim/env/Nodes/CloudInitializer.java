@@ -2,6 +2,7 @@ package PeersimSimulator.peersim.env.Nodes;
 
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.core.Control;
+import PeersimSimulator.peersim.core.Network;
 
 import java.util.Arrays;
 
@@ -35,6 +36,9 @@ public class CloudInitializer  implements Control {
 
     @Override
     public boolean execute() {
+        Cloud cld = (Cloud) Network.get(Network.size() - 1).getProtocol(Cloud.getPid());
+        cld.setActive(true);
+        cld.init(Network.size() - 1);
         return false;
     }
 }

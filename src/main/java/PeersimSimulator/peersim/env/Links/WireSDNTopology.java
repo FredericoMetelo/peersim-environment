@@ -73,11 +73,6 @@ public class WireSDNTopology extends WireGraph {
             for(int i = offset; i < offset + layers[l]; i++){
                 Node n = (Node) g.getNode(i);
                 // Node being linked.
-                if(this.layerCloudAccess(l)) {
-                    g.setEdge(i, Network.size() - 1);
-                    g.setEdge(Network.size() - 1, i);
-
-                }
 
                 for (int j = s; j < e; j++) {
                     // if(j == i) continue; Allowing Self routing, simplifies the action space.
@@ -87,6 +82,12 @@ public class WireSDNTopology extends WireGraph {
                         g.setEdge(i, j);
                         g.setEdge(j, i);
                     }
+                }
+
+                if(this.layerCloudAccess(l)) {
+                    g.setEdge(i, Network.size() - 1);
+                    g.setEdge(Network.size() - 1, i);
+
                 }
             }
             offset += layers[l];

@@ -14,6 +14,7 @@ import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.edsim.EDProtocol;
 import PeersimSimulator.peersim.transport.Transport;
+import org.nfunk.jep.function.Str;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -189,6 +190,8 @@ public class Client implements CDProtocol, EDProtocol {
         for (int i = 0; i < edgeTypes.length; i++) {
             String[] edges = edgeTypes[i].split(",");
             if(edges[0].isEmpty()){
+                List<String> expandedDag = this.expandToList(new HashMap<>(), new HashMap<>(), Integer.parseInt(vertices[i]));
+                this.expandedDAGs.add(expandedDag);
                 this.predecessorsPerDAGType.add(new HashMap<>());
                 this.successorsPerDAGType.add(new HashMap<>());
                 this.numberOfVerticesPerDAGType.add(Integer.parseInt(vertices[i]));
@@ -252,14 +255,15 @@ public class Client implements CDProtocol, EDProtocol {
         if(nextArrival == null) initTaskManagement(linkable.degree());
 
         for(int i = 0; i < linkable.degree(); i++) {
-            if (nextArrival.get(i) <= CommonState.getTime()) {
+            if (nextArrival.get(i) <= CommonState.getTime()
+                    && ((Worker) linkable.getNeighbor(i).getProtocol(Worker.getPid())).getLayer() == 0) { // Not sure of the legality of this...
                 Node target = linkable.getNeighbor(i);
                 if (!target.isUp()) return; // This happens task progress is lost.
                 Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
                 Application app = generateApplication((int) target.getID());
                 tasksAwaiting.add(new AppInfo(app.getAppID(), CommonState.getTime(), app.getDeadline()));
                 cltInfoLog(EVENT_TASK_SENT, "target="+wi.getId());
-                ((Transport) target.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+                ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                         send(
                                 node,
                                 target,
@@ -505,14 +509,15 @@ public class Client implements CDProtocol, EDProtocol {
 
     @Override
     public String toString() {
-        return "Client{" +
+        return (active)? "Client{" +
 
-                ", tasksAwaiting=" + tasksAwaiting.size() +
+                " tasksAwaiting=" + tasksAwaiting.size() +
                 ", averageLatency=" + averageLatency +
                 ", noResults=" + noResults +
                 ", tick=" + CommonState.getTime() +
                 ", id=" + id +
-                '}';
+                '}'
+                : "Client{inactive}";
     }
     public void cltInfoLog(String event, String info){
         Log.logInfo("CLT", this.id, event, info);

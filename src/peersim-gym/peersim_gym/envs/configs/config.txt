@@ -1,35 +1,49 @@
-SIZE 13
+
+
 CYCLE 1
 CYCLES 1000
 random.seed 1234567890
 MINDELAY 0
 MAXDELAY 0
 DROP 0
+
+# Test configs
+SIZE 2
+CLOUD_EXISTS 1
 CONTROLLERS 0;1
+NO_LAYERS            2
+NO_NODES_PER_LAYERS  1,1
+CLOUD_ACCESS         1,1
 
-NO_LAYERS            3
-NO_NODES_PER_LAYERS  6,4,3
-FREQS                1e7,3e7,10e7
-NO_CORES             4,8,16
-Q_MAX                10,50,100
-VARIATIONS           1e3,1e3,1e4
+FREQS                1e7,3e7 #,5e7
+NO_CORES             4,8 #,16
+Q_MAX                10,50 #,100
+VARIATIONS           1e3,1e3 #,1e4
 
-init.Net1.r 50
+# NEW
+
+# NEW
+protocol.cld.no_vms 3
+protocol.cld.VMProcessingPower 1e8
+
+
+init.Net1.r 1000
 protocol.mng.r_u 1
 protocol.mng.X_d 1
 protocol.mng.X_o 150
 protocol.mng.cycle 5
+
 protocol.clt.numberOfTasks 1
 protocol.clt.weight 1
 protocol.clt.CPI 1
 protocol.clt.T 150
-protocol.clt.I 200e6
-protocol.clt.taskArrivalRate 0.2
+protocol.clt.I 1e8
+protocol.clt.taskArrivalRate 0.8
 protocol.clt.numberOfDAG 1
 protocol.clt.dagWeights 1
-protocol.clt.edges 0->1,1->2
+protocol.clt.edges
 protocol.clt.maxDeadline 100
-protocol.clt.vertices 3
+protocol.clt.vertices 1
 
 protocol.wrk.NO_CORES 4
 protocol.wrk.FREQ 1e7
@@ -42,7 +56,7 @@ protocol.props.P_ti 20
 
 #=============Define Simulation Globals
 
-network.size SIZE
+network.size SIZE+CLOUD_EXISTS
 simulation.endtime CYCLE*CYCLES
 simulation.logtime CYCLE
 
@@ -55,6 +69,15 @@ protocol.mng.linkable lnk
 protocol.mng.name mng
 protocol.mng.step CYCLE
 protocol.mng.transport tr
+
+
+# NEW + the initialization stuff
+protocol.cld PeersimSimulator.peersim.env.Nodes.Cloud
+protocol.cld.linkable lnk
+protocol.cld.name cld
+protocol.cld.step CYCLE
+protocol.cld.transport tr
+
 
 protocol.clt PeersimSimulator.peersim.env.Nodes.Client
 protocol.clt.linkable lnk
@@ -110,6 +133,9 @@ init.InitWrk.protocol wrk
 init.InitClt PeersimSimulator.peersim.env.Nodes.ClientInitializer
 init.InitClt.protocol clt
 
+init.InitCld PeersimSimulator.peersim.env.Nodes.CloudInitializer
+init.InitCld.protocol cld
+
 init.InitCtrl PeersimSimulator.peersim.env.Nodes.ControllerInitializer
 init.InitCtrl.protocol ctrl
 
@@ -119,9 +145,9 @@ init.InitMng.protocol mng
 
 #--------Activate Scheduler
 init.sch PeersimSimulator.peersim.edsim.CDScheduler
-init.sch.protocol clt ctrl wrk mng
+init.sch.protocol clt ctrl wrk cld mng
 init.sch.randstart
 
 #--------Activate Initializers
-include.init sch Net0 Net1 InitWrk InitClt InitCtrl InitMng
+include.init sch Net0 Net1 InitWrk InitClt InitCtrl InitCld InitMng
 
