@@ -8,17 +8,17 @@ MAXDELAY 0
 DROP 0
 
 # Test configs
-SIZE 2
+SIZE 6
 CLOUD_EXISTS 1
-CONTROLLERS 0;1
-NO_LAYERS            2
-NO_NODES_PER_LAYERS  1,1
-CLOUD_ACCESS         1,1
+CONTROLLERS 0;1;2;3;4;5
+NO_LAYERS            1
+NO_NODES_PER_LAYERS  6 #,1
+CLOUD_ACCESS         1 #,1
 
-FREQS                1e7,3e7 #,5e7
-NO_CORES             4,8 #,16
-Q_MAX                10,50 #,100
-VARIATIONS           1e3,1e3 #,1e4
+FREQS                1e7 #,3e7 #,5e7
+NO_CORES             4 #,8 #,16
+Q_MAX                10 #,50 #,100
+VARIATIONS           1e3 #,1e3 #,1e4
 
 # NEW
 
@@ -37,7 +37,7 @@ protocol.clt.numberOfTasks 1
 protocol.clt.weight 1
 protocol.clt.CPI 1
 protocol.clt.T 150
-protocol.clt.I 1e8
+protocol.clt.I 16e8
 protocol.clt.taskArrivalRate 0.8
 protocol.clt.numberOfDAG 1
 protocol.clt.dagWeights 1
@@ -45,9 +45,6 @@ protocol.clt.edges
 protocol.clt.maxDeadline 100
 protocol.clt.vertices 1
 
-protocol.wrk.NO_CORES 4
-protocol.wrk.FREQ 1e7
-protocol.wrk.Q_MAX 10
 
 protocol.props.B 2
 protocol.props.Beta1 0.001
