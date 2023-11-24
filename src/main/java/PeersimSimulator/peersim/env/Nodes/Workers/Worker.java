@@ -254,7 +254,7 @@ public class Worker implements CDProtocol, EDProtocol {
             applicationSerialization();
         }
 
-        // Then Communicate changes in Queue Size and Recieved Nodes  to Controller.
+        // Then Communicate changes in Queue Size and Recieved Nodes  to BasicController.
         if (this.changedWorkerState) { // TODO Guarantee we inform neighbours. Guarantee no double offloading.
             broadcastStateChanges(node, protocolID);
         }

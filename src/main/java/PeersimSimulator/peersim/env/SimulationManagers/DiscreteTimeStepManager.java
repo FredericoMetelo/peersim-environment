@@ -33,6 +33,9 @@ public class DiscreteTimeStepManager implements CDProtocol {
     private final static String PAR_CYCLE = "CYCLE";
     private final static String PAR_CTR_ID = "CONTROLLERS";
 
+    private static final String PAR_HAS_CLOUD = "CLOUD_EXISTS";
+
+
     public final int UTILITY_REWARD;
     public final int DELAY_WEIGHT;
     public final int WRONG_MOVE_PUNISHMENT;
@@ -76,6 +79,9 @@ public class DiscreteTimeStepManager implements CDProtocol {
     /** Protocol identifier,*/
     private static int pid;
 
+    private int hasCloud;
+
+
     /**
      * up and stop are the variables responsible for the flow management of the application.
      * up - represents the state of the application, if the application is running up will be true and the controller will accept requests from the agent.tap:
@@ -97,6 +103,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
         OVERLOAD_WEIGHT = Configuration.getInt(prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
         UTILITY_REWARD = Configuration.getInt(prefix + "." + PAR_UTILITY_REWARD, 1);
         CYCLE_SIZE = Configuration.getInt(PAR_CYCLE, 100);
+        hasCloud = Configuration.getInt(PAR_HAS_CLOUD, 0);
         WRONG_MOVE_PUNISHMENT = -200 * UTILITY_REWARD;
         EXPECTED_TASK_ARRIVAL_RATE = Configuration.getDouble(prefix + "." + Client.PAR_TASKARRIVALRATE, Client.DEFAULT_TASKARRIVALRATE);
 
@@ -157,7 +164,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
             }
 
             Controller c = (Controller) Network.get(controllerId).getProtocol(Controller.getPid());
-            if(!c.isActive()) throw new RuntimeException("Inactive Controller id=" + controllerId);
+            if(!c.isActive()) throw new RuntimeException("Inactive BasicController id=" + controllerId);
             double result = c.sendAction(actionList.get(controllerId));
             results.add(compileSimulationData(a.neighbourIndex(), a.controllerId()));
         }
@@ -190,7 +197,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
         List<Double> bandwidths = new ArrayList<>(Network.size());
         List<Double> transmissionPowers = new ArrayList<>(Network.size());
 
-        for (int i = 0; i < Network.size(); i++) {
+        for (int i = 0; i < Network.size() - hasCloud; i++) {
             Node n = Network.get(i);
             if (n.isUp()) {
                 Linkable linkable = (Linkable) n.getProtocol(FastConfig.getLinkable(Worker.getPid()));

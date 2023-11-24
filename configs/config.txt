@@ -57,7 +57,7 @@ protocol.clt.transport tr
 
 
 
-protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.Controller
+protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.BasicController
 protocol.ctrl.linkable lnk
 protocol.ctrl.name ctrl
 protocol.ctrl.step CYCLE
@@ -94,7 +94,7 @@ protocol.tr.drop DROP
 # protocol.clt PeersimSimulator.peersim.env.Nodes.Clients.BasicClient
 
 
-# protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.Controller
+# protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.BasicController
 
 
 

@@ -31,7 +31,7 @@ protocol.clt.step CYCLE
 protocol.clt.transport tr
 
 
-protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.Controller
+protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.BasicController
 protocol.ctrl.linkable lnk
 protocol.ctrl.name ctrl
 protocol.ctrl.step CYCLE
