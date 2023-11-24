@@ -9,6 +9,7 @@ import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.edsim.EDProtocol;
 import PeersimSimulator.peersim.env.Nodes.Events.TaskConcludedEvent;
 import PeersimSimulator.peersim.env.Nodes.Events.TaskOffloadEvent;
+import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 import PeersimSimulator.peersim.env.Tasks.ITask;
 import PeersimSimulator.peersim.env.Tasks.TaskHistory;
 import PeersimSimulator.peersim.env.Util.Log;
@@ -19,7 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-import static PeersimSimulator.peersim.env.Nodes.Worker.EVENT_TASK_FINISH;
+import static PeersimSimulator.peersim.env.Nodes.Workers.Worker.EVENT_TASK_FINISH;
 
 public class Cloud  implements CDProtocol, EDProtocol {
 

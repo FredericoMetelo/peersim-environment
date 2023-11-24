@@ -1,6 +1,7 @@
-package PeersimSimulator.peersim.env.Nodes;
+package PeersimSimulator.peersim.env.Nodes.Controllers;
 
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
+import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 import PeersimSimulator.peersim.env.Records.Coordinates;
 import PeersimSimulator.peersim.env.Records.DebugInfo;
 import PeersimSimulator.peersim.env.Tasks.ITask;

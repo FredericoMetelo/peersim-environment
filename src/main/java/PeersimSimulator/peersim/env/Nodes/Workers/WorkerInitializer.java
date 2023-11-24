@@ -1,5 +1,6 @@
-package PeersimSimulator.peersim.env.Nodes;
+package PeersimSimulator.peersim.env.Nodes.Workers;
 
+import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
 import PeersimSimulator.peersim.env.Util.Log;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;

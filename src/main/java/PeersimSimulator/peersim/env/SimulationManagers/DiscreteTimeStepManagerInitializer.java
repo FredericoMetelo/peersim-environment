@@ -1,4 +1,4 @@
-package PeersimSimulator.peersim.env.Controllers;
+package PeersimSimulator.peersim.env.SimulationManagers;
 
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.core.Control;

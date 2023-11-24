@@ -1,6 +1,6 @@
 package PeersimSimulator.peersim.env.Links;
 
-import PeersimSimulator.peersim.env.Nodes.WorkerInitializer;
+import PeersimSimulator.peersim.env.Nodes.Workers.WorkerInitializer;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;

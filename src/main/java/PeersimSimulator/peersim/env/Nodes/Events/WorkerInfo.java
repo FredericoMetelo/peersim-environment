@@ -1,6 +1,6 @@
 package PeersimSimulator.peersim.env.Nodes.Events;
 
-import PeersimSimulator.peersim.env.Nodes.Client;
+import PeersimSimulator.peersim.env.Nodes.Clients.Client;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.env.Records.Coordinates;
 

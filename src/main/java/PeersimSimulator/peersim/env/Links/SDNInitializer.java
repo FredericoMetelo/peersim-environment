@@ -5,7 +5,7 @@ import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Control;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
-import PeersimSimulator.peersim.env.Nodes.Worker;
+import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 
 import java.util.Arrays;
 

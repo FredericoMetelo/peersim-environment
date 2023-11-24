@@ -61,7 +61,7 @@ simulation.logtime CYCLE
 #=============Define Protocols
 #--------Define Node Protocols
 
-protocol.mng PeersimSimulator.peersim.env.Controllers.DiscreteTimeStepManager
+protocol.mng PeersimSimulator.peersim.env.SimulationManagers.DiscreteTimeStepManager
 protocol.mng.linkable lnk
 protocol.mng.name mng
 protocol.mng.step CYCLE
@@ -76,21 +76,21 @@ protocol.cld.step CYCLE
 protocol.cld.transport tr
 
 
-protocol.clt PeersimSimulator.peersim.env.Nodes.Client
+protocol.clt PeersimSimulator.peersim.env.Nodes.Clients.BasicClient
 protocol.clt.linkable lnk
 protocol.clt.name clt
 protocol.clt.step CYCLE
 protocol.clt.transport tr
 
 
-protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controller
+protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.Controller
 protocol.ctrl.linkable lnk
 protocol.ctrl.name ctrl
 protocol.ctrl.step CYCLE
 protocol.ctrl.transport tr
 
 
-protocol.wrk PeersimSimulator.peersim.env.Nodes.Worker
+protocol.wrk PeersimSimulator.peersim.env.Nodes.Workers.Worker
 protocol.wrk.linkable lnk
 protocol.wrk.name wrk
 protocol.wrk.step CYCLE
@@ -124,19 +124,19 @@ init.Net0 PeersimSimulator.peersim.env.Links.SDNInitializer
 init.Net0.protocol props
 
 #--------Define Node Initialization
-init.InitWrk PeersimSimulator.peersim.env.Nodes.WorkerInitializer
+init.InitWrk PeersimSimulator.peersim.env.Nodes.Workers.WorkerInitializer
 init.InitWrk.protocol wrk
 
-init.InitClt PeersimSimulator.peersim.env.Nodes.ClientInitializer
+init.InitClt PeersimSimulator.peersim.env.Nodes.Clients.ClientInitializer
 init.InitClt.protocol clt
 
 init.InitCld PeersimSimulator.peersim.env.Nodes.CloudInitializer
 init.InitCld.protocol cld
 
-init.InitCtrl PeersimSimulator.peersim.env.Nodes.ControllerInitializer
+init.InitCtrl PeersimSimulator.peersim.env.Nodes.Controllers.ControllerInitializer
 init.InitCtrl.protocol ctrl
 
-init.InitMng PeersimSimulator.peersim.env.Controllers.DiscreteTimeStepManagerInitializer
+init.InitMng PeersimSimulator.peersim.env.SimulationManagers.DiscreteTimeStepManagerInitializer
 init.InitMng.protocol mng
 
 

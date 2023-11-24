@@ -1,8 +1,9 @@
-package PeersimSimulator.peersim.env.Nodes;
+package PeersimSimulator.peersim.env.Nodes.Controllers;
 
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.core.Control;
 import PeersimSimulator.peersim.core.Network;
+import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 
 import java.util.Arrays;
 import java.util.List;

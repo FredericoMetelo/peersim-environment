@@ -1,9 +1,9 @@
-package PeersimSimulator.peersim.env.Controllers;
+package PeersimSimulator.peersim.env.SimulationManagers;
 
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
-import PeersimSimulator.peersim.env.Nodes.Client;
-import PeersimSimulator.peersim.env.Nodes.Controller;
-import PeersimSimulator.peersim.env.Nodes.Worker;
+import PeersimSimulator.peersim.env.Nodes.Clients.Client;
+import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
+import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 import PeersimSimulator.peersim.env.Records.*;
 import PeersimSimulator.peersim.env.Util.Log;
 import PeersimSimulator.peersim.cdsim.CDProtocol;
@@ -44,7 +44,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
      protocol.mng.X_d 1
      protocol.mng.X_o 150
      protocol.mng.cycle 5
-     protocol.mng.Controllers 0
+     protocol.mng.SimulationManagers 0
      */
     public final int CYCLE_SIZE;
 

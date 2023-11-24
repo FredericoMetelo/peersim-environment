@@ -1,6 +1,9 @@
-package PeersimSimulator.peersim.env.Nodes;
+package PeersimSimulator.peersim.env.Nodes.Workers;
 
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
+import PeersimSimulator.peersim.env.Nodes.Clients.Client;
+import PeersimSimulator.peersim.env.Nodes.Cloud;
+import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
 import PeersimSimulator.peersim.env.Records.DependentTaskComparator;
 import PeersimSimulator.peersim.env.Records.LoseTaskInfo;
 import PeersimSimulator.peersim.env.Tasks.Application;
@@ -660,7 +663,7 @@ public class Worker implements CDProtocol, EDProtocol {
             return false;
         }
         // TODO this is a problem, it works because I try to leave the self in position 0 in the linkable.
-        //  It would not work with multiple Controllers.
+        //  It would not work with multiple SimulationManagers.
 
         if (oi.getNeighbourIndex() != 0) { // Self is always the first to be added to the linkable. And should not be changed.
 /*

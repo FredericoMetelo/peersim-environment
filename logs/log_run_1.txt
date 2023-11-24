@@ -32,9 +32,9 @@ EDSimulator: running initializers
 - Running initializer init.sch: class PeersimSimulator.peersim.edsim.CDScheduler
 - Running initializer init.Net0: class PeersimSimulator.peersim.env.Links.SDNInitializer
 - Running initializer init.Net1: class PeersimSimulator.peersim.env.Links.WireSDNTopology
-- Running initializer init.InitWrk: class PeersimSimulator.peersim.env.Nodes.WorkerInitializer
-- Running initializer init.InitClt: class PeersimSimulator.peersim.env.Nodes.ClientInitializer
-- Running initializer init.InitCtrl: class PeersimSimulator.peersim.env.Nodes.ControllerInitializer
+- Running initializer init.InitWrk: class PeersimSimulator.peersim.env.Nodes.Workers.WorkerInitializer
+- Running initializer init.InitClt: class PeersimSimulator.peersim.env.Nodes.Clients.ClientInitializer
+- Running initializer init.InitCtrl: class PeersimSimulator.peersim.env.Nodes.Controllers.ControllerInitializer
 EDSimulator: loaded controls []
 Current time: 0
 |CLT| TASK SENT to Node:<1> FROM < 0>
