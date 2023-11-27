@@ -1,24 +1,19 @@
 package PeersimSimulator.peersim.env.Nodes.Clients;
 
-import PeersimSimulator.peersim.cdsim.CDProtocol;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
 import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Node;
-import PeersimSimulator.peersim.edsim.EDProtocol;
 import PeersimSimulator.peersim.env.Nodes.Events.AppConcludedEvent;
 import PeersimSimulator.peersim.env.Nodes.Events.NewApplicationEvent;
 import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 import PeersimSimulator.peersim.env.Nodes.Workers.WorkerInitializer;
 import PeersimSimulator.peersim.env.Tasks.Application;
-import PeersimSimulator.peersim.env.Tasks.ITask;
-import PeersimSimulator.peersim.env.Tasks.Task;
 import PeersimSimulator.peersim.env.Util.Log;
 import PeersimSimulator.peersim.transport.Transport;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public abstract class AbstractClient implements Client {
 

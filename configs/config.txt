@@ -68,7 +68,7 @@ protocol.ctrl.step CYCLE
 protocol.ctrl.transport tr
 
 
-protocol.wrk PeersimSimulator.peersim.env.Nodes.Workers.Worker
+protocol.wrk PeersimSimulator.peersim.env.Nodes.Workers.BasicWorker
 protocol.wrk.linkable lnk
 protocol.wrk.name wrk
 protocol.wrk.step CYCLE

@@ -87,12 +87,11 @@ public final class BaseDelayTransport implements Transport
 //---------------------------------------------------------------------
 
     /**
-     * Delivers the message with a random
-     * delay, that is drawn from the configured interval according to the uniform
-     * distribution.
+     * Delivers the message with a delay based on Shannon-Hartley theorem
      */
     public void send(Node src, Node dest, Object msg, int pid)
     {
+        //
         // avoid calling nextLong if possible
         // I will base myself on the expression proposed by the authors of the Fog Paper for the delay.
         // t^c = \frac{2 * T * processingPower^o}{r_{l,o}}

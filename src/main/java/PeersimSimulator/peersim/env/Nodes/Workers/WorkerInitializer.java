@@ -147,7 +147,7 @@ public class WorkerInitializer implements Control {
             Linkable l = (Linkable) n.getProtocol(linkableID);
 
             String row = String.format("| %-4s | %-5s | %.3e | %-3s | %-4s | %-25s |%n",
-                    n.getID(), w.getLayer(), w.cpuFreq, w.cpuNoCores, w.qMAX, l.toString());
+                    n.getID(), w.getLayer(), w.getCpuFreq(), w.getCpuNoCores(), w.getQueueCapacity(), l.toString());
             rows.append(row);
         }
         Log.dbg(rows.toString());

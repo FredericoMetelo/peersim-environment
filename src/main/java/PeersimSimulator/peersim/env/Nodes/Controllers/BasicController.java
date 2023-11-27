@@ -96,6 +96,7 @@ public class BasicController implements Controller {
 
     /**
      * Passes the action to send to the respective worker to the BasicController
+     *
      * @param a the action tobe sent, should consist of an index in the node's neighbourhood
      * @return the reward attributed to said action.
      */
@@ -106,9 +107,9 @@ public class BasicController implements Controller {
         Node node = Network.get(this.getId());
         int linkableID = FastConfig.getLinkable(Controller.getPid());
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        if (linkable.degree() <= 0 || a.neighbourIndex() >=linkable.degree()) return -1;
+        if (linkable.degree() <= 0 || a.neighbourIndex() >= linkable.degree()) return -1;
         int neighbourIndex = a.neighbourIndex();
-        ctrInfoLog(EVENT_SEND_ACTION_RECIEVED, "TARGET_INDEX="+neighbourIndex );
+        ctrInfoLog(EVENT_SEND_ACTION_RECIEVED, "TARGET_INDEX=" + neighbourIndex);
         double reward = 0; //calculatReward(linkable, node, targetNode, 1);
         this.currentInstructions = new OffloadInstructions(neighbourIndex);
         this.correspondingWorker.offloadInstructions(Worker.getPid(), this.currentInstructions);
@@ -118,7 +119,7 @@ public class BasicController implements Controller {
     }
 
     @Override
-    public List<ITask> extractCompletedTasks(){
+    public List<ITask> extractCompletedTasks() {
         return this.correspondingWorker.extractCompletedTasks();
     }
 
@@ -178,7 +179,7 @@ public class BasicController implements Controller {
     private void updateNode(WorkerInfo newWi) {
         for (WorkerInfo oldWi : workerInfo) {
             if (oldWi.getId() == newWi.getId()) {
-                ctrInfoLog(EVENT_WORKER_INFO_UPDATE, "id="+newWi.getId()+", Q_size="+ oldWi.getTotalTasks() + "->" + newWi.getTotalTasks() + " rcv_tasks=" + oldWi.getUnprocessedApplications() + "->" + newWi.getUnprocessedApplications());
+                ctrInfoLog(EVENT_WORKER_INFO_UPDATE, "id=" + newWi.getId() + ", Q_size=" + oldWi.getTotalTasks() + "->" + newWi.getTotalTasks() + " rcv_tasks=" + oldWi.getUnprocessedApplications() + "->" + newWi.getUnprocessedApplications());
                 oldWi.setUnprocessedApplications(newWi.getUnprocessedApplications());
                 oldWi.setQueueSize(newWi.getQueueSize());
                 oldWi.setNodeProcessingPower(newWi.getNodeProcessingPower());
@@ -188,7 +189,7 @@ public class BasicController implements Controller {
                 return;
             }
         }
-        ctrInfoLog(EVENT_WORKER_INFO_ADD, "id="+newWi.getId()+", Q_size="+ newWi.getTotalTasks() + "rcv_Apps=" + newWi.getUnprocessedApplications());
+        ctrInfoLog(EVENT_WORKER_INFO_ADD, "id=" + newWi.getId() + ", Q_size=" + newWi.getTotalTasks() + "rcv_Apps=" + newWi.getUnprocessedApplications());
 
         // Means no node with given Id has sent information to the BasicController yet.
         // Only happens with nodes that joined later. All nodes known from beginning are init with a 0 (?).
@@ -223,7 +224,7 @@ public class BasicController implements Controller {
 
             Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
             workerInfo.add(
-                    new WorkerInfo(wi.getId(), 0, 0, default_task_size, Math.floor(default_CPU_NO_CORES * default_CPU_FREQ), wi.qMAX, -2, null) // This should technically be a request...
+                    new WorkerInfo(wi.getId(), 0, 0, default_task_size, Math.floor(default_CPU_NO_CORES * default_CPU_FREQ), wi.getQueueCapacity(), -2, null) // This should technically be a request...
             );
         }
     }
@@ -272,6 +273,7 @@ public class BasicController implements Controller {
         //int start = 1; // By definition can't have less than 3 nodes. For convenience
         return this.workerInfo.stream().map(WorkerInfo::getTotalTasks).toList();
     }
+
     private List<Double> computeDistancesToNeighbours() {
         return this.workerInfo.stream().map(wi -> props.distanceTo(wi.getLastKnownPosition())).toList(); // TODO this is also broken...
     }
@@ -290,7 +292,7 @@ public class BasicController implements Controller {
         // stop = true; Set the await action to block on next iter.
         SDNNodeProperties props = correspondingWorker.getProps();
         // TODO deal with the fact wi might be null!!!! Btw I need to compute distance, I'm not entirely sure how to best do this. AS the
-         // workers may be moving and there is no way they broadcast their position to the neighbourhood. I could have the controller
+        // workers may be moving and there is no way they broadcast their position to the neighbourhood. I could have the controller
         //int offloadable_tasks = wi.getW_i();
         return new PartialState(this.selectedNode,
                 this.getQ(),
@@ -302,7 +304,6 @@ public class BasicController implements Controller {
                 props.getBANDWIDTH(),
                 props.getTRANSMISSION_POWER());
     }
-
 
 
     @Override
@@ -340,7 +341,7 @@ public class BasicController implements Controller {
 
     @Override
     public String toString() {
-        return (active)?"BasicController{" +
+        return (active) ? "BasicController{" +
                 "id=" + id +
                 ", workerInfo=" + workerInfo +
                 ", currentInstructions=" + currentInstructions +
@@ -357,14 +358,16 @@ public class BasicController implements Controller {
     }
 
 
-    public void ctrInfoLog(String event, String info){
+    public void ctrInfoLog(String event, String info) {
         Log.logInfo("CTR", this.id, event, info);
 
     }
-    public void ctrDbgLog(String msg){
+
+    public void ctrDbgLog(String msg) {
         Log.logDbg("CTR", this.id, "DEBUG", msg);
     }
-    public void ctrErrLog(String msg){
+
+    public void ctrErrLog(String msg) {
         Log.logErr("CTR", this.id, "ERROR", msg);
     }
 }
