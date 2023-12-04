@@ -44,9 +44,9 @@ public class MdpApi implements Control {
     @PostMapping("/action")
     public List<SimulationData> postAction(@RequestBody List<Action> a){
 
-        DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
+        DiscreteTimeStepManager dtm = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
 
-        return c.sendAction(a);
+        return dtm.sendAction(a);
     }
 
     @GetMapping("/up")

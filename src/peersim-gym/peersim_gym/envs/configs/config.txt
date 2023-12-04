@@ -8,17 +8,17 @@ MAXDELAY 0
 DROP 0
 
 # Test configs
-SIZE 6
+SIZE 2
 CLOUD_EXISTS 1
-CONTROLLERS 0;1;2;3;4;5
-NO_LAYERS            1
-NO_NODES_PER_LAYERS  6 #,1
-CLOUD_ACCESS         1 #,1
+CONTROLLERS 0;1
+NO_LAYERS            2
+NO_NODES_PER_LAYERS  1,1
+CLOUD_ACCESS         1,1
 
-FREQS                1e7 #,3e7 #,5e7
-NO_CORES             4 #,8 #,16
-Q_MAX                10 #,50 #,100
-VARIATIONS           1e3 #,1e3 #,1e4
+FREQS                1e7,3e7 #,5e7
+NO_CORES             4,8 #,16
+Q_MAX                10,50 #,100
+VARIATIONS           1e3,1e3 #,1e4
 
 # NEW
 

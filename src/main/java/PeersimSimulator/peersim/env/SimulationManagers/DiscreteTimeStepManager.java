@@ -147,26 +147,21 @@ public class DiscreteTimeStepManager implements CDProtocol {
             return null;
         }
         for (Action a : actionList) {
+            // Never forget that the wildcard must extend action.
+            // Some problems may arise if jackson can't distinguih the type of the action.
+            // So I may need to configure an ObjectMapper to handle this.
+            //Action a = wa.getAction();
             int controllerId = a.controllerId();
             if(!controllerIDs.contains(controllerId)){
                 mngErrLog("An action was sent for id " + controllerId + "this id does not correspond to any controller. Ignoring action.");
             }
 
-            int neigh = a.neighbourIndex();
-            Linkable l = (Linkable) Network.get(controllerId).getProtocol(FastConfig.getLinkable(Controller.getPid()));
-            if(neigh < 0 || neigh >= l.degree()){
-                mngErrLog("An action failed because the specified index of the neighbourhood is out of bounds");
-                continue;
-            }
-            if(!l.getNeighbor(neigh).isUp()){
-                mngErrLog("An action failed because the node of the specified index of the neighbourhood is down");
-                continue;
-            }
+
 
             Controller c = (Controller) Network.get(controllerId).getProtocol(Controller.getPid());
             if(!c.isActive()) throw new RuntimeException("Inactive BasicController id=" + controllerId);
-            double result = c.sendAction(actionList.get(controllerId));
-            results.add(compileSimulationData(a.neighbourIndex(), a.controllerId()));
+            SimulationData result = c.sendAction(a);
+            results.add(result);
         }
         stop = false;
         return results;
@@ -223,17 +218,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
         while (stop) Thread.onSpinWait();
     }
 
-    private SimulationData compileSimulationData(int neighbourIndex, int sourceID){
-        int srcLinkableId = FastConfig.getLinkable(Worker.getPid());
-        Linkable srcLinkable = (Linkable) Network.get(sourceID).getProtocol(srcLinkableId);
 
-        Controller controller = (Controller) Network.get(sourceID).getProtocol(Controller.getPid());
-        SDNNodeProperties propsNode = (SDNNodeProperties) Network.get(sourceID).getProtocol(SDNNodeProperties.getPid());
-        SDNNodeProperties propsTarget = (SDNNodeProperties) srcLinkable.getNeighbor(neighbourIndex).getProtocol(SDNNodeProperties.getPid());
-
-        double d_i_j = Math.sqrt(Math.pow(propsNode.getY() - propsTarget.getY(), 2) + Math.pow(propsNode.getX() - propsTarget.getX(), 2));
-        return new SimulationData(sourceID, d_i_j, controller.getWorkerInfo().get(neighbourIndex), controller.extractCompletedTasks());
-    }
     public boolean isActive() {
         return active;
     }
