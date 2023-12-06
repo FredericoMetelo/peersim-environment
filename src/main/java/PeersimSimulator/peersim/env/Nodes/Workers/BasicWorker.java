@@ -5,10 +5,8 @@ import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
-import PeersimSimulator.peersim.env.Nodes.Clients.Client;
-import PeersimSimulator.peersim.env.Nodes.Events.AppConcludedEvent;
+import PeersimSimulator.peersim.env.Nodes.Events.BasicOffloadInstructions;
 import PeersimSimulator.peersim.env.Nodes.Events.OffloadInstructions;
-import PeersimSimulator.peersim.env.Nodes.Events.TaskConcludedEvent;
 import PeersimSimulator.peersim.env.Nodes.Events.TaskOffloadEvent;
 import PeersimSimulator.peersim.env.Records.LoseTaskInfo;
 import PeersimSimulator.peersim.env.Tasks.Application;
@@ -19,7 +17,6 @@ import PeersimSimulator.peersim.transport.Transport;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.TreeSet;
 
 public class BasicWorker extends AbstractWorker{
     public BasicWorker(String prefix) {
@@ -132,8 +129,9 @@ public class BasicWorker extends AbstractWorker{
     }
 
     @Override
-    public boolean offloadInstructions(int pid, OffloadInstructions oi) {
+    public boolean offloadInstructions(int pid, OffloadInstructions offloadInstructions) {
         if(this.awaitingSerialization()) applicationSerialization();
+        BasicOffloadInstructions oi = (BasicOffloadInstructions) offloadInstructions;
 
         ITask task = this.selectNextAvailableTask();
         // ngl, it's late... There is for sure a better way of implementing this. This boolean overloading the method
@@ -154,7 +152,7 @@ public class BasicWorker extends AbstractWorker{
             Node node = Network.get(this.getId());
             int linkableID = FastConfig.getLinkable(pid);
             Linkable linkable = (Linkable) node.getProtocol(linkableID);
-            if(!validOffloadingInstructions(oi, linkable)) {
+            if(!validOffloadingInstructions(oi.getNeighbourIndex(), linkable)) {
                 return false;
             }
 

@@ -4,22 +4,37 @@ import PeersimSimulator.peersim.env.Records.*;
 import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Control;
 import PeersimSimulator.peersim.core.Network;
+import PeersimSimulator.peersim.env.Records.Actions.Action;
+import PeersimSimulator.peersim.env.Records.SimulationData.BasicSimulationData;
+import PeersimSimulator.peersim.env.Records.SimulationData.BatchSimulationData;
+import PeersimSimulator.peersim.env.Records.SimulationData.SimulationData;
+import PeersimSimulator.peersim.env.Util.Log;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.*;
+
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
 
 import java.util.List;
 
 @RestController
 public class MdpApi implements Control {
 
-    @Autowired
-    private ApplicationEventPublisher applicationEventPublisher;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    @PostConstruct
+    public void registerSubtypes() {
+        MAPPER.registerSubtypes(new NamedType(PeersimSimulator.peersim.env.Records.SimulationData.BatchSimulationData.class, "batchSD"));
+        MAPPER.registerSubtypes(new NamedType(PeersimSimulator.peersim.env.Records.SimulationData.BasicSimulationData.class, "basicSD"));
+    }
 
     Information lastInfo;
 
-    public MdpApi(ApplicationEventPublisher applicationEventPublisher) {
-        this.applicationEventPublisher = applicationEventPublisher;
+    public MdpApi() {
         lastInfo = null;
     }
 
@@ -42,11 +57,13 @@ public class MdpApi implements Control {
         return CommonState.getEndTime() <= CommonState.getTime() + c.CYCLE_SIZE;
     }
     @PostMapping("/action")
-    public List<SimulationData> postAction(@RequestBody List<Action> a){
+    public List<SimulationData> postAction(@RequestBody List<Action> a) {
 
         DiscreteTimeStepManager dtm = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
+        List<SimulationData> lsd = dtm.sendAction(a);
 
-        return dtm.sendAction(a);
+        return lsd;
+
     }
 
     @GetMapping("/up")

@@ -1,20 +1,17 @@
 package PeersimSimulator.peersim.env.Nodes.Controllers;
 
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
+import PeersimSimulator.peersim.env.Nodes.Events.BasicOffloadInstructions;
 import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
-import PeersimSimulator.peersim.env.Records.*;
-import PeersimSimulator.peersim.env.Tasks.ITask;
-import PeersimSimulator.peersim.env.Util.Log;
-import PeersimSimulator.peersim.env.Nodes.Events.OffloadInstructions;
-import PeersimSimulator.peersim.env.Nodes.Events.WorkerInfo;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
-import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
-
-import java.util.*;
+import PeersimSimulator.peersim.env.Records.Actions.Action;
+import PeersimSimulator.peersim.env.Records.Actions.BasicAction;
+import PeersimSimulator.peersim.env.Records.SimulationData.BasicSimulationData;
+import PeersimSimulator.peersim.env.Records.SimulationData.SimulationData;
 
 
 public class BasicController extends AbstractController {
@@ -58,7 +55,7 @@ public class BasicController extends AbstractController {
         int neighbourIndex = a.neighbourIndex();
         ctrInfoLog(EVENT_SEND_ACTION_RECIEVED, "TARGET_INDEX=" + neighbourIndex);
         double reward = 0; //calculatReward(linkable, node, targetNode, 1);
-        this.currentInstructions = new OffloadInstructions(neighbourIndex);
+        this.currentInstructions = new BasicOffloadInstructions(neighbourIndex);
         this.correspondingWorker.offloadInstructions(Worker.getPid(), this.currentInstructions);
         // allow progress
         stop = false;
@@ -75,16 +72,17 @@ public class BasicController extends AbstractController {
 
     //=== Reward Function
     @Override
-    public SimulationData compileSimulationData(int neighbourIndex, int sourceID){
+    public BasicSimulationData compileSimulationData(Object nI, int sourceID){
+
+        int neighbourIndex = (int) nI;
         int srcLinkableId = FastConfig.getLinkable(Worker.getPid());
         Linkable srcLinkable = (Linkable) Network.get(sourceID).getProtocol(srcLinkableId);
-
 
         SDNNodeProperties propsNode = (SDNNodeProperties) Network.get(sourceID).getProtocol(SDNNodeProperties.getPid());
         SDNNodeProperties propsTarget = (SDNNodeProperties) srcLinkable.getNeighbor(neighbourIndex).getProtocol(SDNNodeProperties.getPid());
 
         double d_i_j = Math.sqrt(Math.pow(propsNode.getY() - propsTarget.getY(), 2) + Math.pow(propsNode.getX() - propsTarget.getX(), 2));
-        return new SimulationData(sourceID, d_i_j, this.getWorkerInfo().get(neighbourIndex), this.extractCompletedTasks());
+        return new BasicSimulationData(sourceID, d_i_j, this.getWorkerInfo().get(neighbourIndex), this.extractCompletedTasks());
     }
 
     //=== Logging and Debugging

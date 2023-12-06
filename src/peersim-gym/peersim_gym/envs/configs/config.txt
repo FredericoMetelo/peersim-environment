@@ -51,6 +51,7 @@ protocol.props.Beta1 0.001
 protocol.props.Beta2 4
 protocol.props.P_ti 20
 
+
 #=============Define Simulation Globals
 
 network.size SIZE+CLOUD_EXISTS
@@ -83,14 +84,14 @@ protocol.clt.step CYCLE
 protocol.clt.transport tr
 
 
-protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.BasicController
+protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.BatchController
 protocol.ctrl.linkable lnk
 protocol.ctrl.name ctrl
 protocol.ctrl.step CYCLE
 protocol.ctrl.transport tr
 
 
-protocol.wrk PeersimSimulator.peersim.env.Nodes.Workers.BasicWorker
+protocol.wrk PeersimSimulator.peersim.env.Nodes.Workers.BatchWorker
 protocol.wrk.linkable lnk
 protocol.wrk.name wrk
 protocol.wrk.step CYCLE

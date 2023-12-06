@@ -10,6 +10,8 @@ import PeersimSimulator.peersim.env.Nodes.Events.OffloadInstructions;
 import PeersimSimulator.peersim.env.Nodes.Events.WorkerInfo;
 import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 import PeersimSimulator.peersim.env.Records.*;
+import PeersimSimulator.peersim.env.Records.Actions.Action;
+import PeersimSimulator.peersim.env.Records.SimulationData.SimulationData;
 import PeersimSimulator.peersim.env.Tasks.ITask;
 import PeersimSimulator.peersim.env.Util.Log;
 
@@ -69,9 +71,9 @@ public abstract class AbstractController implements Controller {
 
     @Override
     public Object clone() {
-        BasicController svh = null;
+        AbstractController svh = null;
         try {
-            svh = (BasicController) super.clone();
+            svh = (AbstractController) super.clone();
             svh.workerInfo = new ArrayList<>();
         } catch (CloneNotSupportedException e) {
         } // never happens
@@ -175,7 +177,7 @@ public abstract class AbstractController implements Controller {
 
     //=== Reward Function
     @Override
-    public abstract SimulationData compileSimulationData(int neighbourIndex, int sourceID);
+    public abstract SimulationData compileSimulationData(Object neighbourIndex, int sourceID);
 
     //======================================================================================================
     @Override

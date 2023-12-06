@@ -374,10 +374,10 @@ public abstract class AbstractWorker implements Worker {
         return pid;
     }
 
-    protected boolean validOffloadingInstructions(OffloadInstructions oi, Linkable linkable) {
-        return oi.getNeighbourIndex() > 0 || oi.getNeighbourIndex() < linkable.degree();
-    }
+    protected boolean validOffloadingInstructions(int offloadingTarget, Linkable linkable) {
 
+        return offloadingTarget > 0 || offloadingTarget < linkable.degree();
+    }
     protected LoseTaskInfo getOrGenerateLoseTaskInfo(Node node, ITask task) {
         LoseTaskInfo lti;
         if (this.managedApplications.get(task.getAppID()) != null) {

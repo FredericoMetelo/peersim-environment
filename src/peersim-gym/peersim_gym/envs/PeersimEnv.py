@@ -1,19 +1,14 @@
 import math
 import os
 import time
-import time
 from random import randint
-from typing import List
 
-import gymnasium as gym
-import numpy as np
 import requests
-from gymnasium.core import ActType
 from gymnasium.spaces import MultiDiscrete, Dict, Discrete, Box
 from pettingzoo import ParallelEnv
 
-import peersim_gym.envs.PeersimConfigGenerator as cg
-from peersim_gym.envs.PeersimThread import PeersimThread
+import envs.Utils.PeersimConfigGenerator as cg
+from envs.Utils.PeersimThread import PeersimThread
 
 
 AGENT_PREFIX = "worker_"
@@ -29,12 +24,13 @@ class PeersimEnv(ParallelEnv):
     def init(self, render_mode=None, configs=None, log_dir=None):
         self.__init__(render_mode, configs, log_dir=log_dir)
 
-    def __init__(self, render_mode=None, configs=None, log_dir=None):
+    def __init__(self, render_mode=None, simtype="Basic", configs=None, log_dir=None):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
         # (aka if number_nodes is 10 there is a total of 11 nodes (1 controller + 10 workers))
 
+        self.ACTION_TYPE_FIELD = "type"
         self.ACTION_NEIGHBOUR_IDX_FIELD = "neighbourIndex"
         self.ACTION_HANDLER_ID_FIELD = "controllerId"
         self.RESULT_DISTANCE_FIELD = "distance"
@@ -55,8 +51,9 @@ class PeersimEnv(ParallelEnv):
         self.default_timeout = 3  # Second
 
         self.config_archive = configs
+        self.simtype = simtype
 
-        controllers = self.__gen_config(configs)
+        controllers = self.__gen_config(configs, simtype=simtype)
         self.possible_agents = [AGENT_PREFIX + str(r) for r in controllers]
         self.agent_name_mapping = dict(
             zip(self.possible_agents, list(range(len(self.possible_agents))))
@@ -175,7 +172,7 @@ class PeersimEnv(ParallelEnv):
     def close(self):
         self.simulator.stop()
 
-    def __gen_config(self, configs, regen_seed=False):
+    def __gen_config(self, configs, simtype, regen_seed=False):
         controller = []
         # Checking the configurations
         if configs is None:
@@ -183,9 +180,7 @@ class PeersimEnv(ParallelEnv):
             configs = {"protocol.wrk.Q_MAX": str(self.max_Q_size), "SIZE": str(self.number_nodes),
                        "random.seed": self.__gen_seed()}
 
-            controller = cg.generate_config_file(configs)
-            self.config_path = cg.TARGET_FILE_PATH
-
+            controller, self.config_path = cg.generate_config_file(configs, simtype)
         elif type(configs) is dict:
             # Consistency of QMax in configs and the arguments.
             if "protocol.wrk.Q_MAX" in configs:
@@ -198,14 +193,12 @@ class PeersimEnv(ParallelEnv):
                 configs["random.seed"] = self.__gen_seed()
                 print(f'seed:{configs["random.seed"]}')
 
-            controller = cg.generate_config_file(configs)
-            self.config_path = cg.TARGET_FILE_PATH
+            controller, self.config_path  = cg.generate_config_file(configs, simtype)
         elif type(configs) is str:
             self.config_path = configs
             controller, self.config_archive = cg.compile_dict(configs)
         else:
-            raise Exception(
-                "Invalid Type for the configs parameter. Needs to be None, a Dictionary or a String. Please see the project README.md")
+            raise Exception("Invalid Type for the configs parameter. Needs to be None, a Dictionary or a String. Please see the project README.md")
 
         return controller
 
@@ -241,9 +234,13 @@ class PeersimEnv(ParallelEnv):
 
     def __send_action(self, action):
 
-        payload = [{self.ACTION_NEIGHBOUR_IDX_FIELD: int(action.get(name).get(self.ACTION_NEIGHBOUR_IDX_FIELD)),
-                    self.ACTION_HANDLER_ID_FIELD: int(self.agent_name_mapping.get(name))} for name in
-                   self.agent_name_mapping.keys()]
+        payload = [
+            {
+                self.ACTION_TYPE_FIELD: self.type,
+                self.ACTION_NEIGHBOUR_IDX_FIELD: int(action.get(name).get(self.ACTION_NEIGHBOUR_IDX_FIELD)),
+                self.ACTION_HANDLER_ID_FIELD: int(self.agent_name_mapping.get(name))
+            } for name in self.agent_name_mapping.keys()
+        ]
         headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
         action_url = self.url_api + self.url_action_path
         try:

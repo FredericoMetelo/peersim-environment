@@ -244,7 +244,7 @@ public class Application {
      *
      * I.E.
      * (1,2), (2,3), (2,4), (3,5) may be expanded to:
-     * 1, 2,
+     * 1,2,3,4,5
      * @return a list of nodes where dependent nodes show after their dependee
      */
     public List<ITask> expandToList(){

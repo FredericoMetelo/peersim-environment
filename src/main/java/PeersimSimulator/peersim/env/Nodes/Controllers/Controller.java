@@ -1,19 +1,14 @@
 package PeersimSimulator.peersim.env.Nodes.Controllers;
 
 import PeersimSimulator.peersim.cdsim.CDProtocol;
-import PeersimSimulator.peersim.config.FastConfig;
-import PeersimSimulator.peersim.core.Linkable;
-import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.edsim.EDProtocol;
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
-import PeersimSimulator.peersim.env.Nodes.Events.OffloadInstructions;
 import PeersimSimulator.peersim.env.Nodes.Events.WorkerInfo;
 import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
-import PeersimSimulator.peersim.env.Records.Action;
-import PeersimSimulator.peersim.env.Records.DebugInfo;
-import PeersimSimulator.peersim.env.Records.PartialState;
-import PeersimSimulator.peersim.env.Records.SimulationData;
+import PeersimSimulator.peersim.env.Records.*;
+import PeersimSimulator.peersim.env.Records.Actions.Action;
+import PeersimSimulator.peersim.env.Records.SimulationData.SimulationData;
 import PeersimSimulator.peersim.env.Tasks.ITask;
 
 import java.util.List;
@@ -36,7 +31,7 @@ public interface Controller extends CDProtocol, EDProtocol {
     void processEvent(Node node, int pid, Object event);
 
     SimulationData sendAction(Action a);
-    SimulationData compileSimulationData(int neighbourIndex, int sourceID);
+    SimulationData compileSimulationData(Object neighbourIndex, int sourceID);
     List<ITask> extractCompletedTasks();
 
     Worker getCorrespondingWorker();

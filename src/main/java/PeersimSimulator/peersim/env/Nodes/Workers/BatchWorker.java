@@ -5,6 +5,7 @@ import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
+import PeersimSimulator.peersim.env.Nodes.Events.BatchOffloadInstructions;
 import PeersimSimulator.peersim.env.Nodes.Events.OffloadInstructions;
 import PeersimSimulator.peersim.env.Nodes.Events.TaskOffloadEvent;
 import PeersimSimulator.peersim.env.Records.LoseTaskInfo;
@@ -19,6 +20,8 @@ import java.util.List;
 
 public class BatchWorker extends AbstractWorker{
 
+    public static final String EVENT_BATCH_SIZE_BIGGER_THAN_R = "BATCH SIZE BIGGER THAN R";
+
     // TODO this is a copy of basic worker, need to convert this to allow batch action
     public BatchWorker(String prefix) {
         super(prefix);
@@ -27,7 +30,7 @@ public class BatchWorker extends AbstractWorker{
     @Override
     public void nextCycle(Node node, int protocolID) {
         if (!active) return;
-        // Advance Task processing and update status.
+        // Advance Task processinnd update status.
         double remainingProcessingPower = processingPower;
         while (remainingProcessingPower > 0 && !this.idle()) {
             if (this.current == null || this.current.done()) {
@@ -44,9 +47,9 @@ public class BatchWorker extends AbstractWorker{
             }
         }
         cleanExpiredApps();
-        if ((CommonState.getTime() % RANK_EVENT_DELAY) == 0 || this.awaitingSerialization() ) { // && !this.recievedApplications.isEmpty() // if offloaded a task and does not run this then no cleanup.
+/*        if ((CommonState.getTime() % RANK_EVENT_DELAY) == 0 || this.awaitingSerialization() ) { // && !this.recievedApplications.isEmpty() // if offloaded a task and does not run this then no cleanup.
             applicationSerialization();
-        }
+        }*/
 
         // Then Communicate changes in Queue Size and Recieved Nodes  to BasicController.
         if (this.changedWorkerState) { // TODO Guarantee we inform neighbours. Guarantee no double offloading.
@@ -101,9 +104,10 @@ public class BatchWorker extends AbstractWorker{
         if (current != null && !current.done()) {
             return this.changedWorkerState;
         }
-        if ((current == null || current.done()) && queue.isEmpty() && !recievedApplications.isEmpty()) {
-            applicationSerialization();
-        }
+        // TODO confirm this is correct
+//        if ((current == null || current.done()) && queue.isEmpty() && !recievedApplications.isEmpty()) {
+//            applicationSerialization();
+//        }
         this.current = this.selectNextAvailableTask();
         boolean taskAssigend = this.current != null;
         if(taskAssigend) {
@@ -115,6 +119,7 @@ public class BatchWorker extends AbstractWorker{
         return this.changedWorkerState;
     }
 
+
     private ITask selectNextAvailableTask() {
         if (this.current != null) {
             return this.current;
@@ -122,68 +127,81 @@ public class BatchWorker extends AbstractWorker{
         if (!this.queue.isEmpty()) {
             return this.queue.pollFirst();
         }
-        if(!this.recievedApplications.isEmpty()){
+        /*if(!this.recievedApplications.isEmpty()){
             applicationSerialization();
             return this.queue.pollFirst();
-        }
+        }*/
         return null;
     }
 
-    @Override
-    public boolean offloadInstructions(int pid, OffloadInstructions oi) {
-        if(this.awaitingSerialization()) applicationSerialization();
 
-        ITask task = this.selectNextAvailableTask();
-        // ngl, it's late... There is for sure a better way of implementing this. This boolean overloading the method
-        // does not look very good.
-        if(task == null) {
-            wrkInfoLog(EVENT_NO_TASK_OFFLOAD, "id="+this.getId());
+    /**
+     * This method will offlaod the tasks, in the case of batch actions, the tasks will be offloaded in the order they
+     * have in the received actions. For example if we have [t1, t2, t3, t4] in the received actions, and we have the
+     * instructions to offload to [1, 2, 3] then t1 will be offloaded to 1, t2 to 2, t3 to 3 and t4 will remain in the
+     * received queue.
+     * @param pid
+     * @param offloadInstructions
+     * @return whether all task offlaodings succeeded.
+     */
+    @Override
+    public boolean offloadInstructions(int pid, OffloadInstructions offloadInstructions) {
+        BatchOffloadInstructions oi = (BatchOffloadInstructions) offloadInstructions;
+
+        if(this.recievedApplications.isEmpty() || this.recievedApplications.size() < oi.neighbourIndexes().size()){
+            wrkInfoLog(EVENT_BATCH_SIZE_BIGGER_THAN_R, "id="+this.getId());
             return false;
         }
-        // TODO this is a problem, it works because I try to leave the self in position 0 in the linkable.
-        //  It would not work with multiple SimulationManagers.
 
-        if (oi.getNeighbourIndex() != 0) { // Self is always the first to be added to the linkable. And should not be changed.
-/*
-            if(this.queue.isEmpty() ){
-                return false;
-            }
-*/
-            Node node = Network.get(this.getId());
-            int linkableID = FastConfig.getLinkable(pid);
-            Linkable linkable = (Linkable) node.getProtocol(linkableID);
-            if(!validOffloadingInstructions(oi, linkable)) {
-                return false;
-            }
+        boolean success = true;
+        Node node = Network.get(this.getId());
+        int linkableID = FastConfig.getLinkable(pid);
+        Linkable linkable = (Linkable) node.getProtocol(linkableID);
 
-            Node target = linkable.getNeighbor(oi.getNeighbourIndex());
-            if ( !target.isUp()) {
-                wrkErrLog(EVENT_ERR_NODE_OUT_OF_BOUNDS, "The requested target node is outside the nodes known by the DAGWorker="
-                        + (oi.getNeighbourIndex() < 0 || oi.getNeighbourIndex() > linkable.degree())
-                        + ". Or is down=" + target.isUp());
-                return false;
-            }
 
-            LoseTaskInfo lti = getOrGenerateLoseTaskInfo(node, task);
-            if (lti == null) {
-                throw new RuntimeException("Something went wrong with tracking of lose tasks with loseTaskInfo. Killing the simulation.");
-            }
+        int indexInRemainingTasks = 0;
+        for(int neighbourIndex: oi.neighbourIndexes()){
 
-            wrkInfoLog("OFFLOADING TASK", "taskId=" + task.getId() + " appId=" + task.getAppID() + " originalHandler=" + task.getOriginalHandlerID() + " to=" + target.getID());
-            ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
-                    send(
-                            node,
-                            target,
-                            new TaskOffloadEvent(this.id, target.getIndex(), lti),
-                            selectOffloadTargetPid(oi.getNeighbourIndex(), target)
-                    );
-            this.changedWorkerState = true;
-            this.current = null;
-        }else{
-            // oi.getNeighbourIndex() == this.getId()
-            this.tasksToBeLocallyProcessed.add(task.getId());
+            // Only works with dependencyless tasks.
+            ITask task = this.recievedApplications.get(indexInRemainingTasks).expandToList().get(0);
+            if (neighbourIndex != 0) {
+                if(!validOffloadingInstructions(neighbourIndex, linkable)) {
+                    success = false;
+                    indexInRemainingTasks++;
+                    continue;
+                }
+
+                Node target = linkable.getNeighbor(neighbourIndex);
+                if ( !target.isUp()) {
+                    wrkErrLog(EVENT_ERR_NODE_OUT_OF_BOUNDS, "The requested target node is outside the nodes known by the DAGWorker="
+                            + (neighbourIndex < 0 || neighbourIndex > linkable.degree())
+                            + ". Or is down=" + target.isUp());
+                    success = false;
+                }
+
+                LoseTaskInfo lti = getOrGenerateLoseTaskInfo(node, task);
+                if (lti == null) {
+                    throw new RuntimeException("Something went wrong with tracking of lose tasks with loseTaskInfo. Killing the simulation.");
+                }
+
+                wrkInfoLog("OFFLOADING TASK", "taskId=" + task.getId() + " appId=" + task.getAppID() + " originalHandler=" + task.getOriginalHandlerID() + " to=" + target.getID());
+                ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+                        send(
+                                node,
+                                target,
+                                new TaskOffloadEvent(this.id, target.getIndex(), lti),
+                                selectOffloadTargetPid(neighbourIndex, target)
+                        );
+                this.changedWorkerState = true;
+                this.current = null;
+            }else{
+                // oi.getNeighbourIndex() == this.getId()
+                this.tasksToBeLocallyProcessed.add(task.getId());
+                this.queue.add(task);
+            }
+            indexInRemainingTasks++;
         }
-        return true;
+        return success;
     }
 
 }

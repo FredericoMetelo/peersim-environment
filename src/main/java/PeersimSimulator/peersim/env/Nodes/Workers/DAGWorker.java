@@ -1,7 +1,5 @@
 package PeersimSimulator.peersim.env.Nodes.Workers;
 
-import PeersimSimulator.peersim.env.Nodes.Clients.Client;
-import PeersimSimulator.peersim.env.Nodes.Cloud;
 import PeersimSimulator.peersim.env.Records.LoseTaskInfo;
 import PeersimSimulator.peersim.env.Tasks.Application;
 import PeersimSimulator.peersim.env.Tasks.ITask;
@@ -11,7 +9,6 @@ import PeersimSimulator.peersim.env.Nodes.Events.*;
 
 import java.util.*;
 
-import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
 import PeersimSimulator.peersim.core.*;
 import PeersimSimulator.peersim.transport.Transport;
@@ -367,10 +364,12 @@ public class DAGWorker extends AbstractWorker {
         return selected;
     }
 
-    @Override
-    public boolean offloadInstructions(int pid, OffloadInstructions oi) {
-        if(this.awaitingSerialization()) applicationSerialization();
 
+
+    @Override
+    public boolean offloadInstructions(int pid, OffloadInstructions offloadInstructions) {
+        if(this.awaitingSerialization()) applicationSerialization();
+        BasicOffloadInstructions oi = (BasicOffloadInstructions) offloadInstructions;
         ITask task = this.selectNextTaskWithDependenciesMet(true);
         // ngl, it's late... There is for sure a better way of implementing this. This boolean overloading the method
         // does not look very good.
@@ -390,7 +389,7 @@ public class DAGWorker extends AbstractWorker {
             Node node = Network.get(this.getId());
             int linkableID = FastConfig.getLinkable(pid);
             Linkable linkable = (Linkable) node.getProtocol(linkableID);
-            if(!validOffloadingInstructions(oi, linkable)) {
+            if(!validOffloadingInstructions(oi.getNeighbourIndex(), linkable)) {
                 return false;
             }
 
