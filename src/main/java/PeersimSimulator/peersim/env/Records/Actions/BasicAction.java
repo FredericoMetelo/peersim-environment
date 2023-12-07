@@ -14,7 +14,7 @@ public class BasicAction extends Action {
     }
     @Override
     public String toString() {
-        return "target: " + neighbourIndex + " no_task: " + controllerId;
+        return "targets: " + neighbourIndex + " nodeId: " + controllerId;
     }
     public int neighbourIndex(){
         return neighbourIndex;

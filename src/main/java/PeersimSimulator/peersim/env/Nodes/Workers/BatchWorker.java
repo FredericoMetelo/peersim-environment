@@ -15,6 +15,8 @@ import PeersimSimulator.peersim.env.Tasks.TaskHistory;
 import PeersimSimulator.peersim.env.Util.Log;
 import PeersimSimulator.peersim.transport.Transport;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -47,9 +49,9 @@ public class BatchWorker extends AbstractWorker{
             }
         }
         cleanExpiredApps();
-/*        if ((CommonState.getTime() % RANK_EVENT_DELAY) == 0 || this.awaitingSerialization() ) { // && !this.recievedApplications.isEmpty() // if offloaded a task and does not run this then no cleanup.
+        if (!this.hasController && ((CommonState.getTime() % RANK_EVENT_DELAY) == 0 || this.awaitingSerialization() )) { // && !this.recievedApplications.isEmpty() // if offloaded a task and does not run this then no cleanup.
             applicationSerialization();
-        }*/
+        }
 
         // Then Communicate changes in Queue Size and Recieved Nodes  to BasicController.
         if (this.changedWorkerState) { // TODO Guarantee we inform neighbours. Guarantee no double offloading.
@@ -77,9 +79,19 @@ public class BatchWorker extends AbstractWorker{
             double rank = 0;
             offloadedTask.setCurrentRank(rank);
             this.loseTaskInformation.put(offloadedTask.getId(), lti);
-            this.queue.add(offloadedTask);
-        }
+            List<ITask> dummyExpandedDag =new LinkedList<>();
+            dummyExpandedDag.add(offloadedTask);
+            HashMap<String, ITask> dummyTasks = new HashMap<>();
+            dummyTasks.put(offloadedTask.getId(), offloadedTask);
 
+            Application dummyApp = new Application(
+                    dummyTasks,
+                    offloadedTask,
+                    lti.getDeadline(),
+                    offloadedTask.getClientID(),
+                    dummyExpandedDag);
+            this.recievedApplications.add(dummyApp);
+        }
         this.changedWorkerState = true;
     }
 
@@ -92,7 +104,7 @@ public class BatchWorker extends AbstractWorker{
             for (ITask t : tasks) {
                 double rank = 0;
                 t.setCurrentRank(rank);
-                queue.add(t);
+                this.queue.add(t);
             }
         }
         recievedApplications = new LinkedList<>();
@@ -105,9 +117,9 @@ public class BatchWorker extends AbstractWorker{
             return this.changedWorkerState;
         }
         // TODO confirm this is correct
-//        if ((current == null || current.done()) && queue.isEmpty() && !recievedApplications.isEmpty()) {
-//            applicationSerialization();
-//        }
+        if (!this.hasController && ((current == null || current.done()) && queue.isEmpty() && !recievedApplications.isEmpty())) {
+            applicationSerialization();
+        }
         this.current = this.selectNextAvailableTask();
         boolean taskAssigend = this.current != null;
         if(taskAssigend) {
@@ -127,10 +139,10 @@ public class BatchWorker extends AbstractWorker{
         if (!this.queue.isEmpty()) {
             return this.queue.pollFirst();
         }
-        /*if(!this.recievedApplications.isEmpty()){
+        if(!this.hasController && !this.recievedApplications.isEmpty()){
             applicationSerialization();
             return this.queue.pollFirst();
-        }*/
+        }
         return null;
     }
 
@@ -158,12 +170,13 @@ public class BatchWorker extends AbstractWorker{
         int linkableID = FastConfig.getLinkable(pid);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
 
-
         int indexInRemainingTasks = 0;
-        for(int neighbourIndex: oi.neighbourIndexes()){
+        Iterator<Application> appIter = this.recievedApplications.iterator();
+        while(appIter.hasNext() && indexInRemainingTasks < oi.neighbourIndexes().size()) {
+            Application app = appIter.next();
+            int neighbourIndex = oi.neighbourIndexes().get(indexInRemainingTasks);
+            ITask task = app.expandToList().get(0); // Only works with dependencyless tasks.
 
-            // Only works with dependencyless tasks.
-            ITask task = this.recievedApplications.get(indexInRemainingTasks).expandToList().get(0);
             if (neighbourIndex != 0) {
                 if(!validOffloadingInstructions(neighbourIndex, linkable)) {
                     success = false;
@@ -192,8 +205,9 @@ public class BatchWorker extends AbstractWorker{
                                 new TaskOffloadEvent(this.id, target.getIndex(), lti),
                                 selectOffloadTargetPid(neighbourIndex, target)
                         );
+
+                appIter.remove();
                 this.changedWorkerState = true;
-                this.current = null;
             }else{
                 // oi.getNeighbourIndex() == this.getId()
                 this.tasksToBeLocallyProcessed.add(task.getId());
@@ -204,4 +218,8 @@ public class BatchWorker extends AbstractWorker{
         return success;
     }
 
+    @Override
+    public int getNumberOfTasks(){
+        return this.queue.size() + this.recievedApplications.size() + (this.current == null ? 0 : 1);
+    }
 }

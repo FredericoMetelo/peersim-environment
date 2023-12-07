@@ -145,7 +145,7 @@ public abstract class AbstractWorker implements Worker {
         if (event instanceof TaskOffloadEvent ev) {
             handleTaskOffloadEvent(ev);
         } else if (event instanceof NewApplicationEvent ev) {
-            handleNewApplicationEvent(ev); // TODO this is considered overloaded when it shouldn't be overloaded.
+             handleNewApplicationEvent(ev); // TODO this is considered overloaded when it shouldn't be overloaded.
         } else if (event instanceof TaskConcludedEvent ev) {
             ITask finishedTask = ev.getTask();
             handleTaskConcludedEvent(node, pid, finishedTask);

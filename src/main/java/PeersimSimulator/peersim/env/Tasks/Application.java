@@ -83,6 +83,25 @@ public class Application {
 
     }
 
+    public Application(Map<String, ITask> tasks,
+                       ITask firstTask,
+                       double deadline,
+                       int clientID,
+                       List<ITask> expandedDAG) {
+        this.tasks = tasks;
+        this.predecessors = null;
+        this.successors = null;
+        this.deadline = deadline;
+        this.appID = null;
+        this.clientID = clientID;
+        this.initialDataSize = firstTask.getInputSizeBytes(); // TODO this should be the input data size of the root.
+        this.outputDataSize = firstTask.getOutputSizeBytes(); // TODO Learn this value from the leafs of the computation.
+        this.firstTask = firstTask;
+
+        finishedSubtasks = new HashSet<>();
+        this.expandedDAG = expandedDAG;
+    }
+
     private void generateExecutionOrder(){
        //TODO
     }

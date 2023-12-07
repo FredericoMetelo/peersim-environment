@@ -16,7 +16,7 @@ public class BatchAction  extends Action {
     }
     @Override
     public String toString() {
-        return "target: " + neighbourIndex + " no_task: " + controllerId;
+        return "target: " + neighbourIndex + " nodeId: " + controllerId;
     }
     public List<Integer> neighbourIndexes(){
         return neighbourIndex;

@@ -182,6 +182,7 @@ public abstract class AbstractController implements Controller {
     //======================================================================================================
     @Override
     public List<WorkerInfo> getWorkerInfo() {
+        updateNode(this.correspondingWorker.compileWorkerInfo());
         return workerInfo;
     }
 
