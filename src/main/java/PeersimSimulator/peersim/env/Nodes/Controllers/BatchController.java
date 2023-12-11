@@ -11,6 +11,7 @@ import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 import PeersimSimulator.peersim.env.Records.Actions.Action;
 import PeersimSimulator.peersim.env.Records.Actions.BatchAction;
 import PeersimSimulator.peersim.env.Records.SimulationData.BatchSimulationData;
+import PeersimSimulator.peersim.env.Records.SimulationData.FailledActionSimulationData;
 import PeersimSimulator.peersim.env.Records.SimulationData.SimulationData;
 
 import java.util.List;
@@ -37,7 +38,8 @@ public class BatchController extends AbstractController {
         if(!(action instanceof BatchAction a))
             throw new RuntimeException("Wrong Class of Action being used.");
         if (!active || a == null || a.controllerId() < 0) {
-            return null;
+            return new FailledActionSimulationData(this.getId());
+
         }
         if(a.neighbourIndexes().isEmpty()){
            return this.compileSimulationData(a.neighbourIndexes(), this.getId());

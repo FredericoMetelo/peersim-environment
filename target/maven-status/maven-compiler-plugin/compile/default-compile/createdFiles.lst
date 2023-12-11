@@ -98,7 +98,6 @@ PeersimSimulator/peersim/dynamics/WireByMethod.class
 PeersimSimulator/example/loadbalance/LBObserver.class
 PeersimSimulator/peersim/env/Nodes/Cloud.class
 PeersimSimulator/peersim/config/ClassFinder.class
-PeersimSimulator/peersim/env/Nodes/Events/SpringEvents/ActionReadyEvent.class
 PeersimSimulator/peersim/env/Records/DebugInfo.class
 PeersimSimulator/peersim/vector/VectControl.class
 PeersimSimulator/peersim/env/Nodes/Clients/BasicClient.class

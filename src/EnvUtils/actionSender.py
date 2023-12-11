@@ -1,3 +1,5 @@
+import random
+
 from peersim_gym.envs.PeersimEnv import PeersimEnv
 import gymnasium as gym
 
@@ -28,16 +30,17 @@ def send_action(env, action):
     r = requests.post(action_url, json=payload, headers=headers_action)
     return r
 
-def _make_ctr(controllers):
+
+def _make_ctr(ctrs_list):
     s = ""
-    for i in range(len(controllers)):
-        s += controllers[i]
-        if i < len(controllers) - 1:
-            s +=";"
+    for i in range(len(ctrs_list)):
+        s += ctrs_list[i]
+        if i < len(ctrs_list) - 1:
+            s += ";"
     return s
 
-controllers = ["0", "1"]
 
+controllers = ["0", "5"]
 
 if __name__ == "__main__":
 
@@ -45,8 +48,8 @@ if __name__ == "__main__":
     #    p.generate_config_file()
     # configs_dict = {"protocol.ctrl.r_u": "999", "protocol.props.B": "1"}
     # configs_dict="/home/fm/Documents/Thesis/peersim-srv/configs/examples/default-config.txt"
-    env = PeersimEnv(configs={
-        "SIZE": "10",
+    configs = {
+        "SIZE": "6",
         "CYCLE": "1",
         "CYCLES": "1000",
         "random.seed": "1234567890",
@@ -55,12 +58,20 @@ if __name__ == "__main__":
         "DROP": "0",
         "CONTROLLERS": _make_ctr(controllers),
 
+        "CLOUD_EXISTS": "1",
         "NO_LAYERS": "2",
-        "NO_NODES_PER_LAYERS": "6,4",
+        "NO_NODES_PER_LAYERS": "5,1",
+        "CLOUD_ACCESS": "0,1",
+
         "FREQS": "1e7,3e7",
         "NO_CORES": "4,8",
         "Q_MAX": "10,50",
         "VARIATIONS": "1e3,1e3",
+
+        "protocol.cld.no_vms": "3",
+        "protocol.cld.VMProcessingPower": "1e8",
+
+        "init.Net1.r": "500",
 
         "protocol.mng.r_u": "1",
         "protocol.mng.X_d": "1",
@@ -71,25 +82,28 @@ if __name__ == "__main__":
         "protocol.clt.weight": "1",
         "protocol.clt.CPI": "1",
         "protocol.clt.T": "150",
-        "protocol.clt.I": "200e6",
-        "protocol.clt.taskArrivalRate": "0.2",
+        "protocol.clt.I": "4e7",
+        "protocol.clt.taskArrivalRate": "0.6",
 
         "protocol.clt.numberOfDAG": "1",
         "protocol.clt.dagWeights": "1",
-        "protocol.clt.edges": "0->1,1->2,2->3,3->4,4->5,5->6,6->7,0->8,8->7,7->9",
+        "protocol.clt.edges": "",
         "protocol.clt.maxDeadline": "100",
-        "protocol.clt.vertices": "10",
-
-        "protocol.wrk.NO_CORES": "4",
-        "protocol.wrk.FREQ": "1e7",
-        "protocol.wrk.Q_MAX": "10",
+        "protocol.clt.vertices": "1",
 
         "protocol.props.B": "2",
         "protocol.props.Beta1": "0.001",
         "protocol.props.Beta2": "4",
         "protocol.props.P_ti": "20",
-        "init.Net1.r": "50"
-    })
+
+    }
+
+    env = PeersimEnv(configs=configs, simtype="basic")
+    # Legacy Configs:
+    #         "protocol.wrk.NO_CORES": "4",
+    #         "protocol.wrk.FREQ": "1e7",
+    #         "protocol.wrk.Q_MAX": "10",
+
     env.reset()
 
     a = ''
@@ -102,7 +116,7 @@ if __name__ == "__main__":
             get_state()
         else:
             actions = {}
-            if a.isdigit(): # does not work!!!
+            if a.isdigit():  # does not work!!!
                 target = str(a)
                 actions = {
                     agent: {
@@ -111,7 +125,13 @@ if __name__ == "__main__":
                     } for agent in env.agents
                 }
             else:
-                actions = {agent: env.action_space(agent).sample() for agent in env.agents}
+                for agent in env.agents:
+                    actions = {
+                        agent: {
+                            env.ACTION_HANDLER_ID_FIELD: agent.split("_")[1],
+                            env.ACTION_NEIGHBOUR_IDX_FIELD: random.Random().randint(0, int(configs["SIZE"]))
+                        } for agent in env.agents
+                    }
             print(actions)
             # r = send_action(env, actions)
             # print(r)

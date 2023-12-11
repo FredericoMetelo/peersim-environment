@@ -1,56 +1,41 @@
-
-
+SIZE 6
 CYCLE 1
 CYCLES 1000
 random.seed 1234567890
 MINDELAY 0
 MAXDELAY 0
 DROP 0
-
-# Test configs
-SIZE 6
-CLOUD_EXISTS 1
 CONTROLLERS 0;5
-NO_LAYERS            2
-NO_NODES_PER_LAYERS  5,1
-CLOUD_ACCESS         0,1
-
-FREQS                1e7,3e7 #,5e7
-NO_CORES             4,8 #,16
-Q_MAX                10,50 #,100
-VARIATIONS           1e3,1e3 #,1e4
-
-# NEW
-
-# NEW
+CLOUD_EXISTS 1
+NO_LAYERS 2
+NO_NODES_PER_LAYERS 5,1
+CLOUD_ACCESS 0,1
+FREQS 1e7,3e7
+NO_CORES 4,8
+Q_MAX 10,50
+VARIATIONS 1e3,1e3
 protocol.cld.no_vms 3
 protocol.cld.VMProcessingPower 1e8
-
-
-init.Net1.r 1000
+init.Net1.r 500
 protocol.mng.r_u 1
 protocol.mng.X_d 1
 protocol.mng.X_o 150
 protocol.mng.cycle 5
-
 protocol.clt.numberOfTasks 1
 protocol.clt.weight 1
 protocol.clt.CPI 1
 protocol.clt.T 150
-protocol.clt.I 16e8
-protocol.clt.taskArrivalRate 0.8
+protocol.clt.I 4e7
+protocol.clt.taskArrivalRate 0.6
 protocol.clt.numberOfDAG 1
 protocol.clt.dagWeights 1
-protocol.clt.edges
+protocol.clt.edges 
 protocol.clt.maxDeadline 100
 protocol.clt.vertices 1
-
-
 protocol.props.B 2
 protocol.props.Beta1 0.001
 protocol.props.Beta2 4
 protocol.props.P_ti 20
-
 
 #=============Define Simulation Globals
 
@@ -84,14 +69,14 @@ protocol.clt.step CYCLE
 protocol.clt.transport tr
 
 
-protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.BatchController
+protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.BasicController
 protocol.ctrl.linkable lnk
 protocol.ctrl.name ctrl
 protocol.ctrl.step CYCLE
 protocol.ctrl.transport tr
 
 
-protocol.wrk PeersimSimulator.peersim.env.Nodes.Workers.BatchWorker
+protocol.wrk PeersimSimulator.peersim.env.Nodes.Workers.BasicWorker
 protocol.wrk.linkable lnk
 protocol.wrk.name wrk
 protocol.wrk.step CYCLE

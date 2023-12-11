@@ -3,6 +3,8 @@ package PeersimSimulator.peersim.env.Nodes.Events;
 import PeersimSimulator.peersim.env.Nodes.Clients.Client;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.env.Records.Coordinates;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class WorkerInfo implements Message{
 
@@ -11,34 +13,47 @@ public class WorkerInfo implements Message{
      * of a priori expected task size.
      */
     // private static final double DEFAULT_TASK_SIZE = Client.DEFAULT_TASK_SIZE * Client.DEFAULT_NO_INSTR;
+    @JsonProperty("id")
     private int id; // the index of the node.
 
 
     /**
      * Number of Tasks in nodes queue.
      */
+    @JsonProperty("queueSize")
     private int queueSize;
 
     /**
      * Number of Requests that arrived at this node and are awaiting processing.
      */
+    @JsonProperty("unprocessedApplications")
     private int unprocessedApplications;
-
+    @JsonProperty("averageTaskSize")
     private double averageTaskSize;
-
+    @JsonProperty("nodeProcessingPower")
     private double nodeProcessingPower;
-
+    @JsonProperty("freeTaskSlots")
     private int freeTaskSlots;
 
+    @JsonProperty("lastKnownPosition")
     private Coordinates lastKnownPosition;
 
-
+    @JsonProperty("layer")
     private int layer;
 
-    public WorkerInfo(int id, int queueSize, int w, double averageTaskSize, double nodeProcessingPower, int freeTaskSlots, int layer, Coordinates lastKnownPosition) {
+
+    @JsonCreator
+    public WorkerInfo(@JsonProperty("id") int id,
+                      @JsonProperty("queueSize") int queueSize,
+                      @JsonProperty("unprocessedApplications") int unprocessedApplications,
+                      @JsonProperty("averageTaskSize") double averageTaskSize,
+                      @JsonProperty("nodeProcessingPower") double nodeProcessingPower,
+                      @JsonProperty("freeTaskSlots") int freeTaskSlots,
+                      @JsonProperty("layer") int layer,
+                      @JsonProperty("lastKnownPosition") Coordinates lastKnownPosition){
         this.id = id;
         this.queueSize = queueSize;
-        this.unprocessedApplications = w;
+        this.unprocessedApplications = unprocessedApplications;
         this.averageTaskSize = averageTaskSize;
         this.nodeProcessingPower = nodeProcessingPower;
         this.freeTaskSlots = freeTaskSlots;
@@ -80,16 +95,16 @@ public class WorkerInfo implements Message{
         this.unprocessedApplications = unprocessedApplications;
     }
 
-    public int getUnprocessedApplications() {
-        return unprocessedApplications;
-    }
-
     public int getId() {
         return id;
     }
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public int getUnprocessedApplications() {
+        return unprocessedApplications;
     }
 
     public double getAverageTaskSize() {
@@ -108,8 +123,12 @@ public class WorkerInfo implements Message{
         this.nodeProcessingPower = nodeProcessingPower;
     }
 
-    public double getAverageWaitingTime(){
-        return averageTaskSize/nodeProcessingPower;
+    public int getFreeTaskSlots() {
+        return freeTaskSlots;
+    }
+
+    public void setFreeTaskSlots(int freeTaskSlots) {
+        this.freeTaskSlots = freeTaskSlots;
     }
 
     public int getLayer() {

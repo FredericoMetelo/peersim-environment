@@ -8,14 +8,15 @@ import time
 import subprocess
 import os
 
+
 def run_peersim(config_path, jar_path="Environment/peersim-srv-0.0.1-SNAPSHOT.jar", output_redirect=None):
     # subprocess.call("pwd", cwd="/home/fm/Documents/Thesis/peersim-srv")
     if output_redirect is None:
         return subprocess.Popen(['java', '-jar', f'{jar_path}', f'{config_path}'], cwd="/")
     else:
         # log = open(output_redirect, 'w')
-        return subprocess.Popen(['java', '-jar', f'{jar_path}', f'{config_path}'], cwd="/", stderr=output_redirect, stdout=output_redirect)
-
+        return subprocess.Popen(['java', '-jar', f'{jar_path}', f'{config_path}'], cwd="/", stderr=output_redirect,
+                                stdout=output_redirect)
 
 
 class PeersimThread(threading.Thread):
@@ -37,7 +38,6 @@ class PeersimThread(threading.Thread):
         if not (output_file == None):
             self.current_outputfile = open(output_file, 'a')
         self.peersim = run_peersim(self.config_path, jar_path=self.jar_path, output_redirect=self.current_outputfile)
-
 
     def get_id(self):
         # returns id of the respective thread

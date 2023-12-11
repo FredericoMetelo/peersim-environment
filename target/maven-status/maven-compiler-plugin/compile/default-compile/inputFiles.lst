@@ -37,7 +37,6 @@
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/reports/ConnectivityObserver.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/env/Nodes/Clients/Client.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/dynamics/WireRingLattice.java
-/home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/env/Nodes/Events/SpringEvents/ActionReadyEvent.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/dynamics/DynamicNetwork.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/transport/E2ENetwork.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/env/Nodes/Workers/Worker.java

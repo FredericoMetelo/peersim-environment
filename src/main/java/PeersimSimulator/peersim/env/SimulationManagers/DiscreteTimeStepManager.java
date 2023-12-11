@@ -12,6 +12,7 @@ import PeersimSimulator.peersim.cdsim.CDProtocol;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
 import PeersimSimulator.peersim.core.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -164,6 +165,11 @@ public class DiscreteTimeStepManager implements CDProtocol {
             if(!c.isActive()) throw new RuntimeException("Inactive BasicController id=" + controllerId);
             SimulationData result = c.sendAction(a);
             results.add(result);
+        }
+        try{
+            mngDbgLog(new ObjectMapper().writeValueAsString(results));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         stop = false;
         return results;

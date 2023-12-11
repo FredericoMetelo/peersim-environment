@@ -7,9 +7,9 @@ import requests
 from gymnasium.spaces import MultiDiscrete, Dict, Discrete, Box
 from pettingzoo import ParallelEnv
 
+import json
 import envs.Utils.PeersimConfigGenerator as cg
 from envs.Utils.PeersimThread import PeersimThread
-
 
 AGENT_PREFIX = "worker_"
 
@@ -18,29 +18,58 @@ def not_zero(num):
     return 1 if num > 0 else 0
 
 
+def average_of_ints_in_string(s):
+    '''
+    ChatGPT function.
+    Computes the average of a string of numbers separated by commas.
+    '''
+    # Convert the string to a list of integers
+    numbers = [int(num) for num in s.strip().split(",")]
+    # Compute and return the average
+    return sum(numbers) / len(numbers) if numbers else 0
+
+def average_of_floats_in_string(s):
+    '''
+    ChatGPT function.
+    Computes the average of a string of numbers separated by commas.
+    '''
+    # Convert the string to a list of integers
+    numbers = [float(num) for num in s.split(",")]
+    # Compute and return the average
+    return sum(numbers) / len(numbers) if numbers else 0
+
+
+def validate_simulation_type(simtype):
+    if simtype not in ['basic', 'batch', 'dag']:
+        raise ValueError("Invalid argument: %s (NOTE: capitalization matters)" % simtype)
+    if simtype == "dag":
+        raise ValueError("dag is not yet supported")
+
+
 class PeersimEnv(ParallelEnv):
     metadata = {"render_modes": ["ansi"], "render_fps": 4}
 
     def init(self, render_mode=None, configs=None, log_dir=None):
         self.__init__(render_mode, configs, log_dir=log_dir)
 
-    def __init__(self, render_mode=None, simtype="Basic", configs=None, log_dir=None):
+    def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
         # (aka if number_nodes is 10 there is a total of 11 nodes (1 controller + 10 workers))
+        validate_simulation_type(simtype)
 
         self.ACTION_TYPE_FIELD = "type"
         self.ACTION_NEIGHBOUR_IDX_FIELD = "neighbourIndex"
         self.ACTION_HANDLER_ID_FIELD = "controllerId"
         self.RESULT_DISTANCE_FIELD = "distance"
         self.RESULT_WORKER_INFO_FIELD = "wi"
-        self.STATE_NODE_ID_FIELD = "n_i"
+        self.STATE_NODE_ID_FIELD = "nodeId"
         self.STATE_Q_FIELD = "Q"
         self.STATE_PROCESSING_POWER_FIELD = "w"
 
         self.number_nodes = 10
-        self.max_Q_size = 10
+        self.max_Q_size = [10, 50]
         self.max_w = 1
 
         self.url_api = "http://localhost:8080"
@@ -56,20 +85,17 @@ class PeersimEnv(ParallelEnv):
         controllers = self.__gen_config(configs, simtype=simtype)
         self.possible_agents = [AGENT_PREFIX + str(r) for r in controllers]
         self.agent_name_mapping = dict(
-            zip(self.possible_agents, list(range(len(self.possible_agents))))
+            zip(self.possible_agents, controllers)
         )
         # ---- State Space
         self.__log_dir = log_dir
         self.__run_counter = 0
 
+        self.no_nodes_per_layer = [int(no_nodes) for no_nodes in
+                                   self.config_archive["NO_NODES_PER_LAYERS"].strip().split(",")]
         if isinstance(self.max_Q_size, list):
+            self.q_list = self._gen_node_Q_max()
 
-            if len(self.max_Q_size) != self.number_nodes:
-                print("The number of entries in max_Q_size needs to be equal to"
-                      " the number of nodes. Or then max_Q_size needs to be just a number")
-                return
-            self.q_list = self.max_Q_size
-            raise Exception("Nodes with diferent max lenghts is not supported yet!")  # TODO rectify this!!
         else:
             self.q_list = [self.max_Q_size for _ in range(self.number_nodes)]
 
@@ -77,7 +103,7 @@ class PeersimEnv(ParallelEnv):
             agent: Dict(
                 {
                     self.STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
-                    self.STATE_Q_FIELD: MultiDiscrete(self.q_list),
+                    self.STATE_Q_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
                     self.STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
                 }
             ) for agent in self.possible_agents
@@ -87,8 +113,9 @@ class PeersimEnv(ParallelEnv):
         self._action_spaces = {
             agent: Dict(
                 {
-                    self.ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=1),
-                    self.ACTION_NEIGHBOUR_IDX_FIELD: Discrete(self.max_Q_size, start=1)
+                    self.ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=0),
+                    self.ACTION_NEIGHBOUR_IDX_FIELD: Discrete(self.number_nodes - 1, start=0)
+                    # No clue how to cap this to what nodes I can see
                 }
             ) for agent in self.possible_agents
         }
@@ -124,8 +151,8 @@ class PeersimEnv(ParallelEnv):
     def action_space(self, agent):
         return Dict(
             {
-                self.ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=1),
-                self.ACTION_NEIGHBOUR_IDX_FIELD: Discrete(self.max_Q_size, start=1)
+                self.ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=0),
+                self.ACTION_NEIGHBOUR_IDX_FIELD: Discrete(self.number_nodes - 1, start=0)
             }
         )
 
@@ -177,14 +204,14 @@ class PeersimEnv(ParallelEnv):
         # Checking the configurations
         if configs is None:
 
-            configs = {"protocol.wrk.Q_MAX": str(self.max_Q_size), "SIZE": str(self.number_nodes),
+            configs = {"Q_MAX": str(self.max_Q_size), "SIZE": str(self.number_nodes),
                        "random.seed": self.__gen_seed()}
 
             controller, self.config_path = cg.generate_config_file(configs, simtype)
         elif type(configs) is dict:
             # Consistency of QMax in configs and the arguments.
-            if "protocol.wrk.Q_MAX" in configs:
-                self.max_Q_size = int(configs["protocol.wrk.Q_MAX"])
+            if "Q_MAX" in configs:
+                self.max_Q_size = [int(q) for q in configs["Q_MAX"].strip().split(",")]
 
             if "SIZE" in configs:
                 self.number_nodes = int(configs["SIZE"])  # - 1 Not anymore
@@ -193,12 +220,13 @@ class PeersimEnv(ParallelEnv):
                 configs["random.seed"] = self.__gen_seed()
                 print(f'seed:{configs["random.seed"]}')
 
-            controller, self.config_path  = cg.generate_config_file(configs, simtype)
+            controller, self.config_path = cg.generate_config_file(configs, simtype)
         elif type(configs) is str:
             self.config_path = configs
             controller, self.config_archive = cg.compile_dict(configs)
         else:
-            raise Exception("Invalid Type for the configs parameter. Needs to be None, a Dictionary or a String. Please see the project README.md")
+            raise Exception(
+                "Invalid Type for the configs parameter. Needs to be None, a Dictionary or a String. Please see the project README.md")
 
         return controller
 
@@ -217,12 +245,14 @@ class PeersimEnv(ParallelEnv):
         headers_state = {"Accept": "application/json", "Connection": "keep-alive"}
         try:
             s = requests.get(space_url, headers=headers_state, timeout=self.default_timeout).json()
-            obs = s.get('state')
+            full_obs = s.get('state')
+            global_obs = full_obs.get('globalState')
+            partial_obs = full_obs.get('observedState')
             done = s.get("done")
-            self._observation = obs
+            self._observation = partial_obs
             self._done = done
 
-            observations = {self.agents[i]: obs[i] for i in range(len(self.agents))}
+            observations = {self.agents[i]: partial_obs[i] for i in range(len(self.agents))}
             self.state = observations
 
             dbg_info = s.get("info")
@@ -236,7 +266,7 @@ class PeersimEnv(ParallelEnv):
 
         payload = [
             {
-                self.ACTION_TYPE_FIELD: self.type,
+                self.ACTION_TYPE_FIELD: self.simtype,
                 self.ACTION_NEIGHBOUR_IDX_FIELD: int(action.get(name).get(self.ACTION_NEIGHBOUR_IDX_FIELD)),
                 self.ACTION_HANDLER_ID_FIELD: int(self.agent_name_mapping.get(name))
             } for name in self.agent_name_mapping.keys()
@@ -244,7 +274,9 @@ class PeersimEnv(ParallelEnv):
         headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
         action_url = self.url_api + self.url_action_path
         try:
-            r = requests.post(action_url, json=payload, headers=headers_action, timeout=self.default_timeout).json()
+            payload_json = json.dumps(payload)
+            print(payload_json)
+            r = requests.post(action_url, payload_json, headers=headers_action, timeout=self.default_timeout).json()
             result = {AGENT_PREFIX + str(reward["srcId"]): reward for reward in r}
             self._result = result
             return result
@@ -322,7 +354,7 @@ class PeersimEnv(ParallelEnv):
         t_w = not_zero(w_l) * (q_l / miu_l) + not_zero(w_o) * ((q_l / miu_l) + (q_o / miu_o))
         r_i_j = self.BANDWIDTH * math.log(
             1 + (self.PATH_LOSS_CONSTANT * math.pow(d_i_j, self.PATH_LOSS_EXPONENT) * self.TRANSMISSION_POWER) / (
-                        self.BANDWIDTH * self.NORMALIZED_THERMAL_NOISE_POWER))
+                    self.BANDWIDTH * self.NORMALIZED_THERMAL_NOISE_POWER))
         t_c = 2 * w_o * self.AVERAGE_TASK_SIZE / r_i_j if d_i_j != 0 else 0
         t_e = self.AVERAGE_TASK_INSTR * (w_l / self.AVERAGE_PROCESSING_POWER + w_o / self.AVERAGE_PROCESSING_POWER)
         D = self.DELAY_WEIGHT * (t_w + t_c + t_e) / (w_l + w_o)
@@ -334,7 +366,7 @@ class PeersimEnv(ParallelEnv):
         p_overload_o = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_o)
 
         O = self.OVERLOAD_WEIGHT * (w_l * p_overload_l + w_o * p_overload_o) / (
-                    w_l + w_o) if w_l != 0 and w_o != 0 else 0
+                w_l + w_o) if w_l != 0 and w_o != 0 else 0
         return U - (D + O)
 
     def _compute_avg_task_data(self):
@@ -356,9 +388,9 @@ class PeersimEnv(ParallelEnv):
         return acc_task_size / acc_weights, acc_task_instr / acc_weights, task_arrival_rate
 
     def _compute_average_worker_data(self):
-        average_frequency = self.config_archive["protocol.wrk.FREQ"]
-        average_no_cores = self.config_archive["protocol.wrk.NO_CORES"]
-        average_max_Q = self.config_archive["protocol.wrk.Q_MAX"]
+        average_frequency = average_of_floats_in_string(self.config_archive["FREQS"])
+        average_no_cores = average_of_ints_in_string(self.config_archive["NO_CORES"])
+        average_max_Q = average_of_ints_in_string(self.config_archive["Q_MAX"])
         return float(average_no_cores) * float(average_frequency), int(average_max_Q)
 
     def _validateAction(self, original_obs, actions):
@@ -372,3 +404,10 @@ class PeersimEnv(ParallelEnv):
             else:
                 failed[agent] = False
         return failed
+
+    def _gen_node_Q_max(self):
+        q_list = []
+        for idx, no_nodes in enumerate(self.no_nodes_per_layer):
+            for i in range(no_nodes):
+                q_list.append(self.max_Q_size[idx])
+        return q_list

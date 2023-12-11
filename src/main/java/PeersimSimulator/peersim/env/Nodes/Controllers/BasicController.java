@@ -11,6 +11,7 @@ import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.env.Records.Actions.Action;
 import PeersimSimulator.peersim.env.Records.Actions.BasicAction;
 import PeersimSimulator.peersim.env.Records.SimulationData.BasicSimulationData;
+import PeersimSimulator.peersim.env.Records.SimulationData.FailledActionSimulationData;
 import PeersimSimulator.peersim.env.Records.SimulationData.SimulationData;
 
 
@@ -35,16 +36,20 @@ public class BasicController extends AbstractController {
     public SimulationData sendAction(Action action) {
         if(!(action instanceof BasicAction a)) throw new RuntimeException("Wrong Class of Action being used.");
 
-        if (!active || a == null || a.controllerId() < 0 || a.neighbourIndex() < 0) return null;
+        if (!active || a == null || a.controllerId() < 0 || a.neighbourIndex() < 0) {
+            return new FailledActionSimulationData(this.getId());
+        }
         int neigh = a.neighbourIndex();
         Linkable l = (Linkable) Network.get(a.controllerId()).getProtocol(FastConfig.getLinkable(Controller.getPid()));
         if(neigh < 0 || neigh >= l.degree()){
             ctrErrLog("An action failed because the specified index of the neighbourhood is out of bounds");
-            return null;
+            return new FailledActionSimulationData(this.getId());
+
         }
         if(!l.getNeighbor(neigh).isUp()){
             ctrErrLog("An action failed because the node of the specified index of the neighbourhood is down");
-            return null;
+            return new FailledActionSimulationData(this.getId());
+
         }
 
         ctrDbgLog(a.toString());

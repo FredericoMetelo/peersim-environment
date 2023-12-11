@@ -3,23 +3,29 @@ import os
 this_dir, this_filename = os.path.split(__file__)
 print(this_dir + "    " + this_filename)
 PEERSIM_DEFAULTS = {
-    "SIZE": "10",
+    "SIZE": "6",
     "CYCLE": "1",
     "CYCLES": "1000",
     "random.seed": "1234567890",
     "MINDELAY": "0",
     "MAXDELAY": "0",
     "DROP": "0",
-    "CONTROLLERS": "0;1",
+    "CONTROLLERS": "0;5",
 
+    "CLOUD_EXISTS": "1",
     "NO_LAYERS": "2",
-    "NO_NODES_PER_LAYERS": "6,4",
+    "NO_NODES_PER_LAYERS": "5,1",
+    "CLOUD_ACCESS": "0,1",
+
     "FREQS": "1e7,3e7",
     "NO_CORES": "4,8",
     "Q_MAX": "10,50",
     "VARIATIONS": "1e3,1e3",
 
-    "init.Net1.r": "50",
+    "protocol.cld.no_vms": "3",
+    "protocol.cld.VMProcessingPower": "1e8",
+
+    "init.Net1.r": "500",
 
     "protocol.mng.r_u": "1",
     "protocol.mng.X_d": "1",
@@ -30,8 +36,8 @@ PEERSIM_DEFAULTS = {
     "protocol.clt.weight": "1",
     "protocol.clt.CPI": "1",
     "protocol.clt.T": "150",
-    "protocol.clt.I": "200e6",
-    "protocol.clt.taskArrivalRate": "0.2",
+    "protocol.clt.I": "4e7",
+    "protocol.clt.taskArrivalRate": "0.6",
 
     "protocol.clt.numberOfDAG": "1",
     "protocol.clt.dagWeights": "1",
@@ -39,14 +45,10 @@ PEERSIM_DEFAULTS = {
     "protocol.clt.maxDeadline": "100",
     "protocol.clt.vertices": "1",
 
-    "protocol.wrk.NO_CORES": "4",
-    "protocol.wrk.FREQ": "1e7",
-    "protocol.wrk.Q_MAX": "10",
-
     "protocol.props.B": "2",
     "protocol.props.Beta1": "0.001",
     "protocol.props.Beta2": "4",
-    "protocol.props.P_ti": "20"
+    "protocol.props.P_ti": "20",
 }
 
 

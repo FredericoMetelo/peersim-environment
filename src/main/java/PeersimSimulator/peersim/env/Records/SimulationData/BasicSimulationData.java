@@ -3,6 +3,7 @@ package PeersimSimulator.peersim.env.Records.SimulationData;
 import PeersimSimulator.peersim.env.Nodes.Events.WorkerInfo;
 import PeersimSimulator.peersim.env.Tasks.ITask;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
@@ -11,8 +12,16 @@ import java.util.List;
 
 public class BasicSimulationData extends SimulationData {
 
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonProperty("distance")
     private double distance;
+
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonProperty("wi")
     private WorkerInfo wi;
+
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JsonProperty("tasksCompleted")
     private List<ITask> tasksCompleted;
 
 
