@@ -66,7 +66,7 @@ class PeersimEnv(ParallelEnv):
         self.RESULT_WORKER_INFO_FIELD = "wi"
         self.STATE_NODE_ID_FIELD = "nodeId"
         self.STATE_Q_FIELD = "Q"
-        self.STATE_PROCESSING_POWER_FIELD = "w"
+        self.STATE_PROCESSING_POWER_FIELD = "processingPower"
 
         self.number_nodes = 10
         self.max_Q_size = [10, 50]

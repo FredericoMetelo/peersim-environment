@@ -65,6 +65,7 @@
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/transport/UnreliableTransport.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/cdsim/CDState.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/vector/Setter.java
+/home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/env/Records/SimulationData/FailledActionSimulationData.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/util/WeightedRandPerm.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/util/LinearIterator.java
 /home/fm/IdeaProjects/peersim-environment/src/main/java/PeersimSimulator/peersim/graph/SubGraphEdges.java

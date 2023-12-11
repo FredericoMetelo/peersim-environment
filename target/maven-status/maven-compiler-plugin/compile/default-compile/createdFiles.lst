@@ -178,6 +178,7 @@ PeersimSimulator/peersim/graph/GraphIO.class
 PeersimSimulator/peersim/edsim/PriorityQ.class
 PeersimSimulator/peersim/graph/SubGraphEdges.class
 PeersimSimulator/peersim/reports/MemoryObserver.class
+PeersimSimulator/peersim/env/Records/SimulationData/FailledActionSimulationData.class
 PeersimSimulator/example/loadbalance/LinearDistributionInitializer.class
 PeersimSimulator/peersim/graph/FastUndirGraph.class
 PeersimSimulator/peersim/core/OracleIdleProtocol.class
