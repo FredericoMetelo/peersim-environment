@@ -8,8 +8,8 @@ from gymnasium.spaces import MultiDiscrete, Dict, Discrete, Box
 from pettingzoo import ParallelEnv
 
 import json
-import envs.Utils.PeersimConfigGenerator as cg
-from envs.Utils.PeersimThread import PeersimThread
+import peersim_gym.envs.Utils.PeersimConfigGenerator as cg
+from peersim_gym.envs.Utils.PeersimThread import PeersimThread
 
 AGENT_PREFIX = "worker_"
 
@@ -27,6 +27,7 @@ def average_of_ints_in_string(s):
     numbers = [int(num) for num in s.strip().split(",")]
     # Compute and return the average
     return sum(numbers) / len(numbers) if numbers else 0
+
 
 def average_of_floats_in_string(s):
     '''
@@ -46,6 +47,16 @@ def validate_simulation_type(simtype):
         raise ValueError("dag is not yet supported")
 
 
+ACTION_TYPE_FIELD = "type"
+ACTION_NEIGHBOUR_IDX_FIELD = "neighbourIndex"
+ACTION_HANDLER_ID_FIELD = "controllerId"
+RESULT_DISTANCE_FIELD = "distance"
+RESULT_WORKER_INFO_FIELD = "wi"
+STATE_NODE_ID_FIELD = "nodeId"
+STATE_Q_FIELD = "Q"
+STATE_PROCESSING_POWER_FIELD = "processingPower"
+
+
 class PeersimEnv(ParallelEnv):
     metadata = {"render_modes": ["ansi"], "render_fps": 4}
 
@@ -58,15 +69,6 @@ class PeersimEnv(ParallelEnv):
         # the controller.
         # (aka if number_nodes is 10 there is a total of 11 nodes (1 controller + 10 workers))
         validate_simulation_type(simtype)
-
-        self.ACTION_TYPE_FIELD = "type"
-        self.ACTION_NEIGHBOUR_IDX_FIELD = "neighbourIndex"
-        self.ACTION_HANDLER_ID_FIELD = "controllerId"
-        self.RESULT_DISTANCE_FIELD = "distance"
-        self.RESULT_WORKER_INFO_FIELD = "wi"
-        self.STATE_NODE_ID_FIELD = "nodeId"
-        self.STATE_Q_FIELD = "Q"
-        self.STATE_PROCESSING_POWER_FIELD = "processingPower"
 
         self.number_nodes = 10
         self.max_Q_size = [10, 50]
@@ -102,9 +104,9 @@ class PeersimEnv(ParallelEnv):
         self._observation_spaces = {
             agent: Dict(
                 {
-                    self.STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
-                    self.STATE_Q_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
-                    self.STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
+                    STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
+                    STATE_Q_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
+                    STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
                 }
             ) for agent in self.possible_agents
         }
@@ -113,8 +115,8 @@ class PeersimEnv(ParallelEnv):
         self._action_spaces = {
             agent: Dict(
                 {
-                    self.ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=0),
-                    self.ACTION_NEIGHBOUR_IDX_FIELD: Discrete(self.number_nodes - 1, start=0)
+                    ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=0),
+                    ACTION_NEIGHBOUR_IDX_FIELD: Discrete(self.number_nodes - 1, start=0)
                     # No clue how to cap this to what nodes I can see
                 }
             ) for agent in self.possible_agents
@@ -142,17 +144,17 @@ class PeersimEnv(ParallelEnv):
     def observation_space(self, agent):
         return Dict(
             {
-                self.STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
-                self.STATE_Q_FIELD: MultiDiscrete(self.q_list),
-                self.STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
+                STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
+                STATE_Q_FIELD: MultiDiscrete(self.q_list),
+                STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
             }
         )
 
     def action_space(self, agent):
         return Dict(
             {
-                self.ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=0),
-                self.ACTION_NEIGHBOUR_IDX_FIELD: Discrete(self.number_nodes - 1, start=0)
+                ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=0),
+                ACTION_NEIGHBOUR_IDX_FIELD: Discrete(self.number_nodes - 1, start=0)
             }
         )
 
@@ -198,6 +200,9 @@ class PeersimEnv(ParallelEnv):
 
     def close(self):
         self.simulator.stop()
+
+    def agents(self):
+        return self.agents
 
     def __gen_config(self, configs, simtype, regen_seed=False):
         controller = []
@@ -266,9 +271,9 @@ class PeersimEnv(ParallelEnv):
 
         payload = [
             {
-                self.ACTION_TYPE_FIELD: self.simtype,
-                self.ACTION_NEIGHBOUR_IDX_FIELD: int(action.get(name).get(self.ACTION_NEIGHBOUR_IDX_FIELD)),
-                self.ACTION_HANDLER_ID_FIELD: int(self.agent_name_mapping.get(name))
+                ACTION_TYPE_FIELD: self.simtype,
+                ACTION_NEIGHBOUR_IDX_FIELD: int(action.get(name).get(ACTION_NEIGHBOUR_IDX_FIELD)),
+                ACTION_HANDLER_ID_FIELD: int(self.agent_name_mapping.get(name))
             } for name in self.agent_name_mapping.keys()
         ]
         headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
@@ -323,28 +328,28 @@ class PeersimEnv(ParallelEnv):
     def _compute_agent_reward(self, agent_og_obs, agent_obs, action, agent_result):
         # Prepare data
 
-        source_of_task = action[self.ACTION_HANDLER_ID_FIELD]
-        target_of_task = action[self.ACTION_NEIGHBOUR_IDX_FIELD]
+        source_of_task = action[ACTION_HANDLER_ID_FIELD]
+        target_of_task = action[ACTION_NEIGHBOUR_IDX_FIELD]
 
         source_node_og_info = agent_og_obs
         source_node_info = agent_obs
-        target_node_worker_info = agent_result[self.RESULT_WORKER_INFO_FIELD]
-        locally_processed = agent_obs[self.STATE_NODE_ID_FIELD] == target_node_worker_info["id"]
+        target_node_worker_info = agent_result[RESULT_WORKER_INFO_FIELD]
+        locally_processed = agent_obs[STATE_NODE_ID_FIELD] == target_node_worker_info["id"]
 
         if int(target_node_worker_info["queueSize"]) < int(target_of_task) or int(target_of_task) < 0:
             return -self.UTILITY_REWARD
 
-        q_l = len(source_node_og_info[self.STATE_Q_FIELD])
+        q_l = len(source_node_og_info[STATE_Q_FIELD])
         q_o = target_node_worker_info["queueSize"]
-        q_expected_l = len(source_node_info[self.STATE_Q_FIELD])
+        q_expected_l = len(source_node_info[STATE_Q_FIELD])
         q_expected_o = q_o if locally_processed else q_o + 1  # Change to W_o for allowing multiple offloads
 
-        d_i_j = agent_result[self.RESULT_DISTANCE_FIELD]
+        d_i_j = agent_result[RESULT_DISTANCE_FIELD]
 
         w_o = 1  # Number of tasks offloaded is always 1
         w_l = q_l - w_o if 0 < q_l - w_o else 0
 
-        miu_l = source_node_info[self.STATE_PROCESSING_POWER_FIELD]
+        miu_l = source_node_info[STATE_PROCESSING_POWER_FIELD]
         miu_o = target_node_worker_info["nodeProcessingPower"]
 
         # Compute Utility:
@@ -397,8 +402,8 @@ class PeersimEnv(ParallelEnv):
         failed = {}
         for agent in self.agents:
             obs = original_obs[agent]
-            Q = obs[self.STATE_Q_FIELD]
-            neighbour = int(actions[agent][self.ACTION_NEIGHBOUR_IDX_FIELD])
+            Q = obs[STATE_Q_FIELD]
+            neighbour = int(actions[agent][ACTION_NEIGHBOUR_IDX_FIELD])
             if len(Q) <= neighbour or neighbour < 0:
                 failed[agent] = True
             else:

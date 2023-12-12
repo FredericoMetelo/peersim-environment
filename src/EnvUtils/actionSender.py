@@ -120,16 +120,16 @@ if __name__ == "__main__":
                 target = str(a)
                 actions = {
                     agent: {
-                        env.ACTION_HANDLER_ID_FIELD: agent.split("_")[1],
-                        env.ACTION_NEIGHBOUR_IDX_FIELD: target
+                        PeersimEnv.ACTION_HANDLER_ID_FIELD: agent.split("_")[1],
+                        PeersimEnv.ACTION_NEIGHBOUR_IDX_FIELD: target
                     } for agent in env.agents
                 }
             else:
                 for agent in env.agents:
                     actions = {
                         agent: {
-                            env.ACTION_HANDLER_ID_FIELD: agent.split("_")[1],
-                            env.ACTION_NEIGHBOUR_IDX_FIELD: random.Random().randint(0, int(configs["SIZE"]))
+                            PeersimEnv.ACTION_HANDLER_ID_FIELD: agent.split("_")[1],
+                            PeersimEnv.ACTION_NEIGHBOUR_IDX_FIELD: random.Random().randint(0, int(configs["SIZE"]))
                         } for agent in env.agents
                     }
             print(actions)
