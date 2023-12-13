@@ -152,7 +152,15 @@ public static int getSimID() {
 */
 public static void main(String[] args)
 {
-	SpringApplication.run(Simulator.class, args);
+	// Spring Boot part added by me ====================================================================================
+	try {
+		org.springframework.context.ConfigurableApplicationContext ctx = SpringApplication.run(Simulator.class, args);
+	}catch(org.springframework.boot.web.server.PortInUseException e) {
+		System.err.println("Port already in use, the launching of the simulation failed.");
+		return;
+	}
+
+	// =================================================================================================================
 
 	long time = System.currentTimeMillis();	
 	

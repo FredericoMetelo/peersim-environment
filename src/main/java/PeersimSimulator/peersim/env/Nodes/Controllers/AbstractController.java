@@ -221,9 +221,11 @@ public abstract class AbstractController implements Controller {
         ctrDbgLog("Acquiring state");
         // stop = true; Set the await action to block on next iter.
         SDNNodeProperties props = correspondingWorker.getProps();
-        // TODO deal with the fact wi might be null!!!! Btw I need to compute distance, I'm not entirely sure how to best do this. AS the
-        // workers may be moving and there is no way they broadcast their position to the neighbourhood. I could have the controller
-        //int offloadable_tasks = wi.getW_i();
+
+        // using a list here is an hotfix to a limitation of gymnsaium. That for some reason does not allow continuous
+        // values outside of arrays...
+        List<Double> l = new LinkedList<>();
+        l.add(props.getTRANSMISSION_POWER());
         return new PartialState(this.selectedNode,
                 this.getQ(),
                 correspondingWorker.getProcessingPower(),
@@ -232,7 +234,7 @@ public abstract class AbstractController implements Controller {
                 new Coordinates(props.getX(), props.getY()),
                 this.computeDistancesToNeighbours(),
                 props.getBANDWIDTH(),
-                props.getTRANSMISSION_POWER());
+                l);
     }
 
     @Override

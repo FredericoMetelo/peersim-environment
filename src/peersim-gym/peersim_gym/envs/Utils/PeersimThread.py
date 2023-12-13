@@ -36,7 +36,7 @@ class PeersimThread(threading.Thread):
     def run(self, output_file=None):
         self.current_outputfile = None
         if not (output_file == None):
-            self.current_outputfile = open(output_file, 'a')
+            self.current_outputfile = open(output_file, 'a+')
         self.peersim = run_peersim(self.config_path, jar_path=self.jar_path, output_redirect=self.current_outputfile)
 
     def get_id(self):

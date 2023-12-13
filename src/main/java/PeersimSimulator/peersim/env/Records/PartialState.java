@@ -11,7 +11,7 @@ public record PartialState(
         Coordinates position,
         List<Double> distancesToNeighbours,
         double bandwidth,
-        double transmissionPower
+        List<Double> transmissionPower
 ) {
 
 }

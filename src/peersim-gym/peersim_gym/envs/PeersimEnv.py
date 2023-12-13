@@ -11,6 +11,9 @@ import json
 import peersim_gym.envs.Utils.PeersimConfigGenerator as cg
 from peersim_gym.envs.Utils.PeersimThread import PeersimThread
 
+import socket
+from contextlib import closing
+
 AGENT_PREFIX = "worker_"
 
 
@@ -57,6 +60,11 @@ STATE_Q_FIELD = "Q"
 STATE_PROCESSING_POWER_FIELD = "processingPower"
 
 
+def can_launch_simulation():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+        return sock.connect_ex(('localhost', 8080)) != 0
+
+
 class PeersimEnv(ParallelEnv):
     metadata = {"render_modes": ["ansi"], "render_fps": 4}
 
@@ -69,7 +77,9 @@ class PeersimEnv(ParallelEnv):
         # the controller.
         # (aka if number_nodes is 10 there is a total of 11 nodes (1 controller + 10 workers))
         validate_simulation_type(simtype)
-
+        if not can_launch_simulation():
+            print("Simulation Failed to launch. Port 8080 is taken, please free port 8080 first.")
+            exit(1)
         self.number_nodes = 10
         self.max_Q_size = [10, 50]
         self.max_w = 1
@@ -115,9 +125,9 @@ class PeersimEnv(ParallelEnv):
         self._action_spaces = {
             agent: Dict(
                 {
-                    ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=0),
+                    # ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=0),
                     ACTION_NEIGHBOUR_IDX_FIELD: Discrete(self.number_nodes - 1, start=0)
-                    # No clue how to cap this to what nodes I can see
+                    # The neighbour action is not actually part of the actions taken by the agents.
                 }
             ) for agent in self.possible_agents
         }
@@ -153,7 +163,7 @@ class PeersimEnv(ParallelEnv):
     def action_space(self, agent):
         return Dict(
             {
-                ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=0),
+                # ACTION_HANDLER_ID_FIELD: Discrete(self.number_nodes - 1, start=0),
                 ACTION_NEIGHBOUR_IDX_FIELD: Discrete(self.number_nodes - 1, start=0)
             }
         )
@@ -200,9 +210,6 @@ class PeersimEnv(ParallelEnv):
 
     def close(self):
         self.simulator.stop()
-
-    def agents(self):
-        return self.agents
 
     def __gen_config(self, configs, simtype, regen_seed=False):
         controller = []
@@ -317,7 +324,8 @@ class PeersimEnv(ParallelEnv):
                     agent_og_obs=original_obs[agent],
                     agent_obs=obs[agent],
                     action=actions[agent],
-                    agent_result=result[agent]
+                    agent_result=result[agent],
+                    agent_idx=self.agent_name_mapping[agent]
                 )
             elif mask[agent]:
                 rewards[agent] = -self.UTILITY_REWARD
@@ -325,10 +333,10 @@ class PeersimEnv(ParallelEnv):
                 print(f"Action of agent {agent} was not found in the actions sent.")
         return rewards
 
-    def _compute_agent_reward(self, agent_og_obs, agent_obs, action, agent_result):
+    def _compute_agent_reward(self, agent_og_obs, agent_obs, action, agent_result, agent_idx):
         # Prepare data
 
-        source_of_task = action[ACTION_HANDLER_ID_FIELD]
+        source_of_task = agent_idx  # action[ACTION_HANDLER_ID_FIELD]
         target_of_task = action[ACTION_NEIGHBOUR_IDX_FIELD]
 
         source_node_og_info = agent_og_obs
