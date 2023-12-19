@@ -38,6 +38,8 @@ public class MdpApi implements Control {
         lastInfo = null;
     }
 
+
+
     @GetMapping("/state")
     public Information getState() {
         DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
@@ -73,8 +75,11 @@ public class MdpApi implements Control {
         return !(CommonState.getPhase() == CommonState.POST_SIMULATION) && c.isUp();
     }
 
-
-
+    @GetMapping("/NeighbourData")
+    public NetworkData getNeighbourData(){
+        DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
+        return c.getNeighbourData();
+    }
     @Override
     public boolean execute() {
 

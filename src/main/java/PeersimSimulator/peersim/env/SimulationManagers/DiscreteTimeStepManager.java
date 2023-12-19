@@ -274,6 +274,24 @@ public class DiscreteTimeStepManager implements CDProtocol {
         // TODO
         return null;
     }
+
+    public NetworkData getNeighbourData() {
+        int min = Network.size();
+        int max = 0;
+        int average = 0;
+        for (int i = 0; i < Network.size(); i++) {
+            Node n = Network.get(i);
+            if (n.isUp()) {
+                Linkable linkable = (Linkable) n.getProtocol(FastConfig.getLinkable(Worker.getPid()));
+                int size = linkable.degree();
+                if (size < min) min = size;
+                if (size > max) max = size;
+                average += size;
+                average /= 2;
+            }
+        }
+        return new NetworkData(min, max, average);
+    }
     /*
     private double calculatReward(Linkable linkable, Node n, int targetNode, int controllerId) {
         //== Setup the variables as explained.
