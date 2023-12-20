@@ -76,6 +76,8 @@ class PeersimEnv(ParallelEnv):
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
         # (aka if number_nodes is 10 there is a total of 11 nodes (1 controller + 10 workers))
+
+
         validate_simulation_type(simtype)
         if not can_launch_simulation():
             print("Simulation Failed to launch. Port 8080 is taken, please free port 8080 first.")
@@ -88,6 +90,7 @@ class PeersimEnv(ParallelEnv):
         self.url_action_path = "/action"
         self.url_state_path = "/state"
         self.url_isUp = "/up"
+        self.url_NetworkData = "/NeighbourData"
 
         self.default_timeout = 3  # Second
 
@@ -151,6 +154,10 @@ class PeersimEnv(ParallelEnv):
         self.AVERAGE_TASK_SIZE, self.AVERAGE_TASK_INSTR, self.TASK_ARRIVAL_RATE = self._compute_avg_task_data()
         self.AVERAGE_PROCESSING_POWER, self.AVERAGE_MAX_Q = self._compute_average_worker_data()
 
+        self.avg_neighbours = -1
+        self.min_neighbours = -1
+        self.max_neighbours = -1
+
     def observation_space(self, agent):
         return Dict(
             {
@@ -183,6 +190,7 @@ class PeersimEnv(ParallelEnv):
             time.sleep(0.5)  # Good Solution? No... But it is what it is.
         print("Server is up")
 
+        self.max_neighbours, self.min_neighbours, self.avg_neighbours = self.__get_net_data()
         observations, done, info = self.__get_obs()
         infos = {agent: {} for agent in self.agents}
 
@@ -296,6 +304,15 @@ class PeersimEnv(ParallelEnv):
             print("Failed to send action, could not connect to the environment. Returning old result.")
             return self._result
 
+    def __get_net_data(self):
+        payload = {}
+        headers_action = {"Accept": "application/json", "Connection": "keep-alive"}
+        action_url = self.url_api + self.url_NetworkData
+        r = requests.get(action_url, json=payload, headers=headers_action, timeout=self.default_timeout).json()
+        min = r.get('min')
+        max = r.get('max')
+        avg = r.get('average')
+        return min, max, avg
     def __is_up(self):
         payload = {}
         headers_action = {"Accept": "application/json", "Connection": "keep-alive"}
