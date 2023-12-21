@@ -158,6 +158,7 @@ class PeersimEnv(ParallelEnv):
         self.min_neighbours = -1
         self.max_neighbours = -1
 
+        self.last_reward_components = {}
     def observation_space(self, agent):
         return Dict(
             {
@@ -210,6 +211,8 @@ class PeersimEnv(ParallelEnv):
         terminations = {agent: done for agent in self.agents}
         self.num_moves += 1
         truncations = {agent: False for agent in self.agents}
+
+
 
         return observations, rewards, terminations, truncations, info
 
@@ -337,13 +340,14 @@ class PeersimEnv(ParallelEnv):
         rewards = {}
         for agent in self.agents:
             if agent in actions and not mask[agent]:
-                rewards[agent] = self._compute_agent_reward(
+                p = self._compute_agent_reward(
                     agent_og_obs=original_obs[agent],
                     agent_obs=obs[agent],
                     action=actions[agent],
                     agent_result=result[agent],
                     agent_idx=self.agent_name_mapping[agent]
                 )
+                rewards[agent], self.last_reward_components[agent] = p
             elif mask[agent]:
                 rewards[agent] = -self.UTILITY_REWARD
             else:
@@ -362,7 +366,7 @@ class PeersimEnv(ParallelEnv):
         locally_processed = agent_obs[STATE_NODE_ID_FIELD] == target_node_worker_info["id"]
 
         if int(target_node_worker_info["queueSize"]) < int(target_of_task) or int(target_of_task) < 0:
-            return -self.UTILITY_REWARD
+            return -self.UTILITY_REWARD, {"U": -1, "D": 0, "O": 0}
 
         q_l = len(source_node_og_info[STATE_Q_FIELD])
         q_o = target_node_worker_info["queueSize"]
@@ -397,7 +401,8 @@ class PeersimEnv(ParallelEnv):
 
         O = self.OVERLOAD_WEIGHT * (w_l * p_overload_l + w_o * p_overload_o) / (
                 w_l + w_o) if w_l != 0 and w_o != 0 else 0
-        return U - (D + O)
+        reward = U - (D + O)
+        return (reward, {"U": U, "D": D, "O": O})
 
     def _compute_avg_task_data(self):
         task_sizes = self.config_archive["protocol.clt.T"].strip().split(",")
