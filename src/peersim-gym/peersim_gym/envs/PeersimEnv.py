@@ -190,7 +190,7 @@ class PeersimEnv(ParallelEnv):
             time.sleep(0.5)  # Good Solution? No... But it is what it is.
         print("Server is up")
 
-        self.max_neighbours, self.min_neighbours, self.avg_neighbours = self.__get_net_data()
+        self.min_neighbours, self.max_neighbours, self.avg_neighbours = self.__get_net_data()
         observations, done, info = self.__get_obs()
         infos = {agent: {} for agent in self.agents}
 
