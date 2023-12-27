@@ -79,11 +79,12 @@ class PeersimEnv(ParallelEnv):
 
 
         validate_simulation_type(simtype)
+        self.render_mode = render_mode
         if not can_launch_simulation():
             print("Simulation Failed to launch. Port 8080 is taken, please free port 8080 first.")
             exit(1)
         self.number_nodes = 10
-        self.max_Q_size = [10, 50]
+        self.max_Q_size = [10, 50]  # TODO this is specified from outside.
         self.max_w = 1
 
         self.url_api = "http://localhost:8080"
@@ -212,12 +213,14 @@ class PeersimEnv(ParallelEnv):
         self.num_moves += 1
         truncations = {agent: False for agent in self.agents}
 
-
+        if self.render_mode == "ansi":
+            self.render()
 
         return observations, rewards, terminations, truncations, info
 
     def render(self):
-        pass
+        if self.render_mode == "ansi":
+            return self.__render_ansi()
 
     def close(self):
         self.simulator.stop()
@@ -277,7 +280,7 @@ class PeersimEnv(ParallelEnv):
 
             observations = {self.agents[i]: partial_obs[i] for i in range(len(self.agents))}
             self.state = observations
-
+            self.extract_global_data(global_obs)
             dbg_info = s.get("info")
             self._info = dbg_info
             return observations, done, dbg_info
@@ -446,3 +449,13 @@ class PeersimEnv(ParallelEnv):
             for i in range(no_nodes):
                 q_list.append(self.max_Q_size[idx])
         return q_list
+
+    def __render_ansi(self):
+        print(json.dumps(self.state))
+
+    def extract_global_data(self, global_obs):
+        Q = global_obs[STATE_Q_FIELD]
+        # Check number of overloaded nodes.
+        overloaded_nodes = [1 if q > mq else 0 for q, mq in zip(Q, self.max_Q_size)]
+        # Check percentage of occupancy of the nodes.
+        return

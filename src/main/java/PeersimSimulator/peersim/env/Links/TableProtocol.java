@@ -114,10 +114,10 @@ public class TableProtocol implements Protocol, Linkable
         if( neighbors == null ) return "DEAD!";
         StringBuilder buffer = new StringBuilder();
         buffer.append("len=").append(this.neighbors.size()).append(" [");
-        for (Node n : neighbors.values()) {
-
-        buffer.append(n.getIndex()).append(" ");
-    }
+        for (Integer i : idPerInteger) {
+            Node n = neighbors.get(i);
+            buffer.append(n.getIndex()).append(" ");
+        }
 
         return buffer.append("]").toString();
     }

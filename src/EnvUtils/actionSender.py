@@ -2,7 +2,7 @@ import random
 
 from peersim_gym.envs.PeersimEnv import PeersimEnv
 import gymnasium as gym
-
+import peersim_gym.envs.PeersimEnv as p
 import requests
 
 url_api = "http://localhost:8080"
@@ -98,7 +98,8 @@ if __name__ == "__main__":
 
     }
 
-    env = PeersimEnv(configs=configs, simtype="basic")
+    # env = PeersimEnv(configs=configs, simtype="basic")
+    env = PeersimEnv(configs="/home/fm/IdeaProjects/peersim-environment/src/peersim-gym/peersim_gym/envs/configs/config.txt", simtype="basic")
     # Legacy Configs:
     #         "protocol.wrk.NO_CORES": "4",
     #         "protocol.wrk.FREQ": "1e7",
@@ -107,29 +108,35 @@ if __name__ == "__main__":
     env.reset()
 
     a = ''
+    iter = 0
     while a != "quit":
-        a = input(">")
+
+        if iter  < 50:
+            a=""
+        else:
+            a = input(">")
         if a == 'quit' or a == 'q':
             env.close()
             break
         elif a == 's':
             get_state()
         else:
+            iter += 1
             actions = {}
             if a.isdigit():  # does not work!!!
                 target = str(a)
                 actions = {
                     agent: {
-                        PeersimEnv.ACTION_HANDLER_ID_FIELD: agent.split("_")[1],
-                        PeersimEnv.ACTION_NEIGHBOUR_IDX_FIELD: target
+                        p.ACTION_HANDLER_ID_FIELD: agent.split("_")[1],
+                        p.ACTION_NEIGHBOUR_IDX_FIELD: target
                     } for agent in env.agents
                 }
             else:
                 for agent in env.agents:
                     actions = {
                         agent: {
-                            PeersimEnv.ACTION_HANDLER_ID_FIELD: agent.split("_")[1],
-                            PeersimEnv.ACTION_NEIGHBOUR_IDX_FIELD: random.Random().randint(0, int(configs["SIZE"]))
+                            p.ACTION_HANDLER_ID_FIELD: agent.split("_")[1],
+                            p.ACTION_NEIGHBOUR_IDX_FIELD: 0  # random.Random().randint(0, int(configs["SIZE"]))
                         } for agent in env.agents
                     }
             print(actions)

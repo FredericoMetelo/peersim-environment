@@ -131,6 +131,7 @@ public abstract class AbstractController implements Controller {
                 oldWi.setNodeProcessingPower(newWi.getNodeProcessingPower());
                 oldWi.setAverageTaskSize(newWi.getAverageTaskSize());
                 oldWi.setLayer(newWi.getLayer());
+                oldWi.setLastKnownPosition(newWi.getLastKnownPosition());
                 nodeUpdateEventList.addLast(oldWi.getId());
                 return;
             }

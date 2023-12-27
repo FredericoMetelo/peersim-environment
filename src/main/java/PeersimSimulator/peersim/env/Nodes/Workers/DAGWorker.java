@@ -229,10 +229,14 @@ public class DAGWorker extends AbstractWorker {
             }
         }
         queue = newQ;
+        resetReceived();
+    }
+
+    @Override
+    void resetReceived() {
         recievedApplications = new LinkedList<>();
         toAddSize = 0;
     }
-
     private void getDataForPriorityMetrics(LoseTaskInfo lti) {
         getDataForPriorityMetrics(lti.getMaxComputation(), lti.getMinComputation(), lti.getMaxSuccessors(), lti.getMinSuccessors(), lti.getArrivalTime(), lti.getCompletionRate());
     }

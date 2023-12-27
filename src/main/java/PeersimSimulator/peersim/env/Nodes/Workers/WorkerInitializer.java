@@ -131,13 +131,16 @@ public class WorkerInitializer implements Control {
     }
 
     private double sampleVariation(double maxVariation){
+        if(maxVariation == 0) return 0;
         return CommonState.r.nextDouble(-maxVariation, maxVariation);
     }
 
     private void printNetStats(){
 
         Log.dbg("\nWorker Statistics:\nLayers:"+formatIntArray(numberOfNodesPerLayer)+"\n");
-        String header = String.format("| %-4s | %-5s | %-5s | %-3s | %-4s | %-25s |%n",
+        if(this.hasCloud == 1)
+            Log.dbg("Cloud Address: "+(Network.size() - hasCloud)+"\n");
+        String header = String.format("| %-4s | %-5s | %-5s | %-10s | %-10s | %-25s |%n",
                 "NODE", "LAYER", "FREQS", "NO CORES", "Q SIZES", "NEIGHBOURS");
         StringBuilder rows = new StringBuilder(header);
         for (int i = 0; i < Network.size() - 1; i++) {

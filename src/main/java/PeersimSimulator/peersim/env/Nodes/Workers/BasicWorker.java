@@ -91,8 +91,10 @@ public class BasicWorker extends AbstractWorker{
                 queue.add(t);
             }
         }
-        recievedApplications = new LinkedList<>();
+        this.resetReceived();
     }
+
+
 
 
     @Override
@@ -185,5 +187,8 @@ public class BasicWorker extends AbstractWorker{
         }
         return true;
     }
-
+    void resetReceived() {
+        recievedApplications = new LinkedList<>();
+        toAddSize = 0;
+    }
 }

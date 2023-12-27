@@ -107,9 +107,13 @@ public class BatchWorker extends AbstractWorker{
                 this.queue.add(t);
             }
         }
-        recievedApplications = new LinkedList<>();
+        resetReceived();
     }
 
+    void resetReceived() {
+        recievedApplications = new LinkedList<>();
+        toAddSize = 0;
+    }
 
     @Override
     protected boolean nextProcessableTask(Node node, int pid) {

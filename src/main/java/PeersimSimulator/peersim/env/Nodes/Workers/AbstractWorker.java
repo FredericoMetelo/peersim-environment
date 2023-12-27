@@ -359,6 +359,8 @@ public abstract class AbstractWorker implements Worker {
         return managedApplications.get(t.getAppID()) != null;
     }
 
+    abstract void resetReceived();
+
     protected abstract boolean nextProcessableTask(Node node, int pid);
 
     protected int selectOffloadTargetPid(int targetIndex, Node target){

@@ -15,7 +15,7 @@ public interface Worker extends CDProtocol, EDProtocol {
     // Constants/Immutable values
     //======================================================================================================
     String PAR_NAME = "name";
-    int RANK_EVENT_DELAY = 3;
+    int RANK_EVENT_DELAY = 2;
     String PAR_MAX_TIME_AFTER_DEADLINE = "maxTimeAfterDeadline";
     int DEFAULT_TIME_AFTER_DEADLINE = 5;
     String EVENT_WORKER_INFO_SEND = "WRK-INFO BROADCAST";
