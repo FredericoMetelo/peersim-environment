@@ -97,9 +97,12 @@ if __name__ == "__main__":
         "protocol.props.P_ti": "20",
 
     }
+    randomize_seed = True
 
-    # env = PeersimEnv(configs=configs, simtype="basic")
-    env = PeersimEnv(configs="/home/fm/IdeaProjects/peersim-environment/src/peersim-gym/peersim_gym/envs/configs/config.txt", simtype="basic")
+    env = PeersimEnv(configs=configs, simtype="basic", randomize_seed=randomize_seed)
+    # env = PeersimEnv(
+    #     configs="/home/fm/IdeaProjects/peersim-environment/src/peersim-gym/peersim_gym/envs/configs/config.txt",
+    #     simtype="basic", randomize_seed=randomize_seed)
     # Legacy Configs:
     #         "protocol.wrk.NO_CORES": "4",
     #         "protocol.wrk.FREQ": "1e7",
@@ -108,11 +111,12 @@ if __name__ == "__main__":
     env.reset()
 
     a = ''
+    stop_at = 0
     iter = 0
     while a != "quit":
 
-        if iter  < 50:
-            a=""
+        if iter < stop_at:
+            a = ""
         else:
             a = input(">")
         if a == 'quit' or a == 'q':
@@ -120,6 +124,9 @@ if __name__ == "__main__":
             break
         elif a == 's':
             get_state()
+
+        elif a == 'r':
+            env.reset()
         else:
             iter += 1
             actions = {}

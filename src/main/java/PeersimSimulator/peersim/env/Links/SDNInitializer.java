@@ -7,8 +7,10 @@ import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
 import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
+import PeersimSimulator.peersim.env.Records.Coordinates;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class SDNInitializer implements Control {
     // ------------------------------------------------------------------------
@@ -25,6 +27,13 @@ public class SDNInitializer implements Control {
 
     private final int[] numberOfNodesPerLayer;
     public static final String PAR_NO_NODES_PER_LAYERS = "NO_NODES_PER_LAYERS";
+
+
+    private final boolean RANDOMIZE_POSITIONS;
+    private static final String PAR_RANDOMIZE_POSITIONS = "RANDOMIZEPOSITIONS";
+
+    private static final String PAR_POSITIONS = "POSITIONS";
+    private String[] positions;
 
     // ------------------------------------------------------------------------
     // Fields
@@ -45,6 +54,9 @@ public class SDNInitializer implements Control {
         String[] _NO_NODES_PER_LAYERS = Configuration.getString(PAR_NO_NODES_PER_LAYERS, Integer.toString(size)).split(",");
         numberOfNodesPerLayer = Arrays.stream(_NO_NODES_PER_LAYERS).mapToInt(Integer::parseInt).toArray();
 
+        RANDOMIZE_POSITIONS = Configuration.getBoolean(PAR_RANDOMIZE_POSITIONS, true);
+
+        this.positions = Configuration.getString(prefix + "." +PAR_POSITIONS, "").split(";");
         if((Arrays.stream(numberOfNodesPerLayer).sum()) != size){
             throw new RuntimeException("Configurations are incorrect. There are not enough nodes for all the layers and the Cloud.");
         }
@@ -67,6 +79,26 @@ public class SDNInitializer implements Control {
         Worker w;
         Controller c;
         // Set coordinates x,y
+        if(RANDOMIZE_POSITIONS){
+            randomPositions();
+        }else{
+            setPositions();
+        }
+        if(hasCloud == 1){
+            Node cloud = Network.get(Network.size() - 1);
+            SDNNodeProperties cloudProt = (SDNNodeProperties) cloud
+                    .getProtocol(pid);
+            cloudProt.setX(0);
+            cloudProt.setY(0);
+        }
+        return false;
+    }
+
+    private void randomPositions() {
+        Controller c;
+        Worker w;
+        SDNNodeProperties prot;
+        Node n;
         for (int i = 0; i < Network.size() - hasCloud; i++) {
             n = Network.get(i);
             w = (Worker) n.getProtocol(Worker.getPid());
@@ -78,13 +110,28 @@ public class SDNInitializer implements Control {
             w.setProps(prot);
             c.setProps(prot);
         }
-        if(hasCloud == 1){
-            Node cloud = Network.get(Network.size() - 1);
-            SDNNodeProperties cloudProt = (SDNNodeProperties) cloud
-                    .getProtocol(pid);
-            cloudProt.setX(0);
-            cloudProt.setY(0);
+    }
+
+    private void setPositions() {
+        Controller c;
+        Worker w;
+        SDNNodeProperties prot;
+        Node n;
+        if (positions.length != Network.size() - hasCloud) {
+            throw new RuntimeException("The number of positions specified is not equal to the number of nodes. Please specify the position of all the nodes in the network.");
         }
-        return false;
+        for (int i = 0; i < Network.size() - hasCloud; i++) {
+            String[] pos = positions[i].split(",");
+
+            n = Network.get(i);
+            w = (Worker) n.getProtocol(Worker.getPid());
+            c = (Controller) n.getProtocol(Controller.getPid());
+            prot = (SDNNodeProperties) n.getProtocol(pid);
+            // Nodes Coordinates are in 100x100 m²
+            prot.setX(Double.parseDouble(pos[0]));
+            prot.setY(Double.parseDouble(pos[1]));
+            w.setProps(prot);
+            c.setProps(prot);
+        }
     }
 }

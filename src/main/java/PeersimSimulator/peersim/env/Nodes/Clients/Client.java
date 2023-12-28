@@ -66,6 +66,7 @@ public interface Client extends CDProtocol, EDProtocol {
 
     double getAverageByteSize();
 
+    double getAverageTaskCompletionTime();
     @Override
     String toString();
 }

@@ -28,6 +28,7 @@ public class SDNNodeProperties implements Protocol {
     private final double TRANSMISSION_POWER;
     private static final String PAR_TRANSMISSION_POWER = "P_ti";
 
+
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
@@ -41,7 +42,6 @@ public class SDNNodeProperties implements Protocol {
         PATH_LOSS_CONSTANT = Configuration.getDouble( prefix + "." + PAR_PATH_LOSS_CONSTANT, 0.001);
         PATH_LOSS_EXPONENT = Configuration.getDouble( prefix + "." + PAR_PATH_LOSS_EXPONENT, 4);
         TRANSMISSION_POWER = Configuration.getDouble( prefix + "." + PAR_TRANSMISSION_POWER, 20);// 20 dbm
-
     }
 
     public Object clone() {

@@ -1,12 +1,14 @@
 import os
+import random
 
 this_dir, this_filename = os.path.split(__file__)
 print(this_dir + "    " + this_filename)
+
 PEERSIM_DEFAULTS = {
+    "random.seed": "1234567890",
     "SIZE": "6",
     "CYCLE": "1",
     "CYCLES": "1000",
-    "random.seed": "1234567890",
     "MINDELAY": "0",
     "MAXDELAY": "0",
     "DROP": "0",
@@ -49,8 +51,13 @@ PEERSIM_DEFAULTS = {
     "protocol.props.Beta1": "0.001",
     "protocol.props.Beta2": "4",
     "protocol.props.P_ti": "20",
-}
 
+    "RANDOMIZEPOSITIONS": "true",
+    "init.Net0.POSITIONS": "18.55895350495783,17.02475796027715;47.56499372388999,57.28732691557995;5.366872150976409,43.28729893321355;17.488160666668694,29.422819514162434;81.56549175388358,53.14564532018814;85.15660881172089,74.47408014762478;18.438454887921974,44.310130148722195;72.04311826903107,62.06952644109185;25.60125368295145,15.54795598202745;17.543669122835837,70.7258178169151",
+
+    "RANDOMIZETOPOLOGY": "true",
+    "init.Net1.TOPOLOGY": "0,1,2,3,6,8;1,0,2,3,4,5,6,7,8,9;2,0,1,3,6,8,9;3,0,1,2,6,8,9;4,1,5,7;5,1,4,7;6,0,1,2,3,8,9;7,1,4,5;8,0,1,2,3,6;9,1,2,3,6",
+}
 
 def generate_config_file(config_dict, simtype, explicit_lines=False):
     BASE_FILE_PATH = os.path.join(this_dir, "../configs", f"config-{simtype}-BASE.txt")
@@ -103,3 +110,36 @@ def compile_dict(file_path):
             return controllers, _dict
     except FileNotFoundError:
         return "File not found"
+
+def randomize_seed(file_path):
+    """
+    Codepilot generated method.
+    This function reads the first line of a file, and if the line starts with random.seed then it changes the preceeding
+    value to a random number of the same magnitude. For example, if the first line is "random.seed 1234567890", then
+    when the function is called it would become "random.seed 8234466895"
+
+    :param file_path:
+    :return:
+    """
+    with open(file_path, 'r') as file:
+        first_line = file.readline().strip()
+
+    # Check if the first line starts with "random.seed"
+    if first_line.startswith("random.seed"):
+        # Extract the current seed value
+        current_seed = int(first_line.split()[-1])
+
+        # Generate a new random number with the same magnitude
+        magnitude = 10 ** len(str(current_seed))
+        new_seed = random.randint(magnitude, 10 * magnitude - 1)
+
+        # Create the updated line with the new seed
+        updated_line = f"random.seed {new_seed}"
+
+        # Replace the first line in the file
+        with open(file_path, 'r') as file:
+            content = file.read()
+        with open(file_path, 'w') as file:
+            file.write(content.replace(first_line, updated_line))
+
+        return new_seed

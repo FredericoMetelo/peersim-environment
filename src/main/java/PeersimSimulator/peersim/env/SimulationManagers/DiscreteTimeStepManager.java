@@ -199,6 +199,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
         List<Coordinates> positions = new ArrayList<>(Network.size());
         List<Double> bandwidths = new ArrayList<>(Network.size());
         List<Double> transmissionPowers = new ArrayList<>(Network.size());
+        List<Double> taskCompletionTimes = new ArrayList<>(Network.size());
 
         for (int i = 0; i < Network.size() - hasCloud; i++) {
             Node n = Network.get(i);
@@ -215,9 +216,13 @@ public class DiscreteTimeStepManager implements CDProtocol {
                 bandwidths.add(props.getBANDWIDTH());
                 transmissionPowers.add(props.getTRANSMISSION_POWER());
 
+                Client client = (Client) n.getProtocol(Client.getPid());
+                if(client == null || !client.isActive())
+                    continue;
+                taskCompletionTimes.add(client.getAverageTaskCompletionTime());
             }
         }
-        return new GlobalState(nodeIds, queues, processingPowers, layers, noCores, positions, bandwidths, transmissionPowers);
+        return new GlobalState(nodeIds, queues, processingPowers, noCores, layers, positions, bandwidths, transmissionPowers, taskCompletionTimes);
     }
 
 

@@ -10,6 +10,7 @@ public record GlobalState(
         List<Integer> layers,
         List<Coordinates> positions,
         List<Double> bandwidths,
-        List<Double> transmissionPowers
+        List<Double> transmissionPowers,
+        List<Double> averageCompletionTimes
 ) {
 }

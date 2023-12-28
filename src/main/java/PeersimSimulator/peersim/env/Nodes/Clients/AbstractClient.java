@@ -218,6 +218,10 @@ public abstract class AbstractClient implements Client {
         return averageByteSize;
     }
 
+    public double getAverageTaskCompletionTime() {
+        return averageLatency;
+    }
+
     @Override
     public String toString() {
         return (active) ? "DAGClient{" +
@@ -230,6 +234,8 @@ public abstract class AbstractClient implements Client {
                 '}'
                 : "DAGClient{inactive}";
     }
+
+
 
     public void cltInfoLog(String event, String info) {
         Log.logInfo("CLT", this.id, event, info);

@@ -14,6 +14,15 @@ from peersim_gym.envs.Utils.PeersimThread import PeersimThread
 import socket
 from contextlib import closing
 
+STATE_G_LAYERS = "layers"
+
+STATE_G_OVERLOADED_NODES = "overloadedNodes"
+
+STATE_G_OCCUPANCY = "occupancy"
+
+STATE_G_AVERAGE_COMPLETION_TIMES = "averageCompletionTimes"
+STATE_G_Q = "true_Q"
+
 AGENT_PREFIX = "worker_"
 
 
@@ -68,22 +77,22 @@ def can_launch_simulation():
 class PeersimEnv(ParallelEnv):
     metadata = {"render_modes": ["ansi"], "render_fps": 4}
 
-    def init(self, render_mode=None, configs=None, log_dir=None):
-        self.__init__(render_mode, configs, log_dir=log_dir)
+    def init(self, render_mode=None, configs=None, log_dir=None, randomize_seed=False):
+        self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed)
 
-    def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None):
+    def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
         # (aka if number_nodes is 10 there is a total of 11 nodes (1 controller + 10 workers))
 
-
         validate_simulation_type(simtype)
         self.render_mode = render_mode
+        self.randomize_seed = randomize_seed
         if not can_launch_simulation():
             print("Simulation Failed to launch. Port 8080 is taken, please free port 8080 first.")
             exit(1)
-        self.number_nodes = 10
+        self.number_nodes = -1
         self.max_Q_size = [10, 50]  # TODO this is specified from outside.
         self.max_w = 1
 
@@ -99,6 +108,7 @@ class PeersimEnv(ParallelEnv):
         self.simtype = simtype
 
         controllers = self.__gen_config(configs, simtype=simtype)
+        self.number_nodes = int(self.config_archive["SIZE"])
         self.possible_agents = [AGENT_PREFIX + str(r) for r in controllers]
         self.agent_name_mapping = dict(
             zip(self.possible_agents, controllers)
@@ -160,6 +170,7 @@ class PeersimEnv(ParallelEnv):
         self.max_neighbours = -1
 
         self.last_reward_components = {}
+
     def observation_space(self, agent):
         return Dict(
             {
@@ -181,7 +192,8 @@ class PeersimEnv(ParallelEnv):
 
         self.agents = self.possible_agents[:]
         self.num_moves = 0
-
+        if self.randomize_seed:
+            self.set_random_seed()
         if self.simulator != None:
             self.simulator.stop()
         else:
@@ -280,8 +292,14 @@ class PeersimEnv(ParallelEnv):
 
             observations = {self.agents[i]: partial_obs[i] for i in range(len(self.agents))}
             self.state = observations
-            self.extract_global_data(global_obs)
-            dbg_info = s.get("info")
+            extracted_data = self.extract_global_data(global_obs)
+            dbg_info = {
+                STATE_G_Q: global_obs[STATE_Q_FIELD],
+                STATE_G_OVERLOADED_NODES: extracted_data[0],
+                STATE_G_OCCUPANCY: extracted_data[1],
+                STATE_G_AVERAGE_COMPLETION_TIMES: extracted_data[2]
+            }
+
             self._info = dbg_info
             return observations, done, dbg_info
         except requests.exceptions.Timeout:
@@ -319,6 +337,7 @@ class PeersimEnv(ParallelEnv):
         max = r.get('max')
         avg = r.get('average')
         return min, max, avg
+
     def __is_up(self):
         payload = {}
         headers_action = {"Accept": "application/json", "Connection": "keep-alive"}
@@ -452,10 +471,19 @@ class PeersimEnv(ParallelEnv):
 
     def __render_ansi(self):
         print(json.dumps(self.state))
+        print(json.dumps(self._info))
 
     def extract_global_data(self, global_obs):
         Q = global_obs[STATE_Q_FIELD]
+        layers = global_obs[STATE_G_LAYERS]
         # Check number of overloaded nodes.
-        overloaded_nodes = [1 if q > mq else 0 for q, mq in zip(Q, self.max_Q_size)]
+        overloaded_nodes = [1 if q > self.max_Q_size[mq] else 0 for q, mq in zip(Q, layers)]
         # Check percentage of occupancy of the nodes.
-        return
+        occupancy = [q / self.max_Q_size[mq] for q, mq in zip(Q, layers)]
+        # Get the average response time.
+        response_time = global_obs[STATE_G_AVERAGE_COMPLETION_TIMES]
+        return overloaded_nodes, occupancy, response_time
+
+    def set_random_seed(self):
+        seed = cg.randomize_seed(self.config_path)
+        self.config_archive["random.seed"] = seed

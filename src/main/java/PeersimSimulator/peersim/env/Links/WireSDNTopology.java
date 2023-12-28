@@ -16,14 +16,21 @@ public class WireSDNTopology extends WireGraph {
     private static final String PAR_COORDINATES_PROT = "coord_protocol";
     private static final String PAR_RADIUS = "r";
 
+    private static final String TOPOLOGY = "TOPOLOGY";
+
     private static final String PAR_ACCESS_CLOUD = "CLOUD_ACCESS";
     private static final String PAR_HAS_CLOUD = "CLOUD_EXISTS";
+
+    private static final String PAR_RANDOMIZE_TOPOLOGY = "RANDOMIZETOPOLOGY";
+    private static final String PAR_LINKS = "TOPOLOGY";
 
     // --------------------------------------------------------------------------
     // Fields
     // --------------------------------------------------------------------------
     /** Coordinate protocol pid. */
     private final int coordPid;
+    private final boolean RANDOMIZE_TOPOLOGY;
+    private final String[] links;
     private final static int DEFAULT_R = 1000; // no radius
     private final int[] cloudAccessPerLayer;
     private final int hasCloud;
@@ -41,6 +48,9 @@ public class WireSDNTopology extends WireGraph {
         String[] _layers = Configuration.getString(WorkerInitializer.PAR_NO_NODES_PER_LAYERS).split(",");
         layers = Arrays.stream(_layers).mapToInt(Integer::parseInt).toArray();
 
+        RANDOMIZE_TOPOLOGY = Configuration.getBoolean(PAR_RANDOMIZE_TOPOLOGY, true);
+
+        this.links = Configuration.getString(prefix + "." +PAR_LINKS, "").split(";");
 
         hasCloud = Configuration.getInt(PAR_HAS_CLOUD, 0);
         String[] _ACCESS_CLOUD = Configuration.getString(PAR_ACCESS_CLOUD, "0").split(",");
@@ -60,6 +70,58 @@ public class WireSDNTopology extends WireGraph {
 
 
         // Link all nodes.
+        if(this.RANDOMIZE_TOPOLOGY)
+            radiusBasedTopology(g);
+        else
+            specifiedTopology(g);
+    }
+
+    private void specifiedTopology(Graph g) {
+        if(this.links.length == 0)
+            throw new RuntimeException("No links specified.");
+        if(this.links.length != (Network.size() - hasCloud))
+            throw new RuntimeException("Every node must have at least a link to itself on the first entry.");
+
+        for (int i = 0; i < Network.size(); ++i) {
+            g.setEdge(i, i);
+        }
+
+        for(int i = 0; i < this.links.length; i++){
+            String links = this.links[i];
+            String[] _links = links.split(",");
+            int from = Integer.parseInt(_links[0]); // IMPORTANT!!! FIRST Entry must always be the node itself.
+            if(i != from){
+                throw new RuntimeException("Link specification must be ordered by node, meaning node 0 needs to be specified first, then node 1, and so forth. \n" +
+                        "The first entry must always be the node itself.");
+            }
+            for(int j = 1; j < _links.length; j++){
+                int to = Integer.parseInt(_links[j]);
+                g.setEdge(from, to);
+                g.setEdge(to, from);
+            }
+        }
+        int j = 0;
+        int cloud = Network.size() - 1;
+        for(int l = 0; l < layers.length; l++){
+            int nodesInLayer = j + layers[l];
+            while(j < nodesInLayer){
+                if(this.layerCloudAccess(l)) {
+                    g.setEdge(j, cloud);
+                    g.setEdge(cloud, j);
+                }
+                j++;
+            }
+
+        }
+    }
+
+    /**
+     *
+     * From a random positioning of the nodes, generates a topology based on the radius.
+     * This one was 100% me and I'm kinda proud of it.
+     * @param g
+     */
+    private void radiusBasedTopology(Graph g) {
         for (int i = 0; i < Network.size(); ++i) {
             g.setEdge(i, i);
         }
@@ -87,7 +149,6 @@ public class WireSDNTopology extends WireGraph {
                 if(this.layerCloudAccess(l)) {
                     g.setEdge(i, Network.size() - 1);
                     g.setEdge(Network.size() - 1, i);
-
                 }
             }
             offset += layers[l];
