@@ -1,4 +1,4 @@
-random.seed 1234567890
+random.seed 67808398231145215653067363029252777153871197001436497034153834551007701709875931172036932872819594394368179626923724
 SIZE 10
 CYCLE 1
 CYCLES 1000
@@ -26,7 +26,7 @@ protocol.clt.weight 1
 protocol.clt.CPI 1
 protocol.clt.T 150
 protocol.clt.I 40000000
-protocol.clt.taskArrivalRate 0.18333333333333335
+protocol.clt.taskArrivalRate 0.17500000000000002
 protocol.clt.numberOfDAG 1
 protocol.clt.dagWeights 1
 protocol.clt.edges 
