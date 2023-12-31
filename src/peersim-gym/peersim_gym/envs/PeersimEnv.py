@@ -377,8 +377,10 @@ class PeersimEnv(ParallelEnv):
         return rewards
 
     def _compute_agent_reward(self, agent_og_obs, agent_obs, action, agent_result, agent_idx):
+        # Long story short... having a large range of rewards is making it so that the agent is not learning. Q-values
+        # are exploding. The kind people in stack exchange have recommended that I keep the rewards in a small range [-1, 1]
+        # https://datascience.stackexchange.com/questions/20098/should-i-normalize-rewards-in-reinforcement-learning
         # Prepare data
-
         source_of_task = agent_idx  # action[ACTION_HANDLER_ID_FIELD]
         target_of_task = action[ACTION_NEIGHBOUR_IDX_FIELD]
 
@@ -423,7 +425,16 @@ class PeersimEnv(ParallelEnv):
 
         O = self.OVERLOAD_WEIGHT * (w_l * p_overload_l + w_o * p_overload_o) / (
                 w_l + w_o) if w_l != 0 and w_o != 0 else 0
+
+        # Capping the percentages to be between 100 and -100
+        U = max(min(U, 100), -100)
+        D = max(min(D, 100), -100)
+        O = max(min(O, 100), -100)
+
+        # computing reward and normalizing it
         reward = U - (D + O)
+        reward = reward / 300
+
         return (reward, {"U": U, "D": D, "O": O})
 
     def _compute_avg_task_data(self):
