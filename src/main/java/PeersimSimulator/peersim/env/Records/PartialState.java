@@ -4,6 +4,7 @@ import java.util.List;
 
 public record PartialState(
         int nodeId,
+        int queueSize,
         List<Integer> Q,
         double processingPower,
         double averageWaitingTime,

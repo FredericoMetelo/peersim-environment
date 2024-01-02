@@ -34,7 +34,7 @@ public class TableProtocol implements Protocol, Linkable
 
     /** Neighbors */
     protected Map<Integer, Node> neighbors;
-    protected List<Integer> idPerInteger;
+    protected List<Integer> indexInLinkableToId;
 
 
 // --------------------------------------------------------------------------
@@ -46,7 +46,7 @@ public class TableProtocol implements Protocol, Linkable
         int initCapacity =Configuration.getInt(s + "." + PAR_INITCAP,
                 DEFAULT_INITIAL_CAPACITY);
         neighbors = new HashMap<>(initCapacity);
-        idPerInteger = new ArrayList<>(initCapacity);
+        indexInLinkableToId = new ArrayList<>(initCapacity);
     }
 
 //--------------------------------------------------------------------------
@@ -57,7 +57,7 @@ public class TableProtocol implements Protocol, Linkable
         try { ip = (TableProtocol) super.clone(); }
         catch( CloneNotSupportedException e ) {} // never happens
         ip.neighbors = new HashMap<>(neighbors.size());
-        idPerInteger = new ArrayList<>(neighbors.size());
+        indexInLinkableToId = new ArrayList<>(neighbors.size());
 
         return ip;
     }
@@ -81,22 +81,25 @@ public class TableProtocol implements Protocol, Linkable
         if(this.contains(n)) {
             return false;
         }
-        this.idPerInteger.add((int) n.getID());
-        return this.neighbors.put((int) n.getID(), n) == null;
+        this.indexInLinkableToId.add((int) n.getID()); // 1 0
+        return this.neighbors.put((int) n.getID(), n) == null; // (1,n1) (0, n0)
     }
 
 // --------------------------------------------------------------------------
 
+    // TODO: This class is relly just extra steps for no reason. I added it when I was thinking of maintaining the option
+    //  of having the getNeighbour work by the node id instead of position in linkable, but that did not happen. We use
+    //  the position in linkable.
     public Node getNeighbor(int i)
     {
-        return neighbors.get(idPerInteger.get(i));
+        return neighbors.get(indexInLinkableToId.get(i));
     }
 
 // --------------------------------------------------------------------------
 
     public int degree()
     {
-        return this.idPerInteger.size();
+        return this.indexInLinkableToId.size();
     }
 
 // --------------------------------------------------------------------------
@@ -114,7 +117,7 @@ public class TableProtocol implements Protocol, Linkable
         if( neighbors == null ) return "DEAD!";
         StringBuilder buffer = new StringBuilder();
         buffer.append("len=").append(this.neighbors.size()).append(" [");
-        for (Integer i : idPerInteger) {
+        for (Integer i : indexInLinkableToId) {
             Node n = neighbors.get(i);
             buffer.append(n.getIndex()).append(" ");
         }
@@ -127,7 +130,7 @@ public class TableProtocol implements Protocol, Linkable
     public void onKill()
     {
         neighbors = null;
-        idPerInteger = null;
+        indexInLinkableToId = null;
     }
 
 }

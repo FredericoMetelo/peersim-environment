@@ -381,7 +381,7 @@ class PeersimEnv(ParallelEnv):
         # are exploding. The kind people in stack exchange have recommended that I keep the rewards in a small range [-1, 1]
         # https://datascience.stackexchange.com/questions/20098/should-i-normalize-rewards-in-reinforcement-learning
         # Prepare data
-        source_of_task = agent_idx  # action[ACTION_HANDLER_ID_FIELD]
+        source_of_task = 0 # agent_idx  # Not used, but it's also not correct. This gets the id not the index.
         target_of_task = action[ACTION_NEIGHBOUR_IDX_FIELD]
 
         source_node_og_info = agent_og_obs
@@ -389,7 +389,8 @@ class PeersimEnv(ParallelEnv):
         target_node_worker_info = agent_result[RESULT_WORKER_INFO_FIELD]
         locally_processed = agent_obs[STATE_NODE_ID_FIELD] == target_node_worker_info["id"]
 
-        if int(target_node_worker_info["queueSize"]) < int(target_of_task) or int(target_of_task) < 0:
+        # Check if the target node is within [0, #Neighbours]
+        if int(len(source_node_og_info["Q"])) < int(target_of_task) or int(target_of_task) < 0:
             return -self.UTILITY_REWARD, {"U": -1, "D": 0, "O": 0}
 
         q_l = len(source_node_og_info[STATE_Q_FIELD])

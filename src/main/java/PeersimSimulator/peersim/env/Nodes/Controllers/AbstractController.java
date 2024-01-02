@@ -210,7 +210,26 @@ public abstract class AbstractController implements Controller {
     @Override
     public List<Integer> getQ() {
         //int start = 1; // By definition can't have less than 3 nodes. For convenience
+        updateThisNodeInfo();
         return this.workerInfo.stream().map(WorkerInfo::getTotalTasks).toList();
+    }
+
+    /**
+     * This method moves the current node to the first position of the list. This is allows the agent to always find the node in the correct position and avoids mistakes
+     */
+    private void updateThisNodeInfo() {
+        if (this.workerInfo.get(0).getId() == this.getId()) {
+            this.workerInfo.set(0, this.correspondingWorker.compileWorkerInfo());
+            return;
+        }
+        for (int i = 0; i < this.workerInfo.size(); i++) {
+            if (this.workerInfo.get(i).getId() == this.getId()) {
+                WorkerInfo wi = this.workerInfo.get(i);
+                this.workerInfo.remove(i);
+                this.workerInfo.add(0, wi);
+                return;
+            }
+        }
     }
 
     private List<Double> computeDistancesToNeighbours() {
@@ -227,7 +246,8 @@ public abstract class AbstractController implements Controller {
         // values outside of arrays...
         List<Double> l = new LinkedList<>();
         l.add(props.getTRANSMISSION_POWER());
-        return new PartialState(this.selectedNode,
+        return new PartialState(this.getId(),
+                this.correspondingWorker.getNumberOfTasks(),
                 this.getQ(),
                 correspondingWorker.getProcessingPower(),
                 correspondingWorker.getAverageWaitingTime(),
