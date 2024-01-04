@@ -70,7 +70,7 @@ public class BatchWorker extends AbstractWorker{
         ITask offloadedTask = ev.getTask();
         offloadedTask.addEvent(TaskHistory.TaskEvenType.OFFLOADED, this.id, CommonState.getTime());
         wrkInfoLog(EVENT_TASK_OFFLOAD_RECIEVE, " taskId=" + ev.getTask().getId() + " appId="+ev.getTask().getAppID()+" originalHandler=" + ev.getTask().getOriginalHandlerID());
-        if (this.getNumberOfTasks() > qMAX) {
+        if (this.getTotalNumberOfTasksInNode() > qMAX) {
             this.droppedLastCycle++;
             this.totalDropped++;
             Log.err("Dropping Tasks(" + this.droppedLastCycle + ") Node " + this.getId() + " is Overloaded!"); // TODO
@@ -223,7 +223,7 @@ public class BatchWorker extends AbstractWorker{
     }
 
     @Override
-    public int getNumberOfTasks(){
+    public int getTotalNumberOfTasksInNode(){
         return this.queue.size() + this.recievedApplications.size() + (this.current == null ? 0 : 1);
     }
 }

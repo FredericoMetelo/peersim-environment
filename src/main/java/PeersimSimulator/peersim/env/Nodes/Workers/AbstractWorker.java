@@ -282,7 +282,7 @@ public abstract class AbstractWorker implements Worker {
         this.totalTasksRecieved++;
         this.tasksRecievedSinceLastCycle++;
 
-        if (this.getNumberOfTasks() + app.applicationSize() > qMAX) {
+        if (this.getTotalNumberOfTasksInNode() + app.applicationSize() > qMAX) {
             droppedLastCycle++;
             totalDropped++;
             wrkInfoLog(EVENT_OVERLOADED_NODE, " DroppedApp=" + app.getAppID());
@@ -412,7 +412,7 @@ public abstract class AbstractWorker implements Worker {
 
     @Override
     public WorkerInfo compileWorkerInfo() {
-        return new WorkerInfo(this.id, this.queue.size(), this.unprocessedTasksInApps(), averageTaskSize(), processingPower, qMAX - this.getNumberOfTasks(), this.getLayer(), this.getProps().getCoordinates());
+        return new WorkerInfo(this.id, this.getTotalNumberOfTasksInNode(), this.unprocessedTasksInApps(), averageTaskSize(), processingPower, qMAX - this.getTotalNumberOfTasksInNode(), this.getLayer(), this.getProps().getCoordinates());
 
     }
 
@@ -490,7 +490,7 @@ public abstract class AbstractWorker implements Worker {
      * @return the total amount of tasks in the node.
      */
     @Override
-    public int getNumberOfTasks() {
+    public int getTotalNumberOfTasksInNode() {
         return this.queue.size() + toAddSize + ((current == null || current.done()) ? 0 : 1);
     }
 

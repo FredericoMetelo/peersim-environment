@@ -56,7 +56,7 @@ public interface Worker extends CDProtocol, EDProtocol {
     @Override
     String toString();
 
-    int getNumberOfTasks();
+    int getTotalNumberOfTasksInNode();
 
     void setActive(boolean active);
 

@@ -7,7 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/../src/peersim-gym" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../src/peersim-gym/peersim_gym" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="PeersimGym" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.11 (PeersimGym)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

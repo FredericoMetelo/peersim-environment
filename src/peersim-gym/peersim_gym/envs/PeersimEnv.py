@@ -488,7 +488,7 @@ class PeersimEnv(ParallelEnv):
         Q = global_obs[STATE_Q_FIELD]
         layers = global_obs[STATE_G_LAYERS]
         # Check number of overloaded nodes.
-        overloaded_nodes = [1 if q > self.max_Q_size[mq] else 0 for q, mq in zip(Q, layers)]
+        overloaded_nodes = [1 if q >= self.max_Q_size[mq] else 0 for q, mq in zip(Q, layers)]
         # Check percentage of occupancy of the nodes.
         occupancy = [q / self.max_Q_size[mq] for q, mq in zip(Q, layers)]
         # Get the average response time.

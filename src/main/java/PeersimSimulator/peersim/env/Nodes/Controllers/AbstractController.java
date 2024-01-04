@@ -247,7 +247,7 @@ public abstract class AbstractController implements Controller {
         List<Double> l = new LinkedList<>();
         l.add(props.getTRANSMISSION_POWER());
         return new PartialState(this.getId(),
-                this.correspondingWorker.getNumberOfTasks(),
+                this.correspondingWorker.getTotalNumberOfTasksInNode(),
                 this.getQ(),
                 correspondingWorker.getProcessingPower(),
                 correspondingWorker.getAverageWaitingTime(),
@@ -277,7 +277,7 @@ public abstract class AbstractController implements Controller {
             totalTasksProcessed.add(w.getTotalTasksProcessed());
             totalTasksOffloaded.add(w.getTotalTasksOffloaded());
             workerInvariant.add(
-                    w.getTotalTasksRecieved() == w.getTotalDropped() + w.getTotalTasksProcessed() + w.getTotalTasksOffloaded() + w.getNumberOfTasks()
+                    w.getTotalTasksRecieved() == w.getTotalDropped() + w.getTotalTasksProcessed() + w.getTotalTasksOffloaded() + w.getTotalNumberOfTasksInNode()
             );
         }
         return new DebugInfo(this.selectedNode,

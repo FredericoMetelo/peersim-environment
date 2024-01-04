@@ -207,7 +207,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
                 Linkable linkable = (Linkable) n.getProtocol(FastConfig.getLinkable(Worker.getPid()));
                 Worker worker = (Worker) n.getProtocol(Worker.getPid());
                 nodeIds.add(worker.getId());
-                queues.add(worker.getNumberOfTasks());
+                queues.add(worker.getTotalNumberOfTasksInNode());
                 processingPowers.add(worker.getProcessingPower());
                 layers.add(worker.getLayer());
                 noCores.add(worker.getCpuNoCores());

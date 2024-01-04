@@ -143,7 +143,7 @@ public class DAGWorker extends AbstractWorker {
         ITask offloadedTask = ev.getTask();
         offloadedTask.addEvent(TaskHistory.TaskEvenType.OFFLOADED, this.id, CommonState.getTime());
         wrkInfoLog(EVENT_TASK_OFFLOAD_RECIEVE, " taskId=" + ev.getTask().getId() + " appId="+ev.getTask().getAppID()+" originalHandler=" + ev.getTask().getOriginalHandlerID());
-        if (this.getNumberOfTasks() > qMAX) {
+        if (this.getTotalNumberOfTasksInNode() > qMAX) {
             this.droppedLastCycle++;
             this.totalDropped++;
             Log.err("Dropping Tasks(" + this.droppedLastCycle + ") Node " + this.getId() + " is Overloaded!"); // TODO
