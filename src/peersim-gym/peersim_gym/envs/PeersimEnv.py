@@ -428,13 +428,12 @@ class PeersimEnv(ParallelEnv):
                 w_l + w_o) if w_l != 0 and w_o != 0 else 0
 
         # Capping the percentages to be between 100 and -100
-        U = max(min(U, 100), -100)
-        D = max(min(D, 100), -100)
-        O = max(min(O, 100), -100)
+        U = max(min(U, 100), -100)/100
+        D = max(min(D, 100), -100)/100
+        O = max(min(O, 100), -100)/100
 
         # computing reward and normalizing it
         reward = U - (D + O)
-        reward = reward / 300
 
         return (reward, {"U": U, "D": D, "O": O})
 
