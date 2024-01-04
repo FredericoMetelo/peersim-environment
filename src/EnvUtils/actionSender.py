@@ -99,7 +99,7 @@ if __name__ == "__main__":
     }
     randomize_seed = True
 
-    env = PeersimEnv(configs=configs, simtype="basic", randomize_seed=randomize_seed)
+    env = PeersimEnv(configs=configs, simtype="basic", randomize_seed=randomize_seed, log_dir="stdout")
     # env = PeersimEnv(
     #     configs="/home/fm/IdeaProjects/peersim-environment/src/peersim-gym/peersim_gym/envs/configs/config.txt",
     #     simtype="basic", randomize_seed=randomize_seed)
