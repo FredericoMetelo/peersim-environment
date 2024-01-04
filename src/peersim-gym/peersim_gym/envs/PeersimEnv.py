@@ -319,7 +319,7 @@ class PeersimEnv(ParallelEnv):
         action_url = self.url_api + self.url_action_path
         try:
             payload_json = json.dumps(payload)
-            print(payload_json)
+            # print(payload_json)
             r = requests.post(action_url, payload_json, headers=headers_action, timeout=self.default_timeout).json()
             result = {AGENT_PREFIX + str(reward["srcId"]): reward for reward in r}
             self._result = result
@@ -382,6 +382,8 @@ class PeersimEnv(ParallelEnv):
         # https://datascience.stackexchange.com/questions/20098/should-i-normalize-rewards-in-reinforcement-learning
         # Prepare data
         source_of_task = 0 # agent_idx  # Not used, but it's also not correct. This gets the id not the index.
+        avg_tasks_processed_per_node = self.AVERAGE_TASK_INSTR/self.AVERAGE_PROCESSING_POWER
+
         target_of_task = action[ACTION_NEIGHBOUR_IDX_FIELD]
 
         source_node_og_info = agent_og_obs
@@ -419,8 +421,8 @@ class PeersimEnv(ParallelEnv):
         D = self.DELAY_WEIGHT * (t_w + t_c + t_e) / (w_l + w_o)
 
         # Compute Overload
-        q_prime_l = min(max(0, q_expected_l - self.AVERAGE_PROCESSING_POWER) + w_l, self.AVERAGE_MAX_Q)
-        q_prime_o = min(max(0, q_expected_o - self.AVERAGE_PROCESSING_POWER) + w_o, self.AVERAGE_MAX_Q)
+        q_prime_l = min(max(0, avg_tasks_processed_per_node) + w_l, self.AVERAGE_MAX_Q)
+        q_prime_o = min(max(0, avg_tasks_processed_per_node) + w_o, self.AVERAGE_MAX_Q)
         p_overload_l = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_l)
         p_overload_o = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_o)
 
