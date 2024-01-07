@@ -111,7 +111,7 @@ if __name__ == "__main__":
     env.reset()
 
     a = ''
-    stop_at = 0
+    stop_at = 999
     iter = 0
     while a != "quit":
 
