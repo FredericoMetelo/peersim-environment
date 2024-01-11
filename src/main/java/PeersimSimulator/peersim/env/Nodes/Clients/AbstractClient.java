@@ -23,7 +23,7 @@ public abstract class AbstractClient implements Client {
     protected double averageByteSize;
     protected double[] NO_INSTR;
     protected double[] taskCumulativeProbs;
-    protected int maxDeadline;
+    protected int minDeadline;
     protected int[] CPI;
     protected double[] dagCumulativeProbs;
     /**
@@ -52,7 +52,8 @@ public abstract class AbstractClient implements Client {
         pid = Configuration.getPid(prefix + "."+PAR_NAME ); //
 
         // Read Constants
-        maxDeadline = Configuration.getInt(prefix + "." +PAR_MAX_DEADLINE, DEFAULT_MAX_DEADLINE);
+        minDeadline = Configuration.getInt(prefix + "." + PAR_MIN_DEADLINE, DEFAULT_MAX_DEADLINE);
+        minDeadline = (minDeadline <= 0) ? Integer.MAX_VALUE : minDeadline;
         TASK_ARRIVAL_RATE = Configuration.getDouble( prefix + "." + PAR_TASKARRIVALRATE, DEFAULT_TASKARRIVALRATE );
         numberOfTasks = Configuration.getInt( prefix + "." + PAR_NO_TASKS, DEFAULT_NUMBEROFTASKS);
         String[] _layers = Configuration.getString(WorkerInitializer.PAR_NO_NODES_PER_LAYERS).split(",");

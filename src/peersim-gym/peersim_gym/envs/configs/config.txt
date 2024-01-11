@@ -1,4 +1,4 @@
-random.seed 18050187229
+random.seed 66566125626
 SIZE 6
 CYCLE 1
 CYCLES 1000
@@ -30,7 +30,7 @@ protocol.clt.taskArrivalRate 0.6
 protocol.clt.numberOfDAG 1
 protocol.clt.dagWeights 1
 protocol.clt.edges 
-protocol.clt.maxDeadline 100
+protocol.clt.minDeadline 100
 protocol.clt.vertices 1
 protocol.props.B 2
 protocol.props.Beta1 0.001

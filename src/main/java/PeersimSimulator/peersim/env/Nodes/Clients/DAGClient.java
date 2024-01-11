@@ -37,7 +37,7 @@ public class DAGClient extends AbstractClient {
         pid = Configuration.getPid(prefix + "."+PAR_NAME ); //
 
         // Read Constants
-        maxDeadline = Configuration.getInt(prefix + "." +PAR_MAX_DEADLINE, DEFAULT_MAX_DEADLINE);
+        minDeadline = Configuration.getInt(prefix + "." + PAR_MIN_DEADLINE, DEFAULT_MAX_DEADLINE);
         TASK_ARRIVAL_RATE = Configuration.getDouble( prefix + "." + PAR_TASKARRIVALRATE, DEFAULT_TASKARRIVALRATE );
         numberOfTasks = Configuration.getInt( prefix + "." + PAR_NO_TASKS, DEFAULT_NUMBEROFTASKS);
         numberOfDAG = Configuration.getInt( prefix + "." + PAR_NUMBER_DAG, DEFAULT_NUMBEROFDAG);
@@ -221,7 +221,7 @@ public class DAGClient extends AbstractClient {
         }
 
         // TODO Convert this to computing the minimum deadline required for finishing the task.
-        double deadline = CommonState.getTime() + CommonState.r.nextInt(maxDeadline, maxDeadline * 2);
+        double deadline = CommonState.getTime() + CommonState.r.nextInt(minDeadline, minDeadline * 2);
         List<ITask> list = expandedDAGs.get(dagType).stream().map(it -> tasks.get(verticesToTaskID.get(it))).toList();
         return new Application(tasks, predecessors, successors, deadline, appID, this.getId(), firstTask.getInputSizeBytes(), lastTask.getOutputSizeBytes(), firstTask, list);
     }

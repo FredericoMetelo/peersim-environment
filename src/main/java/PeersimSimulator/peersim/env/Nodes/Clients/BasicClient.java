@@ -2,7 +2,6 @@ package PeersimSimulator.peersim.env.Nodes.Clients;
 
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.core.CommonState;
-import PeersimSimulator.peersim.env.Nodes.Workers.WorkerInitializer;
 import PeersimSimulator.peersim.env.Tasks.Application;
 import PeersimSimulator.peersim.env.Tasks.ITask;
 import PeersimSimulator.peersim.env.Tasks.Task;
@@ -71,7 +70,7 @@ public class BasicClient  extends AbstractClient {
         predecessors.put(firstTask.getId(), new ArrayList<>());
         successors.put(firstTask.getId(), new ArrayList<>());
 
-        double deadline = CommonState.getTime() + CommonState.r.nextInt(maxDeadline, maxDeadline * 2);
+        double deadline = CommonState.getTime() + CommonState.r.nextInt(minDeadline, minDeadline * 2);
         List<ITask> list = new ArrayList<>();
         list.add(firstTask);
 

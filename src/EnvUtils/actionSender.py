@@ -88,7 +88,7 @@ if __name__ == "__main__":
         "protocol.clt.numberOfDAG": "1",
         "protocol.clt.dagWeights": "1",
         "protocol.clt.edges": "",
-        "protocol.clt.maxDeadline": "100",
+        "protocol.clt.minDeadline": "100",
         "protocol.clt.vertices": "1",
 
         "protocol.props.B": "2",

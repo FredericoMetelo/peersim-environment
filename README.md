@@ -199,24 +199,38 @@ env = PeersimEnv(configs=configs_dict, log_dir="")
 ```
 Internally we always pass a config file to the Peersim simulation tool.
 When the configs are passed as a `Dict` or `None` a configuration file is generated. The details of the possible configurations are in the next section.
+
+
 <a name="Configurations"></a>
-## Configuratons of the Model
-A list of possible configurations is as follows, add this lines anywhere in the configuration file:
+## Configurations of the Model
+
+To develop our simulation we utilized the Peersim simulation engine, which allows for large-scale simulations with high dynamicity to be run. Furthermore, the Peersim Engine allows for customizable and in-depth configuration of the simulation through configuration files. A feature we find very useful.
+
+In the subsequent section, we will delve into a comprehensive explanation of the simulation configurations.
+
+
 <a name="ConfiguringTheSimulation"></a>
 ### Configuration of the Simulation
-Note: Entries without the format <protocol|init|control>.string_id.parameter_name are just constant values that help define other variables.
+Before beginning to explain the possible configurations of the different parts of the network we need to go over what these parts are. The simulation works by first generating a set of nodes that can be of two different types, Workers and Clients. The Clients act as task generators of work and collect metrics on the conclusion of tasks. Whereas the Worker Node acts as a processing node for said tasks, meaning the Worker node is the one doing the actual computing of the tasks. The Worker nodes also may host a controller component, which is a protocol that will run on the same node of the workers and is responsible for collecting information about the node's neighborhood and sending information about the node's neighborhood in one-hop broadcasts. 
 
-- **Size of the Network** defines the number of nodes in the simulation,
-  for 'SIZE' nodes there are 1 Controller Node, 1 Client Node and SIZE-1 Worker Nodes. The actual variable that sets the simulation size is
-  'network.size'.
+The challenge of task offloading encompasses various configurations, and we have implemented some of these specific instances. These include Online-Binary task offloading, where the decision to offload the next available task is made dynamically; and Batch Task offloading, where, at each time step, decisions are made for every task that arrived in the last time-step regarding offloading. Furthermore, we are working on implementing a dependency-cognisant task offloading simulation.
+The selection of these modes is done by defining a base file that outlines the appropriate protocols for each instance of the problem. Beyond determining the simulation mode, the configurability extends to a range of global parameters applicable to all instances, in the remainder of this section we will be going over the different configurations that are allowed.
+
+The global configurations encompass six domains: Global Configurations, Worker-specific configurations, Controller-specific configurations, Client-specific configurations, Cloud-specific configurations, and lastly, topology and network-specific configurations.
+
+
+### Global Configurations
+#### Overall configurations of the simulaiton
+- **Size of the Network** defines the number of nodes in the simulation, due to the properties of Peersim, if we have stipulated size N to the simulation then there are N workers and N Clients.
   ```
   SIZE 10
   ...
   network.size SIZE
   ```
 
-- **Number of times simulation is executed** The constant 'CYCLES' defines the total number of complete cycles (ticks in the simulation) until the simulation ends. We should note the actual variable that sets this value is 'simulation.endtime'
-  The constant 'CYCLE' is used to define the number of ticks to reschedule the running of an event (IE client sending messages, worker ticking the clock once), I recommend leaving this value at one.
+- **Number of times simulation is executed** The constant 'CYCLES' defines the total number of complete cycles (ticks in the simulation) from a simulation starting from 0 to when the simulation ends. We should note the actual variable that sets this value is 'simulation.endtime', but for convenience 
+
+  The constant 'CYCLE' is used to define the number of ticks to reschedule the making of an offloading decision. For example, if the value is left at one an offloading decision will be made every time-step. 
   ```
   CYCLES 1000
   CYCLE 1
@@ -225,27 +239,27 @@ Note: Entries without the format <protocol|init|control>.string_id.parameter_nam
   # bellow directly. They are shown for informative purposes only.
   ...
   simulation.endtime CYCLE*CYCLES
-  ...
-  protocol.wrk.step CYCLE
-  ...
-  
   ```
-- **Bounds of the delay a message can have** Setting MINDELAY and MAXDELAY will allow messages to possibly be delayd when being delivered.
-  The delay will be such that MINDELAY <= delay <= MAXDELAY (MAXDELAY == MINDELAY == 0 means no delay, also MINDELAY<=MAXDELAY).
+- **Bounds of the delay a message can have** Setting MINDELAY and MAXDELAY will allow messages to possibly be delayed when being delivered.
+  The delay will be such that MINDELAY <= delay <= MAXDELAY (MAXDELAY == MINDELAY == 0 means no delay).
   ```
   MINDELAY 0
   MAXDELAY 0
   ```
-- **Probability of a package/message being lost** Allows messages to be lost, the simulation for now assumes that the communications are reliable although possibly delayed therefore the environment is still not prepared to deal with this.
+  
+- **The probability of a package/message being lost** Allows messages to be lost.
   ```
   DROP 0
   ```
+
 - **CONTROLLERS**, sepcifies the indexes of the controllers on the global network.
-```
-CONTROLLERS 0,1,2
-```
+  ```
+  CONTROLLERS 0,1,2
+  ```
+
+
 <a name="ConfiguringTheController"></a>
-### Configurations of the DiscreteTimeStepManager and PettingZoo Environemnt
+#### Configurations of the DiscreteTimeStepManager and PettingZoo Environemnt
 - **Utility Reward, r_u**, a parameter of the reward function acts as a weight in the expression that computes the utility of a reward.
   This parameter recieves an int, the default value is 1. It is directly used by the Environment.
     ```
@@ -261,73 +275,78 @@ CONTROLLERS 0,1,2
     ``` 
     protocol.mng.X_o 150
     ```
-- **Cycles between Stops**, a parameter that defines the number of time-steps it takes for the simulation to stop and await an 
-    action from the agents.
-    ```
-    protocol.mng.cycle 5
-    ``` 
+
 <a name="ConfiguringTheClient"></a>
 ### Configurations of the Client
-The clients have multiple DAG types that can be selected when creating a task, and there can also be multiple options for 
-each task on the DAG. For each of the DAG or task types all the configurations must be specified, otherwise an error is thrown on environment creation.
+The simulation works by processing applications, which consist of groups of tasks. The Clients generate applications, that have different properties depending on the type of simulation being implemented. In the case of Binary-Online offloading an application consists of a single task. In a simulation with dependencies, an application consists of a Directed Acyclic Graph(DAG) of tasks.
+
+A task consists of an amount of instructions to be processed, a total data size inputted, and a cost in CPU cycles per instruction. 
+Similarly to the tasks, there can also be multiple types of DAGs, in the simulations with dependencies the DAG type is selected randomly whenever the client is generating an application. A DAG is modeled as a set of tasks, which the type is randomly selected on creation, a list of dependencies that must always start with the task 0 and end in the last task.
+
+For each of the DAG or task types, all the configurations must be specified, otherwise an error is thrown on environment creation. In the case of the dependency less simulations there uis only one DAG type with one vertice and no edges.
 
 #### Global to Client
-- **Task Arrival Rate per Client**. This parameter is only specified once and is global to the client. At each time step a Client will with probability of taskArrivalRate send a task for each node.
+
+- **Task Arrival Rate per Client**. This parameter is only specified once and is global to the client. At each time step a Client will with a probability specified in taskArrivalRate send a task for each node it can see.
     ```
     protocol.clt.taskArrivalRate 0.01
     ```
-- **Max Possible deadline**, this parameter allows defining the maximum deadline over a base time (TODO: This time is a 
-hardcoded value, for each task I will compute the total number of instructions it takes to finish the app and divide it
-by the average computing power).
+
+- **Max Possible deadline**, this parameter allows defining the minimum deadline. To ignore the deadline set this parameter to a be less or equal to zero.
     ``` 
-    protocol.clt.maxDeadline 100
+    protocol.clt.minDeadline 100
     ```
+
 #### Task Parameters
-- **Number of Tasks**, this parameter specifies the total number of task types on the simulation.
+
+- **Number of Tasks**, this parameter specifies the total number of task types in the simulation.
     ``` 
     protocol.clt.numberOfTasks: 2
     ```
-- **Ratios of each task type, taskWeights**, the ratio of each task type must be separated by a ',' without any spaces.
-The parameter represents the probability of a generated task being of each of the types. The values of each task type
-will be divided by the total of the weights total to compute the ratios of generating each of the tasks.
+
+- **Ratios of each task type, taskWeights**, the ratio each task type is selected is specified in this parameter. The ratios must be separated by a ',' without any spaces. The actual values used do not matter as the weights will be scaled and converted into probabilities.
   ```
   protocol.clt.weight 4,6
   ```
-- **Average Number of Cycles in a Instruction, CPI**, the number of cycles per instruction of each task type must be separated by a ',' without any spaces. This parameter is used in two ways:
+
+- **Average Number of Cycles in an Instruction, CPI**, the number of cycles per instruction of each task type must be separated by a ',' without any spaces. This parameter is used in two ways:
     - In computing the reward function. Specifically, affects the delay function and represents the execution cost of the tasks.
-    - It considered in computing the time it takes for a simulation to finish a task.
+    - It is considered in computing the time it takes for a simulation to finish a task.
     ```
     protocol.clt.CPI 1,1
     ```
+
 - **Byte Size of Task, T**, the byte sizes of a task of each task type must be separated by a ',' without any spaces. This parameter is measured in Mbytes and used in computing the communication cost in time of offloading tasks in the Reward function.
     ``` 
     protocol.clt.T 150,100
     ```
+
 - **Number of Instructions per Task, B**, the byte sizes of a task of each task type must be separated by a ',' without any spaces. This parameter, same as CPI, is used in two ways:
     - In computing the reward function. Specifically, affects the delay function and represents the execution cost of the tasks.
-    - It considered in computing the time it takes for a simulation to finish a task.
+    - It is considered in computing the time it takes for a simulation to finish a task.
   ``` 
   protocol.clt.I 200e6,250e6
   ```
 
-A simulation started on the definitions of the examples, would have two task types:
-```
-1st type: {CPI:1, T:150, I:200e6} -> A task will be generated with type 1 40% of the time (4/(4+6))
-2nd type: {CPI:1, T:100, I:250e6} -> A task will be generated with type 2 60% of the time (6/(4+6))
-```
+  A simulation started on the definitions of the examples would have two task types:
+  ```
+  1st type: {CPI:1, T:150, I:200e6} -> A task will be generated with type 1 40% of the time (4/(4+6))
+  2nd type: {CPI:1, T:100, I:250e6} -> A task will be generated with type 2 60% of the time (6/(4+6))
+  ```
   
 #### DAG Parameters 
  **TODO**: Specify restrictions on DAGs
-- **Number of DAGs**, this parameter specifies the total number of DAG types on the simulation.
+- **Number of DAGs**, this parameter specifies the total number of DAG types in the simulation.
     ``` 
     protocol.clt.numberOfDAG: 2
     ```
+
 - **Ratios of each DAG type**, the ratio of each DAG type must be separated by a ',' without any spaces.
-  The parameter represents the probability of a generated DAG being of each of the types. The values of each DAG type
-  will be divided by the total of the weights total to compute the ratios of generating each of the tasks.
+   The ratios must be separated by a ',' without any spaces. The actual values used do not matter as the weights will be scaled and converted into probabilities.
   ```
   protocol.clt.dagWeights 4,6
   ```
+
 - **Edges**, this parameter specifies the edge configurations of each of the DAG types.
     an edge is represented by a string `predecessorVertice->successorVertice` and different edges are separated by a ','. 
 The different DAGs edges are separated by a ';'.
@@ -337,6 +356,7 @@ The different DAGs edges are separated by a ';'.
   ```
   protocol.clt.edges 0->1,1->2,2->3,3->4,4->5,5->6,6->7,0->8,8->7,7->9
   ```
+
 - **Number of veritces in the DAG**, Represents the total amount of vertices in the DAG. This value must be the value of
   the biggest vertice in the edges + 1.
     ``` 
@@ -434,7 +454,7 @@ To compile the simulator use the following command:
 mvn clean -Dmaven.test.skip package
 ```
 
-This will package a jar with all necessary dependencies to run the simulator. The jar can be found on the `target/peersim-srv-0.0.1-SNAPSHOT.jar`
+This will package a jar with all the necessary dependencies to run the simulator. The jar can be found on the `target/peersim-srv-0.0.1-SNAPSHOT.jar`
 directory/folder.
 
 

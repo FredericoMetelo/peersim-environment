@@ -14,7 +14,7 @@ public interface Client extends CDProtocol, EDProtocol {
     String PAR_NO_TASKS = "numberOfTasks";
     String PAR_NO_INSTR = "I";
     String PAR_TASKS_WEIGHTS = "weight";
-    String PAR_MAX_DEADLINE = "maxDeadline";
+    String PAR_MIN_DEADLINE = "minDeadline";
     String PAR_CPI = "CPI";
 
     String PAR_NAME = "name";

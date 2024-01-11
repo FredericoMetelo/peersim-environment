@@ -443,13 +443,13 @@ class PeersimEnv(ParallelEnv):
         D = self.DELAY_WEIGHT * (t_w + t_c + t_e) / (w_l + w_o)
 
         # Compute Overload
-        q_prime_l = q_expected_l  # min(max(0, q_l - avg_tasks_processed_per_node) + w_l, self.AVERAGE_MAX_Q)
-        q_prime_o = q_expected_o  # min(max(0, q_o - avg_tasks_processed_per_node) + w_o, self.AVERAGE_MAX_Q)
-        p_overload_l = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_l)
-        p_overload_o = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_o)
-
-        O = self.OVERLOAD_WEIGHT * (w_l * p_overload_l + w_o * p_overload_o) / (
-                w_l + w_o) if w_l != 0 and w_o != 0 else 0
+        # q_prime_l = q_expected_l  # min(max(0, q_l - avg_tasks_processed_per_node) + w_l, self.AVERAGE_MAX_Q)
+        # q_prime_o = q_expected_o  # min(max(0, q_o - avg_tasks_processed_per_node) + w_o, self.AVERAGE_MAX_Q)
+        # p_overload_l = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_l)
+        # p_overload_o = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_o)
+        distance_to_Ovl_l = (self.AVERAGE_MAX_Q - q_expected_l + self.TASK_ARRIVAL_RATE)/self.AVERAGE_MAX_Q
+        distance_to_Ovl_o = (self.AVERAGE_MAX_Q - q_expected_o + self.TASK_ARRIVAL_RATE)/self.AVERAGE_MAX_Q
+        O = self.OVERLOAD_WEIGHT * math.log((distance_to_Ovl_l + distance_to_Ovl_o)/2)  # I may need to remove
 
         # Capping the percentages to be between 100 and -100
         U = max(min(U, 100), -100)/100
