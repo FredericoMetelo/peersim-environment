@@ -283,7 +283,7 @@ The simulation works by processing applications, which consist of groups of task
 A task consists of an amount of instructions to be processed, a total data size inputted, and a cost in CPU cycles per instruction. 
 Similarly to the tasks, there can also be multiple types of DAGs, in the simulations with dependencies the DAG type is selected randomly whenever the client is generating an application. A DAG is modeled as a set of tasks, which the type is randomly selected on creation, a list of dependencies that must always start with the task 0 and end in the last task.
 
-For each of the DAG or task types, all the configurations must be specified, otherwise an error is thrown on environment creation. In the case of the dependency less simulations there uis only one DAG type with one vertice and no edges.
+For each of the DAG or task types, all the configurations must be specified, otherwise an error is thrown on environment creation. In the case of the dependency less simulations there must be only one DAG type with one vertice and no edges.
 
 #### Global to Client
 
@@ -381,20 +381,47 @@ A simulation created with the specifications above would have two DAG types
         \7/
   ```
 
-### Configuring the topologie
-- **Radius of neighbourhood**, this parameter defines the radius of the neighbourhood of a node, the area in which a node knows all other nodes.
-  ```init.Net1.r 50```
+### Configuring the topology
+There are three ways of configuring the topology of the network. The first is the manual way, where we can specify a concrete topology by indicating the position of the nodes and their links, alternatively. The second is the automatic way, where we randomly place the nodes and they will be able to communicate with everyone in a neighborhood of user-defined radius. Lastly, it is possible to specify the position of the nodes and have them linked to every node in a neighborhood of a user-specified radius. 
+
+- **Randomize Positions Flag,** this flag is the one that specifies whether the nodes are to be placed randomly or a topology was specified manually.
+  ```
+  RANDOMIZEPOSITIONS true
+  ```
+
+- **Specify the Positions of the nodes,** the coordinates of the nodes are specified in one String with the format "X0,Y0;X1,Y1;...", in this fashion we have the coordinates separated by ';', so the coordinates of the first node are (x0, Y0) and the second are (X1, Y1).
+  ```
+    init.Net0.POSITIONS 18.55895350495783,17.02475796027715;47.56499372388999,57.28732691557995;5.366872150976409,43.28729893321355;17.488160666668694,29.422819514162434;81.56549175388358,53.14564532018814;85.15660881172089,74.47408014762478;18.438454887921974,44.310130148722195;72.04311826903107,62.06952644109185;25.60125368295145,15.54795598202745;17.543669122835837,70.7258178169151
+
+  ```
+- **Randomize Positions Flag,** this flag is the one that specifies whether nodes are to be linked using the radius method or using the manual definition of the links.
+  ```
+  RANDOMIZETOPOLOGY true
+  ```
+- **Specify the links between the nodes,** this parameter allows for manually specifying the links between nodes. The parameter is of the form, 'node_idx,neigh0,neigh1,...' where the first entry is the node's index, then we list the indexes of the nodes it has links to. Entries are separated by a ";". If a node has no neighbors, we must specify the node's index without any following indexes, for example '0;'.
+  ```
+  init.Net1.TOPOLOGY 0,1,2,3,6,8;1,0,2,3,4,5,6,7,8,9;2,0,1,3,6,8,9;3,0,1,2,6,8,9;4,1,5,7;5,1,4,7;6,0,1,2,3,8,9;7,1,4,5;8,0,1,2,3,6;9,1,2,3,6
+
+  ```
+
+- **The Radius of neighbourhood**, this parameter defines the radius of the neighbourhood of a node, the area in which a node knows all other nodes.
+  ```
+  init.Net1.r 50
+  ```
+
 ### Configurations of the Worker
 <a name="ConfigurationOfTheWorker"></a>
+
 - **Number of Cores in Worker CPU**. This parameter is used in two ways:
     - In computing the reward function. Specifically, affects the delay function and represents the execution cost of the tasks.
-    - It considered in computing the time it takes for a simulation to finish a task.
+    - It is considered in computing the time it takes for a simulation to finish a task.
     ``` 
     protocol.wrk.NO_CORES 4
     ```
+
 - **Frequency of Worker CPU**. This parameter is measured in instructions/second, and is used in two ways:
     - In computing the reward function. Specifically, affects the delay function and represents the execution cost of the tasks.
-    - It considered in computing the time it takes for a simulation to finish a task.
+    - It is considered in computing the time it takes for a simulation to finish a task.
     ``` 
     protocol.wrk.FREQ 1e7
     ```
@@ -402,8 +429,15 @@ A simulation created with the specifications above would have two DAG types
     ``` 
     protocol.wrk.Q_MAX 10
     ```
+    TODO!!!!!
+        "CLOUD_EXISTS": "1",
+        "NO_LAYERS": "2",
+        "NO_NODES_PER_LAYERS": "5,1",
+        "CLOUD_ACCESS": "0,1",
+        
 <a name="ConfigurationsOfTheLinks"></a>
-### Configuration of the links between the nodes
+
+#### Configuration of the links between the nodes
 - **Bandwidth**. This parameter is measured in Mhz and is used in computing the communication cost in time of offloading tasks in the Reward function.
     ``` 
     protocol.props.B 2
@@ -420,6 +454,18 @@ A simulation created with the specifications above would have two DAG types
     ``` 
     protocol.props.P_ti 20
     ```
+    
+### Configuration of the Cloud
+We consider the cloud as a collection of virtual machines that allow for processing multiple tasks concurrently, one per VM. Each of these virtual machines is similar to a Worker in the sense that every time-step they will be able to process a given number of instructions. Each one will need to have processing power specified.
+- **Number of VMs available to the Cloud** - This specifies the number of  VMs that can process concurrent tasks in the Cloud at the same time.
+    ```
+    protocol.cld.no_vms 3
+    ```
+- **Processing Power of the VMs** - This is the number of instructions that a VM in the cloud can produce in a time step.
+    ```
+    protocol.cld.VMProcessingPower 1e8
+    ```
+
 <a name="Developing"></a>
 # Developing the Simulation
 <a name="SetupTheSimulator"></a>
