@@ -1,0 +1,106 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.0.2)
+
+2024-01-10T15:42:34.614Z  INFO 47309 --- [           main] PeersimSimulator.peersim.Simulator       : Starting Simulator v0.0.1-SNAPSHOT using Java 19.0.2 with PID 47309 (/home/fm/IdeaProjects/peersim-environment/src/peersim-gym/peersim_gym/envs/Environment/peersim-srv-0.0.1-SNAPSHOT.jar started by fm in /)
+2024-01-10T15:42:34.617Z  INFO 47309 --- [           main] PeersimSimulator.peersim.Simulator       : No active profile set, falling back to 1 default profile: "default"
+2024-01-10T15:42:35.625Z  INFO 47309 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2024-01-10T15:42:35.634Z  INFO 47309 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2024-01-10T15:42:35.634Z  INFO 47309 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.5]
+2024-01-10T15:42:35.695Z  INFO 47309 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2024-01-10T15:42:35.697Z  INFO 47309 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1013 ms
+2024-01-10T15:42:36.456Z  INFO 47309 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2024-01-10T15:42:36.468Z  INFO 47309 --- [           main] PeersimSimulator.peersim.Simulator       : Started Simulator in 2.381 seconds (process running for 2.832)
+Simulator: loading configuration
+ConfigProperties: File /home/fm/IdeaProjects/peersim-environment/src/peersim-gym/peersim_gym/envs/Utils/../configs/config.txt loaded.
+Simulator: starting experiment 0 invoking PeersimSimulator.peersim.edsim.EDSimulator
+Random seed: 18050187229
+
+
+
+EDSimulator: resetting
+Network: no node defined, using GeneralNode
+[0;33m|0000| MNG ( -01 )|  DEBUG                | msg:[ 0 5 ][0m
+EDSimulator: running initializers
+- Running initializer init.sch: class PeersimSimulator.peersim.edsim.CDScheduler
+- Running initializer init.Net0: class PeersimSimulator.peersim.env.Links.SDNInitializer
+- Running initializer init.Net1: class PeersimSimulator.peersim.env.Links.WireSDNTopology
+2024-01-10T15:42:36.531Z  INFO 47309 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2024-01-10T15:42:36.531Z  INFO 47309 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+- Running initializer init.InitWrk: class PeersimSimulator.peersim.env.Nodes.Workers.WorkerInitializer
+[0;33m
+Worker Statistics:
+Layers:[5  1]
+[0m
+[0;33mCloud Address: 6
+[0m
+[0;33m| NODE | LAYER | FREQS | NO CORES   | Q SIZES    | NEIGHBOURS                |
+| 0    | 0     | 1,000e+07 | 4   | 10   | len=6 [0 1 2 3 4 5 ]      |
+| 1    | 0     | 1,000e+07 | 4   | 10   | len=6 [1 0 2 3 4 5 ]      |
+| 2    | 0     | 1,000e+07 | 4   | 10   | len=6 [2 0 1 3 4 5 ]      |
+| 3    | 0     | 1,000e+07 | 4   | 10   | len=6 [3 0 1 2 4 5 ]      |
+| 4    | 0     | 1,000e+07 | 4   | 10   | len=6 [4 0 1 2 3 5 ]      |
+| 5    | 1     | 3,000e+07 | 8   | 50   | len=7 [5 0 1 2 3 4 6 ]    |
+[0m
+- Running initializer init.InitClt: class PeersimSimulator.peersim.env.Nodes.Clients.ClientInitializer
+- Running initializer init.InitCtrl: class PeersimSimulator.peersim.env.Nodes.Controllers.ControllerInitializer
+- Running initializer init.InitCld: class PeersimSimulator.peersim.env.Nodes.CloudInitializer
+- Running initializer init.InitMng: class PeersimSimulator.peersim.env.SimulationManagers.DiscreteTimeStepManagerInitializer
+EDSimulator: loaded controls []
+Current time: 0
+[0;33m|0000| MNG ( -01 )|  DEBUG                | msg:Start Waiting Time<0>[0m
+2024-01-10T15:42:36.539Z  INFO 47309 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 8 ms
+[0;33m|0000| CTR ( 000 )|  DEBUG                | msg:Acquiring state[0m
+[0;33m|0000| CTR ( 005 )|  DEBUG                | msg:Acquiring state[0m
+[0;33m|0000| CTR ( 000 )|  DEBUG                | msg:Acquiring state[0m
+[0;33m|0000| CTR ( 005 )|  DEBUG                | msg:Acquiring state[0m
+[0;33m|0000| MNG ( -01 )|  DEBUG                | msg:[targets: 0 nodeId: 0, targets: 0 nodeId: 5][0m
+[0;33m|0000| CTR ( 000 )|  DEBUG                | msg:targets: 0 nodeId: 0[0m
+|0000| CTR ( 000 )|  SEND ACTION RECIEVED | info:TARGET_INDEX=0
+|0000| WRK ( 000 )|  NO TASK FOR OFFLOAD  | info:id=0
+|0000| CTR ( 000 )|  WORKER-INFO UPDATE   | info:id=0, Q_size=0->0 rcv_tasks=0->0
+[0;33m|0000| CTR ( 005 )|  DEBUG                | msg:targets: 0 nodeId: 5[0m
+|0000| CTR ( 005 )|  SEND ACTION RECIEVED | info:TARGET_INDEX=0
+|0000| WRK ( 005 )|  NO TASK FOR OFFLOAD  | info:id=5
+|0000| CTR ( 005 )|  WORKER-INFO UPDATE   | info:id=5, Q_size=0->0 rcv_tasks=0->0
+[0;33m|0000| MNG ( -01 )|  DEBUG                | msg:[{"srcId":0,"distance":0.0,"wi":{"id":0,"queueSize":0,"unprocessedApplications":0,"averageTaskSize":0.0,"nodeProcessingPower":3.9998289E7,"freeTaskSlots":10,"layer":0,"lastKnownPosition":{"X":60.62290186378916,"Y":80.13245010633867},"size":1.0,"totalTasks":0,"w":0.999957225},"tasksCompleted":[]},{"srcId":5,"distance":0.0,"wi":{"id":5,"queueSize":0,"unprocessedApplications":0,"averageTaskSize":0.0,"nodeProcessingPower":2.39994793E8,"freeTaskSlots":50,"layer":1,"lastKnownPosition":{"X":71.78107326595483,"Y":55.46413607105074},"size":1.0,"totalTasks":0,"w":5.999869825},"tasksCompleted":[]}][0m
+|0000| CLT ( 001 )|  TASK SENT            | info:target=1
+|0000| CLT ( 001 )|  TASK SENT            | info:target=2
+|0000| CLT ( 002 )|  TASK SENT            | info:target=1
+|0000| CLT ( 002 )|  TASK SENT            | info:target=3
+|0000| WRK ( 003 )|  NEW APP RECIEVED     | info: appId=810dce39-7d80-469d-9855-0bc99aaa9a9c
+|0000| CLT ( 003 )|  TASK SENT            | info:target=0
+|0000| CLT ( 003 )|  TASK SENT            | info:target=1
+|0000| WRK ( 001 )|  NEW APP RECIEVED     | info: appId=19701aef-5938-4f41-9165-de25f4e54877
+|0000| WRK ( 001 )|  NEW APP RECIEVED     | info: appId=667258e1-9c85-4269-8ed6-add44cfbf03e
+|0000| CLT ( 000 )|  TASK SENT            | info:target=1
+|0000| CLT ( 000 )|  TASK SENT            | info:target=3
+|0000| WRK ( 003 )|  NEW APP RECIEVED     | info: appId=acb44ac6-f2dd-4b41-8013-6a2740139fa2
+|0000| WRK ( 001 )|  NEW APP RECIEVED     | info: appId=9c42c106-783c-4590-a92c-f9b24755aa1e
+|0000| WRK ( 001 )|  NEW APP RECIEVED     | info: appId=2137ea15-0db5-4778-9e20-802f3a9646af
+|0000| WRK ( 000 )|  NEW APP RECIEVED     | info: appId=13cf4d06-fe62-4453-8c8a-59bfdc8f634e
+|0000| WRK ( 002 )|  NEW APP RECIEVED     | info: appId=ab2a5852-23d2-492d-8d91-98b69bde1cc5
+|0000| WRK ( 000 )|  SERIALIZING EVENT    | info:Q_size=0 rcv_Apps=1 working=false
+|0000| WRK ( 000 )|  WRK-INFO BROADCAST   | info:Q_size=0 rcv_Apps=0 working=true
+|0000| CTR ( 000 )|  WORKER-INFO UPDATE   | info:id=0, Q_size=0->1 rcv_tasks=0->0
+|0000| CTR ( 005 )|  WORKER-INFO UPDATE   | info:id=0, Q_size=0->1 rcv_tasks=0->0
+|0000| WRK ( 001 )|  SERIALIZING EVENT    | info:Q_size=0 rcv_Apps=4 working=false
+|0000| WRK ( 001 )|  WRK-INFO BROADCAST   | info:Q_size=3 rcv_Apps=0 working=true
+|0000| CTR ( 005 )|  WORKER-INFO UPDATE   | info:id=1, Q_size=0->4 rcv_tasks=0->0
+|0000| CTR ( 000 )|  WORKER-INFO UPDATE   | info:id=1, Q_size=0->4 rcv_tasks=0->0
+Current time: 1
+|0001| WRK ( 003 )|  SERIALIZING EVENT    | info:Q_size=0 rcv_Apps=2 working=false
+|0001| WRK ( 003 )|  WRK-INFO BROADCAST   | info:Q_size=1 rcv_Apps=0 working=true
+|0001| CLT ( 002 )|  TASK SENT            | info:target=1
+|0001| CLT ( 002 )|  TASK SENT            | info:target=3
+|0001| WRK ( 003 )|  NEW APP RECIEVED     | info: appId=e183dc25-0c7f-4c8c-9515-32c6af976375
+[0;33m|0001| MNG ( -01 )|  DEBUG                | msg:Start Waiting Time<1>[0m
+[0;33m|0001| CTR ( 000 )|  DEBUG                | msg:Acquiring state[0m
+[0;33m|0001| CTR ( 005 )|  DEBUG                | msg:Acquiring state[0m
+[0;33m|0001| CTR ( 000 )|  DEBUG                | msg:Acquiring state[0m
+[0;33m|0001| CTR ( 005 )|  DEBUG                | msg:Acquiring state[0m

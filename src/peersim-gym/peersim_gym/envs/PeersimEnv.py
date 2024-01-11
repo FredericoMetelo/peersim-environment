@@ -100,6 +100,7 @@ class PeersimEnv(ParallelEnv):
         self.url_action_path = "/action"
         self.url_state_path = "/state"
         self.url_isUp = "/up"
+        self.url_isStopped = "/stopped"
         self.url_NetworkData = "/NeighbourData"
 
         self.default_timeout = 3  # Second
@@ -201,7 +202,7 @@ class PeersimEnv(ParallelEnv):
         # self.__gen_config(self.config_archive, regen_seed=True)
         self.__run_peersim()
         while not self.__is_up():
-            time.sleep(0.5)  # Good Solution? No... But it is what it is.
+            time.sleep(0.05)  # Good Solution? No... But it is what it is.
         print("Server is up")
 
         self.min_neighbours, self.max_neighbours, self.avg_neighbours = self.__get_net_data()
@@ -217,8 +218,12 @@ class PeersimEnv(ParallelEnv):
         original_obs = self.state
         mask = self._validateAction(original_obs, actions)
         result = self.__send_action(actions)
-        observations, done, info = self.__get_obs()
 
+        # Wait for the simulation to stabilize so the next state is actually the next state the agent would observe.
+        while not self.__is_stopped():
+            time.sleep(0.05)
+
+        observations, done, info = self.__get_obs()
         rewards = self._compute_rewards(original_obs, observations, actions, result, mask)
 
         terminations = {agent: done for agent in self.agents}
@@ -354,6 +359,22 @@ class PeersimEnv(ParallelEnv):
 
         return status
 
+    def __is_stopped(self):
+        payload = {}
+        headers_action = {"Accept": "application/json", "Connection": "keep-alive"}
+        action_url = self.url_api + self.url_isStopped
+        try:
+            r = requests.get(action_url, json=payload, headers=headers_action, timeout=self.default_timeout)
+            status = r.content == 'True' or r.content == 'true' or r.content
+        except requests.exceptions.Timeout:
+            print("Failed at Connecting to the Environment")
+            status = False
+        except requests.exceptions.ConnectionError:
+            # if the Server is not yet reachable. We wait.
+            status = False
+
+        return status
+
     def __gen_seed(self):
         n = randint(1000000000, 9999999999)
         return str(n)
@@ -382,7 +403,8 @@ class PeersimEnv(ParallelEnv):
         # https://datascience.stackexchange.com/questions/20098/should-i-normalize-rewards-in-reinforcement-learning
         # Prepare data
         source_of_task = 0 # agent_idx  # Not used, but it's also not correct. This gets the id not the index.
-        avg_tasks_processed_per_node = self.AVERAGE_TASK_INSTR/self.AVERAGE_PROCESSING_POWER
+        avg_tasks_processed_per_node = self.AVERAGE_PROCESSING_POWER/self.AVERAGE_TASK_INSTR
+        # Note: The avergae number of tasks processed per node is how many times can the processing power cover a task
 
         target_of_task = action[ACTION_NEIGHBOUR_IDX_FIELD]
 
@@ -421,8 +443,8 @@ class PeersimEnv(ParallelEnv):
         D = self.DELAY_WEIGHT * (t_w + t_c + t_e) / (w_l + w_o)
 
         # Compute Overload
-        q_prime_l = min(max(0, avg_tasks_processed_per_node) + w_l, self.AVERAGE_MAX_Q)
-        q_prime_o = min(max(0, avg_tasks_processed_per_node) + w_o, self.AVERAGE_MAX_Q)
+        q_prime_l = q_expected_l  # min(max(0, q_l - avg_tasks_processed_per_node) + w_l, self.AVERAGE_MAX_Q)
+        q_prime_o = q_expected_o  # min(max(0, q_o - avg_tasks_processed_per_node) + w_o, self.AVERAGE_MAX_Q)
         p_overload_l = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_l)
         p_overload_o = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_o)
 
@@ -485,6 +507,7 @@ class PeersimEnv(ParallelEnv):
     def __render_ansi(self):
         print(json.dumps(self.state))
         print(json.dumps(self._info))
+        print("Last Reward Components:" + json.dumps(self.last_reward_components))
 
     def extract_global_data(self, global_obs):
         Q = global_obs[STATE_Q_FIELD]

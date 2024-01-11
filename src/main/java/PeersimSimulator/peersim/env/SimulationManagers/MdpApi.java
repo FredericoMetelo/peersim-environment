@@ -75,6 +75,12 @@ public class MdpApi implements Control {
         return !(CommonState.getPhase() == CommonState.POST_SIMULATION) && c.isUp();
     }
 
+    @GetMapping("/stopped")
+    public boolean isStopped(){
+        if(Network.get(0) == null) return false;
+        DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
+        return !(CommonState.getPhase() == CommonState.POST_SIMULATION) && !c.isStable();
+    }
     @GetMapping("/NeighbourData")
     public NetworkData getNeighbourData(){
         DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
