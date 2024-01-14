@@ -10,6 +10,7 @@ from pettingzoo import ParallelEnv
 import json
 import peersim_gym.envs.Utils.PeersimConfigGenerator as cg
 from peersim_gym.envs.Utils.PeersimThread import PeersimThread
+from peersim_gym.envs.Utils.PeersimVis import PeersimVis
 
 import socket
 from contextlib import closing
@@ -75,7 +76,7 @@ def can_launch_simulation():
 
 
 class PeersimEnv(ParallelEnv):
-    metadata = {"render_modes": ["ansi"], "render_fps": 4}
+    metadata = {"render_modes": ["ansi", "human"], "render_fps": 4}
 
     def init(self, render_mode=None, configs=None, log_dir=None, randomize_seed=False):
         self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed)
@@ -172,6 +173,9 @@ class PeersimEnv(ParallelEnv):
 
         self.last_reward_components = {}
 
+        if self.render_mode == "human":
+            self.vis = PeersimVis()
+
     def observation_space(self, agent):
         return Dict(
             {
@@ -230,7 +234,7 @@ class PeersimEnv(ParallelEnv):
         self.num_moves += 1
         truncations = {agent: False for agent in self.agents}
 
-        if self.render_mode == "ansi":
+        if self.render_mode is not None:
             self.render()
 
         return observations, rewards, terminations, truncations, info
@@ -238,6 +242,17 @@ class PeersimEnv(ParallelEnv):
     def render(self):
         if self.render_mode == "ansi":
             return self.__render_ansi()
+        elif self.render_mode == "human":
+            return self.__render_human()
+
+    def __render_ansi(self):
+        print(json.dumps(self.state))
+        print(json.dumps(self._info))
+        print("Last Reward Components:" + json.dumps(self.last_reward_components))
+
+    def __render_human(self):
+        self.vis.update_state(self._global_obs, self.max_Q_size)
+        self.vis.draw() # TODO Project the coordinates to the render space...
 
     def close(self):
         self.simulator.stop()
@@ -293,6 +308,7 @@ class PeersimEnv(ParallelEnv):
             partial_obs = full_obs.get('observedState')
             done = s.get("done")
             self._observation = partial_obs
+            self._global_obs = global_obs
             self._done = done
 
             observations = {self.agents[i]: partial_obs[i] for i in range(len(self.agents))}
@@ -504,10 +520,7 @@ class PeersimEnv(ParallelEnv):
                 q_list.append(self.max_Q_size[idx])
         return q_list
 
-    def __render_ansi(self):
-        print(json.dumps(self.state))
-        print(json.dumps(self._info))
-        print("Last Reward Components:" + json.dumps(self.last_reward_components))
+
 
     def extract_global_data(self, global_obs):
         Q = global_obs[STATE_Q_FIELD]
@@ -523,3 +536,4 @@ class PeersimEnv(ParallelEnv):
     def set_random_seed(self):
         seed = cg.randomize_seed(self.config_path)
         self.config_archive["random.seed"] = seed
+

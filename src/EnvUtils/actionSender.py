@@ -99,10 +99,10 @@ if __name__ == "__main__":
     }
     randomize_seed = True
 
-    env = PeersimEnv(configs=configs, simtype="basic", randomize_seed=randomize_seed, log_dir="stdout")
+    env = PeersimEnv(configs=configs, simtype="basic", randomize_seed=randomize_seed, log_dir="stdout", render_mode="human")
     # env = PeersimEnv(
     #     configs="/home/fm/IdeaProjects/peersim-environment/src/peersim-gym/peersim_gym/envs/configs/config.txt",
-    #     simtype="basic", randomize_seed=randomize_seed)
+    #     simtype="basic", randomize_seed=randomize_seed, render_mode="human")
     # Legacy Configs:
     #         "protocol.wrk.NO_CORES": "4",
     #         "protocol.wrk.FREQ": "1e7",
