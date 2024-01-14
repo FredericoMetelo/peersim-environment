@@ -4,5 +4,5 @@ import PeersimSimulator.peersim.env.Records.SimulationData.SimulationData;
 
 import java.util.List;
 
-public record NetworkData(int min, int max, int average) {
+public record NetworkData(int min, int max, int average, List<List<Integer>> neighbourMatrix) {
 }

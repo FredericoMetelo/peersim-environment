@@ -10,12 +10,12 @@ COORD_X = "X"
 COORD_Y = "Y"
 
 # Constants
-NODE_W = 10
-NODE_H = 10
+NODE_W = 15
+NODE_H = 15
 
-FONT_SIZE = 10
+FONT_SIZE = 15
 
-INFO_W = 80
+INFO_W = 100
 INFO_H = 40
 
 NODE_COLOR = (133, 196, 120)  # GREEN
@@ -24,6 +24,9 @@ NODE_TEXT_COLOR = (255, 255, 255)  # WHITE
 NODE_INFO_BACKGROUND_COLOR = (251, 234, 205)  # CREAM
 NODE_INFO_TEXT_COLOR = (0, 0, 0)  # BLACK
 
+LINK_PASSED_TASK_COLOR = (255, 0, 0)  # RED
+LINK_NO_ACTION_COLOR = (0, 0, 0)  # BLACK
+
 pygame.init()
 displayw = 1000 + INFO_W
 displayh = 1000 + INFO_H
@@ -31,10 +34,11 @@ windowclock = pygame.time.Clock()
 
 
 class PeersimVis(object):
-    def __init__(self):
+    def __init__(self, has_cloud):
         # Display dimensions
         self.displayw = displayw
         self.displayh = displayh
+        self.has_cloud = has_cloud
 
         # Game font
         self.font = pygame.font.SysFont("monospace", FONT_SIZE)
@@ -49,7 +53,8 @@ class PeersimVis(object):
         pygame.display.update()
         windowclock.tick(60)
 
-    def update_state(self, state, max_Q):
+    def update_state(self, state, max_Q, neighborsMatrix, last_actions, controllers, agent_name_mapping):
+        # There is a better way of doing this without passing every parameter in existence for sure... But, I'm tired af
         """
         Update the state of the visualization using the state provided by the simulator.
         :return:
@@ -60,19 +65,29 @@ class PeersimVis(object):
         global_Q = global_state[GLOBAL_STATE_Q]
         global_layers = global_state[GLOBAL_STATE_LAYERS]
 
+        # node x sent action to node y
+        actions = { node_id: last_actions[agent_name]['neighbourIndex'] for agent_name, node_id in agent_name_mapping.items() }
+
         # Clear the display
         self.display.fill((255, 255, 255))
 
-        # Draw the nodes
+        self.draw_links(neighborsMatrix, global_positions, actions)
+        self.draw_nodes(global_Q, global_ids, global_layers, global_positions, max_Q)
+
+    def draw_nodes(self, global_Q, global_ids, global_layers, global_positions, max_Q):
         for i in range(len(global_ids)):
-            x = global_positions[i][COORD_X] * 10  # Project the coordinates to the display 100x100 to 1000x1000
-            y = global_positions[i][COORD_Y] * 10
+            x = self.project_x(i, global_positions)  # Project the coordinates to the display 100x100 to 1000x1000
+            y = self.project_y(i, global_positions)
             layer = global_layers[i]
             Q = global_Q[i]
             id = global_ids[i]
             overloaded = Q >= max_Q[layer]
-            self.draw_node(x, y, layer, Q, id, overloaded)
+            # To identify if an action passed through this link, we check if the last action of the node was to the
+            # target node
 
+
+
+            self.draw_node(x, y, layer, Q, id, overloaded)
 
     def draw_node(self, x, y, layer, Q_size, id, overloaded=False):
         color = NODE_COLOR if not overloaded else NODE_OVERLOADED_COLOR
@@ -89,8 +104,37 @@ class PeersimVis(object):
 
         Q_surface = self.font.render(f"Q={Q_size}   L={layer}", 1, NODE_INFO_TEXT_COLOR)
 
-
         info_rect_height = info_rect.height
         self.display.blit(Q_surface, (info_x + 10, info_y + 10))
 
+    def draw_links(self, link_matrix, positions, actions):
+        """
+        Draw the links between the nodes.
+        :param link_matrix: The link matrix.
+        :param positions: The positions of the nodes.
+        :return:
+        """
+        for i in range(len(link_matrix) - self.has_cloud):
+            for j in range(len(link_matrix[i])):
+                source = i
+                target = link_matrix[i][j]
+                if target == len(positions) and self.has_cloud >= 1:
+                    continue
+                is_target = False
+                if source in actions:
+                    is_target = actions[source] == target
+                x1 = self.project_x(source, positions) + NODE_W / 2
+                y1 = self.project_y(source, positions) + NODE_H / 2
+                x2 = self.project_x(target, positions) + NODE_W / 2
+                y2 = self.project_y(target, positions) + NODE_H / 2
+                self.draw_line(x1, y1, x2, y2, is_target)
 
+    def project_y(self, node_idx, positions):
+        return positions[node_idx][COORD_Y] * 10
+
+    def project_x(self, node_idx, positions):
+        return positions[node_idx][COORD_X] * 10
+
+    def draw_line(self, x1, y1, x2, y2, is_target):
+        color = LINK_PASSED_TASK_COLOR if is_target else LINK_NO_ACTION_COLOR
+        pygame.draw.line(self.display, color, (x1, y1), (x2, y2), 1)

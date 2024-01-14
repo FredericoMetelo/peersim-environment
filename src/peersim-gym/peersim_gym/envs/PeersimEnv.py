@@ -109,11 +109,11 @@ class PeersimEnv(ParallelEnv):
         self.config_archive = configs
         self.simtype = simtype
 
-        controllers = self.__gen_config(configs, simtype=simtype)
+        self.controllers = self.__gen_config(configs, simtype=simtype)
         self.number_nodes = int(self.config_archive["SIZE"])
-        self.possible_agents = [AGENT_PREFIX + str(r) for r in controllers]
+        self.possible_agents = [AGENT_PREFIX + str(r) for r in self.controllers]
         self.agent_name_mapping = dict(
-            zip(self.possible_agents, controllers)
+            zip(self.possible_agents, self.controllers)
         )
         # ---- State Space
         self.__log_dir = log_dir
@@ -170,11 +170,13 @@ class PeersimEnv(ParallelEnv):
         self.avg_neighbours = -1
         self.min_neighbours = -1
         self.max_neighbours = -1
+        self.neighbourMatrix = []
+        self.has_cloud = int(self.config_archive["CLOUD_EXISTS"])
 
         self.last_reward_components = {}
 
         if self.render_mode == "human":
-            self.vis = PeersimVis()
+            self.vis = PeersimVis(self.has_cloud)
 
     def observation_space(self, agent):
         return Dict(
@@ -209,7 +211,8 @@ class PeersimEnv(ParallelEnv):
             time.sleep(0.05)  # Good Solution? No... But it is what it is.
         print("Server is up")
 
-        self.min_neighbours, self.max_neighbours, self.avg_neighbours = self.__get_net_data()
+        self.min_neighbours, self.max_neighbours, self.avg_neighbours, self.neighbourMatrix = self.__get_net_data()
+        self.has_cloud = int(self.config_archive["CLOUD_EXISTS"])
         observations, done, info = self.__get_obs()
         infos = {agent: {} for agent in self.agents}
 
@@ -234,6 +237,8 @@ class PeersimEnv(ParallelEnv):
         self.num_moves += 1
         truncations = {agent: False for agent in self.agents}
 
+        self.last_actions = actions
+
         if self.render_mode is not None:
             self.render()
 
@@ -251,8 +256,8 @@ class PeersimEnv(ParallelEnv):
         print("Last Reward Components:" + json.dumps(self.last_reward_components))
 
     def __render_human(self):
-        self.vis.update_state(self._global_obs, self.max_Q_size)
-        self.vis.draw() # TODO Project the coordinates to the render space...
+        self.vis.update_state(self._global_obs, self.max_Q_size, self.neighbourMatrix, self.last_actions, self.controllers, self.agent_name_mapping)
+        self.vis.draw()  # TODO Project the coordinates to the render space...
 
     def close(self):
         self.simulator.stop()
@@ -357,7 +362,8 @@ class PeersimEnv(ParallelEnv):
         min = r.get('min')
         max = r.get('max')
         avg = r.get('average')
-        return min, max, avg
+        neighbourMatrix = r.get('neighbourMatrix')
+        return min, max, avg, neighbourMatrix
 
     def __is_up(self):
         payload = {}
@@ -418,8 +424,8 @@ class PeersimEnv(ParallelEnv):
         # are exploding. The kind people in stack exchange have recommended that I keep the rewards in a small range [-1, 1]
         # https://datascience.stackexchange.com/questions/20098/should-i-normalize-rewards-in-reinforcement-learning
         # Prepare data
-        source_of_task = 0 # agent_idx  # Not used, but it's also not correct. This gets the id not the index.
-        avg_tasks_processed_per_node = self.AVERAGE_PROCESSING_POWER/self.AVERAGE_TASK_INSTR
+        source_of_task = 0  # agent_idx  # Not used, but it's also not correct. This gets the id not the index.
+        avg_tasks_processed_per_node = self.AVERAGE_PROCESSING_POWER / self.AVERAGE_TASK_INSTR
         # Note: The avergae number of tasks processed per node is how many times can the processing power cover a task
 
         target_of_task = action[ACTION_NEIGHBOUR_IDX_FIELD]
@@ -463,14 +469,15 @@ class PeersimEnv(ParallelEnv):
         # q_prime_o = q_expected_o  # min(max(0, q_o - avg_tasks_processed_per_node) + w_o, self.AVERAGE_MAX_Q)
         # p_overload_l = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_l)
         # p_overload_o = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_o)
-        distance_to_Ovl_l = (self.AVERAGE_MAX_Q - q_expected_l + self.TASK_ARRIVAL_RATE)/self.AVERAGE_MAX_Q
-        distance_to_Ovl_o = (self.AVERAGE_MAX_Q - q_expected_o + self.TASK_ARRIVAL_RATE)/self.AVERAGE_MAX_Q
-        O = self.OVERLOAD_WEIGHT * math.log((distance_to_Ovl_l + distance_to_Ovl_o)/2)  # I may need to remove
+        distance_to_Ovl_l = (self.AVERAGE_MAX_Q - q_expected_l + self.TASK_ARRIVAL_RATE) / self.AVERAGE_MAX_Q
+        distance_to_Ovl_o = (self.AVERAGE_MAX_Q - q_expected_o + self.TASK_ARRIVAL_RATE) / self.AVERAGE_MAX_Q
+        O = self.OVERLOAD_WEIGHT * math.log((distance_to_Ovl_l + distance_to_Ovl_o) / 2)  # I may need to remove
 
         # Capping the percentages to be between 100 and -100
-        U = max(min(U, 100), -100)/100
-        D = max(min(D, 100), -100)/100
-        O = max(min(O, 100), -100)/100  # TODO Confirm if the task arrival rate is correct. Because It may need to be 1/TASK_ARRIVAL_RATE
+        U = max(min(U, 100), -100) / 100
+        D = max(min(D, 100), -100) / 100
+        O = max(min(O, 100),
+                -100) / 100  # TODO Confirm if the task arrival rate is correct. Because It may need to be 1/TASK_ARRIVAL_RATE
 
         # computing reward and normalizing it
         reward = U - (D + O)
@@ -520,8 +527,6 @@ class PeersimEnv(ParallelEnv):
                 q_list.append(self.max_Q_size[idx])
         return q_list
 
-
-
     def extract_global_data(self, global_obs):
         Q = global_obs[STATE_Q_FIELD]
         layers = global_obs[STATE_G_LAYERS]
@@ -536,4 +541,3 @@ class PeersimEnv(ParallelEnv):
     def set_random_seed(self):
         seed = cg.randomize_seed(self.config_path)
         self.config_archive["random.seed"] = seed
-

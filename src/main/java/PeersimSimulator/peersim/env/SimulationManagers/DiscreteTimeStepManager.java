@@ -284,8 +284,10 @@ public class DiscreteTimeStepManager implements CDProtocol {
         int min = Network.size();
         int max = 0;
         int average = 0;
+        List<List<Integer>> neighbourMatrix = new ArrayList<>(Network.size());
         for (int i = 0; i < Network.size(); i++) {
             Node n = Network.get(i);
+            int[] neighbours = getNeighbours(n);
             if (n.isUp()) {
                 Linkable linkable = (Linkable) n.getProtocol(FastConfig.getLinkable(Worker.getPid()));
                 int size = linkable.degree();
@@ -294,8 +296,18 @@ public class DiscreteTimeStepManager implements CDProtocol {
                 average += size;
                 average /= 2;
             }
+            neighbourMatrix.add(Arrays.stream(neighbours).boxed().toList());
         }
-        return new NetworkData(min, max, average);
+        return new NetworkData(min, max, average, neighbourMatrix);
+    }
+
+    private static int[] getNeighbours(Node n) {
+        int linkableID = FastConfig.getLinkable(Worker.getPid());
+        Linkable l = (Linkable) n.getProtocol(linkableID);
+        String neighboursString = l.toString();
+        if (neighboursString.equals("DEAD!")) return new int[0];
+        int[] neighbours = Arrays.stream(neighboursString.substring(neighboursString.indexOf("[") + 1, neighboursString.indexOf(" ]")).split(" ")).mapToInt(Integer::parseInt).toArray(); // This is a bit of a hack.
+        return neighbours;
     }
     /*
     private double calculatReward(Linkable linkable, Node n, int targetNode, int controllerId) {
