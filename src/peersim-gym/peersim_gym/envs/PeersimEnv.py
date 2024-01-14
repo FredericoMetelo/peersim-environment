@@ -454,7 +454,7 @@ class PeersimEnv(ParallelEnv):
         # Capping the percentages to be between 100 and -100
         U = max(min(U, 100), -100)/100
         D = max(min(D, 100), -100)/100
-        O = max(min(O, 100), -100)/100
+        O = max(min(O, 100), -100)/100  # TODO Confirm if the task arrival rate is correct. Because It may need to be 1/TASK_ARRIVAL_RATE
 
         # computing reward and normalizing it
         reward = U - (D + O)
