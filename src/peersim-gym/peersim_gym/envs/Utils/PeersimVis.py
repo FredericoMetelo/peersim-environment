@@ -26,6 +26,8 @@ NODE_INFO_TEXT_COLOR = (0, 0, 0)  # BLACK
 
 LINK_PASSED_TASK_COLOR = (255, 0, 0)  # RED
 LINK_NO_ACTION_COLOR = (0, 0, 0)  # BLACK
+LOCAL_PROCESSING_BACKGROUND_COLOR = (0, 0, 255)  # BLUE
+LOCAL_PROCESSING_TEXT_COLOR = (255, 255, 255)  # WHITE
 
 pygame.init()
 displayw = 1000 + INFO_W
@@ -114,20 +116,44 @@ class PeersimVis(object):
         :param positions: The positions of the nodes.
         :return:
         """
+        do_not_overrride = {}
         for i in range(len(link_matrix) - self.has_cloud):
             for j in range(len(link_matrix[i])):
                 source = i
                 target = link_matrix[i][j]
+                key = f"{source}-{target}"
+                rev_key = f"{target}-{source}"
                 if target == len(positions) and self.has_cloud >= 1:
                     continue
+                # Problem, the lines are being drawn on top of each other, therefore erasing one another.
+                # Another potential problem for later is that there isn't really any distinction between the direction
+                # of the task being offloaded.
+
                 is_target = False
                 if source in actions:
                     is_target = actions[source] == target
+
+                if key in do_not_overrride or rev_key in do_not_overrride:
+                    continue
+
                 x1 = self.project_x(source, positions) + NODE_W / 2
                 y1 = self.project_y(source, positions) + NODE_H / 2
                 x2 = self.project_x(target, positions) + NODE_W / 2
                 y2 = self.project_y(target, positions) + NODE_H / 2
                 self.draw_line(x1, y1, x2, y2, is_target)
+
+                if is_target: # Guarantee that drawn lines are not overriden
+                    do_not_overrride[key] = target
+                    do_not_overrride[rev_key] = target
+
+                if source == target and is_target:
+                    local_rect_x = self.project_x(source, positions) + NODE_W
+                    local_rect_y = self.project_y(source, positions)
+                    local_rect = pygame.draw.rect(self.display, LOCAL_PROCESSING_BACKGROUND_COLOR,
+                                                  (local_rect_x, local_rect_y, NODE_W, NODE_H))
+                    local_text_surface = self.font.render("L", True, LOCAL_PROCESSING_TEXT_COLOR)
+                    local_text_rect = local_text_surface.get_rect(center=local_rect.center)
+                    self.display.blit(local_text_surface, local_text_rect)
 
     def project_y(self, node_idx, positions):
         return positions[node_idx][COORD_Y] * 10
