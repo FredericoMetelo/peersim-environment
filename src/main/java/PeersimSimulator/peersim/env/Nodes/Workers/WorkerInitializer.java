@@ -143,7 +143,7 @@ public class WorkerInitializer implements Control {
         String header = String.format("| %-4s | %-5s | %-5s | %-10s | %-10s | %-25s |%n",
                 "NODE", "LAYER", "FREQS", "NO CORES", "Q SIZES", "NEIGHBOURS");
         StringBuilder rows = new StringBuilder(header);
-        for (int i = 0; i < Network.size() - 1; i++) {
+        for (int i = 0; i < Network.size() - hasCloud; i++) {
             Node n = Network.get(i);
             Worker w = (Worker) n.getProtocol(Worker.getPid());
             int linkableID = FastConfig.getLinkable(Worker.getPid());

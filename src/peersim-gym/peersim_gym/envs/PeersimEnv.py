@@ -165,8 +165,8 @@ class PeersimEnv(ParallelEnv):
         self.BANDWIDTH = float(self.config_archive["protocol.props.B"])
         self.NORMALIZED_THERMAL_NOISE_POWER = 174
         self.AVERAGE_TASK_SIZE, self.AVERAGE_TASK_INSTR, self.TASK_ARRIVAL_RATE = self._compute_avg_task_data()
-        self.AVERAGE_PROCESSING_POWER, self.AVERAGE_MAX_Q = self._compute_average_worker_data()
-
+        self.AVERAGE_PROCESSING_POWER, self.AVERAGE_MAX_Q, self.PROCESSING_POWERS = self._compute_worker_data()
+        self.NODES_PER_LAYER = [int(no_nodes) for no_nodes in self.config_archive["NO_NODES_PER_LAYERS"].strip().split(",")]
         self.avg_neighbours = -1
         self.min_neighbours = -1
         self.max_neighbours = -1
@@ -423,11 +423,9 @@ class PeersimEnv(ParallelEnv):
         # Long story short... having a large range of rewards is making it so that the agent is not learning. Q-values
         # are exploding. The kind people in stack exchange have recommended that I keep the rewards in a small range [-1, 1]
         # https://datascience.stackexchange.com/questions/20098/should-i-normalize-rewards-in-reinforcement-learning
-        # Prepare data
-        source_of_task = 0  # agent_idx  # Not used, but it's also not correct. This gets the id not the index.
-        avg_tasks_processed_per_node = self.AVERAGE_PROCESSING_POWER / self.AVERAGE_TASK_INSTR
-        # Note: The avergae number of tasks processed per node is how many times can the processing power cover a task
 
+        # Prepare data
+        source_of_task = agent_obs[STATE_NODE_ID_FIELD]
         target_of_task = action[ACTION_NEIGHBOUR_IDX_FIELD]
 
         source_node_og_info = agent_og_obs
@@ -439,9 +437,17 @@ class PeersimEnv(ParallelEnv):
         if int(len(source_node_og_info["Q"])) < int(target_of_task) or int(target_of_task) < 0:
             return -self.UTILITY_REWARD, {"U": -1, "D": 0, "O": 0}
 
-        q_l = len(source_node_og_info[STATE_Q_FIELD])
+        target_layer = self.get_layer(target_of_task)
+        target_processing_power = self.PROCESSING_POWERS[target_layer]
+        target_max_q = self.max_Q_size[target_layer]
+
+        source_layer = self.get_layer(source_of_task)
+        source_processing_power = self.PROCESSING_POWERS[source_layer]
+        source_max_q = self.max_Q_size[source_layer]
+
+        q_l = source_node_og_info["queueSize"]
         q_o = target_node_worker_info["queueSize"]
-        q_expected_l = len(source_node_info[STATE_Q_FIELD])
+        q_expected_l = source_node_info["queueSize"]
         q_expected_o = q_o if locally_processed else q_o + 1  # Change to W_o for allowing multiple offloads
 
         d_i_j = agent_result[RESULT_DISTANCE_FIELD]
@@ -449,8 +455,8 @@ class PeersimEnv(ParallelEnv):
         w_o = 1  # Number of tasks offloaded is always 1
         w_l = q_l - w_o if 0 < q_l - w_o else 0
 
-        miu_l = source_node_info[STATE_PROCESSING_POWER_FIELD]
-        miu_o = target_node_worker_info["nodeProcessingPower"]
+        miu_l = source_processing_power
+        miu_o = target_processing_power
 
         # Compute Utility:
         U = self.UTILITY_REWARD * math.log(1 + w_l + w_o)
@@ -461,7 +467,7 @@ class PeersimEnv(ParallelEnv):
             1 + (self.PATH_LOSS_CONSTANT * math.pow(d_i_j, self.PATH_LOSS_EXPONENT) * self.TRANSMISSION_POWER) / (
                     self.BANDWIDTH * self.NORMALIZED_THERMAL_NOISE_POWER))
         t_c = 2 * w_o * self.AVERAGE_TASK_SIZE / r_i_j if d_i_j != 0 else 0
-        t_e = self.AVERAGE_TASK_INSTR * (w_l / self.AVERAGE_PROCESSING_POWER + w_o / self.AVERAGE_PROCESSING_POWER)
+        t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
         D = self.DELAY_WEIGHT * (t_w + t_c + t_e) / (w_l + w_o)
 
         # Compute Overload
@@ -469,9 +475,10 @@ class PeersimEnv(ParallelEnv):
         # q_prime_o = q_expected_o  # min(max(0, q_o - avg_tasks_processed_per_node) + w_o, self.AVERAGE_MAX_Q)
         # p_overload_l = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_l)
         # p_overload_o = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_o)
-        distance_to_Ovl_l = (self.AVERAGE_MAX_Q - q_expected_l + self.TASK_ARRIVAL_RATE) / self.AVERAGE_MAX_Q
-        distance_to_Ovl_o = (self.AVERAGE_MAX_Q - q_expected_o + self.TASK_ARRIVAL_RATE) / self.AVERAGE_MAX_Q
-        O = self.OVERLOAD_WEIGHT * math.log((distance_to_Ovl_l + distance_to_Ovl_o) / 2)  # I may need to remove
+
+        distance_to_Ovl_l = max((source_max_q - q_expected_l) / source_max_q, 0.0001)  # Normalized manhattan distance
+        distance_to_Ovl_o = max((target_max_q - q_expected_o) / target_max_q, 0.0001)  # 0.0001 is to avoid log(0)
+        O = -self.OVERLOAD_WEIGHT * math.log((distance_to_Ovl_l + distance_to_Ovl_o) / 2)  # I may need to remove
 
         # Capping the percentages to be between 100 and -100
         U = max(min(U, 100), -100) / 100
@@ -502,11 +509,15 @@ class PeersimEnv(ParallelEnv):
 
         return acc_task_size / acc_weights, acc_task_instr / acc_weights, task_arrival_rate
 
-    def _compute_average_worker_data(self):
+    def _compute_worker_data(self):
+        frequencies = [int(f) for f in self.config_archive["FREQS"].strip().split(",")]
+        no_cores = [int(c) for c in self.config_archive["NO_CORES"].strip().split(",")]
+        processing_power = [f * c for f, c in zip(frequencies, no_cores)]
+
         average_frequency = average_of_floats_in_string(self.config_archive["FREQS"])
         average_no_cores = average_of_ints_in_string(self.config_archive["NO_CORES"])
         average_max_Q = average_of_ints_in_string(self.config_archive["Q_MAX"])
-        return float(average_no_cores) * float(average_frequency), int(average_max_Q)
+        return float(average_no_cores) * float(average_frequency), int(average_max_Q), processing_power
 
     def _validateAction(self, original_obs, actions):
         failed = {}
@@ -541,3 +552,11 @@ class PeersimEnv(ParallelEnv):
     def set_random_seed(self):
         seed = cg.randomize_seed(self.config_path)
         self.config_archive["random.seed"] = seed
+
+    def get_layer(self, target_of_task):
+        acc = 0
+        for i in range(len(self.NODES_PER_LAYER)):
+            acc += self.NODES_PER_LAYER[i]
+            if target_of_task < acc:
+                return i
+        return -1
