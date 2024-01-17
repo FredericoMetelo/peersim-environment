@@ -107,7 +107,7 @@ public final class BaseDelayTransport implements Transport
             EDSimulator.add(1, msg, dest, pid);
             return;
         }
-        double numberOfBytes = 2 * msgSize;
+        double numberOfBytes = msgSize;
         double transmissionRate = srcProps.getBANDWIDTH() * Math.log(1 +
                 (getChannelGain(srcProps, dstProps) * srcProps.getTRANSMISSION_POWER())
                 / (srcProps.getBANDWIDTH() * SPECTRAL_NOISE_POWER)) ;

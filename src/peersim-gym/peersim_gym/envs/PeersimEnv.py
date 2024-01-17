@@ -441,14 +441,29 @@ class PeersimEnv(ParallelEnv):
         target_processing_power = self.PROCESSING_POWERS[target_layer]
         target_max_q = self.max_Q_size[target_layer]
 
+        if self.neighbourMatrix is None or len(self.neighbourMatrix) == 0:
+            print("Neighbour Matrix is empty or none. Setting ranks to 1")
+            source_rank = 1
+            target_rank = 1
+        else:
+            target_global_index = target_node_worker_info["id"]
+            source_rank = len(self.neighbourMatrix[source_of_task]) if self.get_layer(source_of_task) == 0 else 0
+            target_rank = len(self.neighbourMatrix[target_global_index]) if self.get_layer(target_global_index) == 0 else 0
+
         source_layer = self.get_layer(source_of_task)
         source_processing_power = self.PROCESSING_POWERS[source_layer]
         source_max_q = self.max_Q_size[source_layer]
 
         q_l = source_node_og_info["queueSize"]
         q_o = target_node_worker_info["queueSize"]
-        q_expected_l = source_node_info["queueSize"]
-        q_expected_o = q_o if locally_processed else q_o + 1  # Change to W_o for allowing multiple offloads
+
+        source_var = self.TASK_ARRIVAL_RATE - self.AVERAGE_TASK_INSTR/source_processing_power
+        target_var = self.TASK_ARRIVAL_RATE - self.AVERAGE_TASK_INSTR/target_processing_power
+        q_expected_l = q_l if locally_processed else max(q_l - 1, 0)
+        q_expected_o = q_o if locally_processed else q_o + 1
+
+        q_expected_l = max(min(q_expected_l + source_var, source_max_q), 0)
+        q_expected_o = max(min(q_expected_o + target_var, target_max_q), 0)
 
         d_i_j = agent_result[RESULT_DISTANCE_FIELD]
 
@@ -481,10 +496,11 @@ class PeersimEnv(ParallelEnv):
         O = -self.OVERLOAD_WEIGHT * math.log((distance_to_Ovl_l + distance_to_Ovl_o) / 2)  # I may need to remove
 
         # Capping the percentages to be between 100 and -100
-        U = max(min(U, 100), -100) / 100
-        D = max(min(D, 100), -100) / 100
-        O = max(min(O, 100),
-                -100) / 100  # TODO Confirm if the task arrival rate is correct. Because It may need to be 1/TASK_ARRIVAL_RATE
+        # U = max(min(U, 100), -100) / 100
+        # D = max(min(D, 100), -100) / 100
+        # O = max(min(O, 100), -100) / 100
+
+        # TODO Confirm if the task arrival rate is correct. Because It may need to be 1/TASK_ARRIVAL_RATE
 
         # computing reward and normalizing it
         reward = U - (D + O)

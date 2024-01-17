@@ -117,6 +117,9 @@ class PeersimVis(object):
         :return:
         """
         do_not_overrride = {}
+        if link_matrix is None:
+            print("Link matrix is None, cannot draw links skipping iteration")
+            return
         for i in range(len(link_matrix) - self.has_cloud):
             for j in range(len(link_matrix[i])):
                 source = i
