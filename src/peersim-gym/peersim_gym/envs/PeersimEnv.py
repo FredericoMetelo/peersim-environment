@@ -67,6 +67,7 @@ RESULT_DISTANCE_FIELD = "distance"
 RESULT_WORKER_INFO_FIELD = "wi"
 STATE_NODE_ID_FIELD = "nodeId"
 STATE_Q_FIELD = "Q"
+STATE_QSIZE_FIELD = "queueSize"
 STATE_PROCESSING_POWER_FIELD = "processingPower"
 
 
@@ -207,13 +208,16 @@ class PeersimEnv(ParallelEnv):
             self.simulator = PeersimThread(name=f'Run{self.__run_counter}', configs=self.config_path)
         # self.__gen_config(self.config_archive, regen_seed=True)
         self.__run_peersim()
-        while not self.__is_up():
+        time.sleep(0.5)
+        while not self.__is_up() or not self.__is_stopped():
             time.sleep(0.05)  # Good Solution? No... But it is what it is.
         print("Server is up")
 
-        self.min_neighbours, self.max_neighbours, self.avg_neighbours, self.neighbourMatrix = self.__get_net_data()
         self.has_cloud = int(self.config_archive["CLOUD_EXISTS"])
         observations, done, info = self.__get_obs()
+        self.poolNetStats()
+        observations = self.normalize_observations(observations)
+
         infos = {agent: {} for agent in self.agents}
 
         return observations, infos
@@ -232,6 +236,8 @@ class PeersimEnv(ParallelEnv):
 
         observations, done, info = self.__get_obs()
         rewards = self._compute_rewards(original_obs, observations, actions, result, mask)
+
+        observations = self.normalize_observations(observations)
 
         terminations = {agent: done for agent in self.agents}
         self.num_moves += 1
@@ -467,23 +473,23 @@ class PeersimEnv(ParallelEnv):
 
         d_i_j = agent_result[RESULT_DISTANCE_FIELD]
 
-        w_o = 1  # Number of tasks offloaded is always 1
-        w_l = q_l - w_o if 0 < q_l - w_o else 0
+        w_o = 1 if not locally_processed and 0 < q_l - 1 else 0
+        w_l = 1 if locally_processed else 0
 
         miu_l = source_processing_power
         miu_o = target_processing_power
 
         # Compute Utility:
-        U = self.UTILITY_REWARD * math.log(1 + w_l + w_o)
+        U = self.UTILITY_REWARD # * math.log(1 + w_l + w_o)
 
         # Compute Delay
-        t_w = not_zero(w_l) * (q_l / miu_l) + not_zero(w_o) * ((q_l / miu_l) + (q_o / miu_o))
+        t_w = not_zero(w_l) * (q_l / miu_l) + not_zero(w_o) * ((q_l / miu_l) + (q_o / miu_o))  # q_l/miu_l on the second term represents the time spent waiting in queue before being selected for offloading
         r_i_j = self.BANDWIDTH * math.log(
             1 + (self.PATH_LOSS_CONSTANT * math.pow(d_i_j, self.PATH_LOSS_EXPONENT) * self.TRANSMISSION_POWER) / (
                     self.BANDWIDTH * self.NORMALIZED_THERMAL_NOISE_POWER))
-        t_c = 2 * w_o * self.AVERAGE_TASK_SIZE / r_i_j if d_i_j != 0 else 0
+        t_c = w_o * self.AVERAGE_TASK_SIZE / r_i_j if d_i_j != 0 else 0 # This should also include a call back if that is the case, that was probably the reason for the 2
         t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
-        D = self.DELAY_WEIGHT * (t_w + t_c + t_e) / (w_l + w_o)
+        D =  (t_w + t_c + t_e) # / (w_l + w_o)
 
         # Compute Overload
         # q_prime_l = q_expected_l  # min(max(0, q_l - avg_tasks_processed_per_node) + w_l, self.AVERAGE_MAX_Q)
@@ -496,9 +502,9 @@ class PeersimEnv(ParallelEnv):
         O = -self.OVERLOAD_WEIGHT * math.log((distance_to_Ovl_l + distance_to_Ovl_o) / 2)  # I may need to remove
 
         # Capping the percentages to be between 100 and -100
-        # U = max(min(U, 100), -100) / 100
-        # D = max(min(D, 100), -100) / 100
-        # O = max(min(O, 100), -100) / 100
+        # U = max(min(U, self.UTILITY_REWARD), self.UTILITY_REWARD) / self.UTILITY_REWARD
+        D = max(min(D, self.DELAY_WEIGHT), -self.DELAY_WEIGHT) / self.DELAY_WEIGHT # Some people call this cheating, I call it not despairing -, _ ,-
+        O = max(min(O, self.OVERLOAD_WEIGHT), -self.OVERLOAD_WEIGHT) / self.OVERLOAD_WEIGHT
 
         # TODO Confirm if the task arrival rate is correct. Because It may need to be 1/TASK_ARRIVAL_RATE
 
@@ -534,6 +540,14 @@ class PeersimEnv(ParallelEnv):
         average_no_cores = average_of_ints_in_string(self.config_archive["NO_CORES"])
         average_max_Q = average_of_ints_in_string(self.config_archive["Q_MAX"])
         return float(average_no_cores) * float(average_frequency), int(average_max_Q), processing_power
+
+    def poolNetStats(self):
+        iter = 0
+        while self.neighbourMatrix is None or len(self.neighbourMatrix) == 0:
+            print(f"Pooling for net stats {iter}")
+            self.min_neighbours, self.max_neighbours, self.avg_neighbours, self.neighbourMatrix = self.__get_net_data()
+            iter += 1
+            time.sleep(0.05)
 
     def _validateAction(self, original_obs, actions):
         failed = {}
@@ -576,3 +590,40 @@ class PeersimEnv(ParallelEnv):
             if target_of_task < acc:
                 return i
         return -1
+
+    def normalize_observations(self, observations):
+        normalized_obs = {}
+        for agent in observations.keys():
+            obs = observations[agent]
+            normalized_obs[agent] = self.normalize_observation(obs)
+        return normalized_obs
+
+    def normalize_observation(self, obs):
+        normalized_obs = {}
+        id = obs[STATE_NODE_ID_FIELD]
+        normalized_obs[STATE_NODE_ID_FIELD] = id
+
+        # Normalize the queueSize
+        queueSize = obs[STATE_QSIZE_FIELD]
+        max_Q = self.max_Q_size[self.get_layer(id)]
+        queueSize = queueSize / max_Q
+        normalized_obs[STATE_QSIZE_FIELD] = queueSize
+
+        # Normalize the processing power
+        processingPower = obs[STATE_PROCESSING_POWER_FIELD]
+        processingPower = processingPower / self.AVERAGE_PROCESSING_POWER
+        normalized_obs[STATE_PROCESSING_POWER_FIELD] = processingPower
+
+        # Normalize the Q
+        Q = obs[STATE_Q_FIELD]
+        normalized_Q = []
+        for i in range(len(Q)):
+            neighbor_id = self.neighbourMatrix[id][i]
+            neighbor_layer = self.get_layer(neighbor_id)
+            n_max_Q = self.max_Q_size[neighbor_layer]
+            normalized_Q.append(Q[i] / n_max_Q)
+        normalized_obs[STATE_Q_FIELD] = normalized_Q
+        return normalized_obs
+        
+
+            

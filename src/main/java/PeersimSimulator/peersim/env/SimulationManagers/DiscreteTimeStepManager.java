@@ -240,9 +240,11 @@ public class DiscreteTimeStepManager implements CDProtocol {
     }
 
     public boolean isUp() {
+        mngDbgLog("isUp: " + up);
         return up;
     }
     public boolean isStable() {
+        mngDbgLog("isStable: " + stop);
         return stop;
     }
 
