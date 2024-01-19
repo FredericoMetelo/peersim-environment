@@ -101,7 +101,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
         this.name = prefix;
         pid = Configuration.getPid(prefix + "." + PAR_NAME);
         up = false;
-        stop = true;
+        stop = false;
         DELAY_WEIGHT = Configuration.getInt(prefix + "." + PAR_DELAY_WEIGHT, 1);
         OVERLOAD_WEIGHT = Configuration.getInt(prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
         UTILITY_REWARD = Configuration.getInt(prefix + "." + PAR_UTILITY_REWARD, 1);

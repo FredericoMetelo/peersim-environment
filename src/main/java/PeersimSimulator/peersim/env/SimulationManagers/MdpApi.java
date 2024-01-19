@@ -42,6 +42,7 @@ public class MdpApi implements Control {
 
     @GetMapping("/state")
     public Information getState() {
+        System.out.println("Getting state");
         DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
         if (CommonState.POST_SIMULATION == CommonState.getPhase()) {
             return new Information(lastInfo.state(), true, lastInfo.info());
@@ -71,6 +72,7 @@ public class MdpApi implements Control {
     @GetMapping("/up")
     public boolean isUp(){
         if(Network.get(0) == null) return false;
+        System.err.println("Checking up");
         DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
         return !(CommonState.getPhase() == CommonState.POST_SIMULATION) && c.isUp();
     }
@@ -78,11 +80,14 @@ public class MdpApi implements Control {
     @GetMapping("/stopped")
     public boolean isStopped(){
         if(Network.get(0) == null) return false;
+        System.err.println("Checking stopped");
         DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
         return !(CommonState.getPhase() == CommonState.POST_SIMULATION) && !c.isStable();
     }
     @GetMapping("/NeighbourData")
     public NetworkData getNeighbourData(){
+        if(Network.get(0) == null) return null;
+        System.err.println("Checking neighbourData");
         DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
         return c.getNeighbourData();
     }
