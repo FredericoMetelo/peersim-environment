@@ -492,6 +492,9 @@ class PeersimEnv(ParallelEnv):
         w_o = 1 if not locally_processed and 0 < q_l - 1 else 0
         w_l = 1 if locally_processed else 0
 
+        if w_l == 0 and w_o == 0:
+            return -self.UTILITY_REWARD, {"U": -self.UTILITY_REWARD, "D": 0, "O": 0}
+
         miu_l = source_processing_power
         miu_o = target_processing_power
 
