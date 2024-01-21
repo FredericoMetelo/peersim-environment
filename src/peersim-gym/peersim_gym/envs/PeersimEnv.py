@@ -240,6 +240,8 @@ class PeersimEnv(ParallelEnv):
             time.sleep(0.05)
 
         observations, done, info = self.__get_obs()
+
+
         rewards = self._compute_rewards(original_obs, observations, actions, result, mask)
 
         observations = self.normalize_observations(observations)
@@ -318,7 +320,16 @@ class PeersimEnv(ParallelEnv):
         space_url = self.url_api + self.url_state_path
         headers_state = {"Accept": "application/json", "Connection": "keep-alive"}
         try:
-            s = requests.get(space_url, headers=headers_state, timeout=self.default_timeout).json()
+            iter = 0
+            r = requests.get(space_url, headers=headers_state, timeout=self.default_timeout)
+            while r.status_code < 200 or r.status_code >= 300: # Most likely only 200 will be returned, but I'm paranoid
+                r = requests.get(space_url, headers=headers_state, timeout=self.default_timeout)
+                iter += 1
+                if iter > 100:
+                    print("Failed to get observation, connection timed out. Returning old reward.")
+                    raise Exception("Failed to get observation after 100 tries, environment is down.")
+                time.sleep(0.1)
+            s = r.json()
             full_obs = s.get('state')
             global_obs = full_obs.get('globalState')
             partial_obs = full_obs.get('observedState')
@@ -504,7 +515,7 @@ class PeersimEnv(ParallelEnv):
 
         distance_to_Ovl_l = max((source_max_q - q_expected_l) / source_max_q, 0.0001)  # Normalized manhattan distance
         distance_to_Ovl_o = max((target_max_q - q_expected_o) / target_max_q, 0.0001)  # 0.0001 is to avoid log(0)
-        O = -self.OVERLOAD_WEIGHT * math.log((distance_to_Ovl_l + distance_to_Ovl_o) / 2)  # I may need to remove
+        O = -self.OVERLOAD_WEIGHT * math.log((w_l * distance_to_Ovl_l + w_o * distance_to_Ovl_o))  # I may need to remove
 
         # Capping the percentages to be between 100 and -100
         # U = max(min(U, self.UTILITY_REWARD), self.UTILITY_REWARD) / self.UTILITY_REWARD
