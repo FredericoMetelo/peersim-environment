@@ -617,7 +617,7 @@ class PeersimEnv(ParallelEnv):
             normalized_obs[agent] = self.normalize_observation(obs)
         return normalized_obs
 
-    def normalize_observation(self, obs):
+    def normalize_observation(self, obs, padding=True):
         normalized_obs = {}
         id = obs[STATE_NODE_ID_FIELD]
         normalized_obs[STATE_NODE_ID_FIELD] = id
@@ -641,8 +641,7 @@ class PeersimEnv(ParallelEnv):
             neighbor_layer = self.get_layer(neighbor_id)
             n_max_Q = self.max_Q_size[neighbor_layer]
             normalized_Q.append(Q[i] / n_max_Q)
+        if padding:
+            normalized_Q += [-1 for _ in range(len(Q), self.number_nodes)]
         normalized_obs[STATE_Q_FIELD] = normalized_Q
         return normalized_obs
-        
-
-            
