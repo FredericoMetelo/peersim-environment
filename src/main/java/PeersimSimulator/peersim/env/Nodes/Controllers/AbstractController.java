@@ -255,7 +255,9 @@ public abstract class AbstractController implements Controller {
                 new Coordinates(props.getX(), props.getY()),
                 this.computeDistancesToNeighbours(),
                 props.getBANDWIDTH(),
-                l);
+                l,
+                (this.workerInfo == null || this.workerInfo.isEmpty())? 0 : this.workerInfo.size()
+        );
     }
 
     @Override
