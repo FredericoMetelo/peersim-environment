@@ -1,4 +1,4 @@
-random.seed 77298672944138056591821949408815949840623053026555696298093218574720078755
+random.seed 68589318352820511536277177806386335687457
 SIZE 30
 CYCLE 1
 CYCLES 1000
@@ -20,7 +20,7 @@ init.Net1.r 50
 protocol.mng.r_u 2
 protocol.mng.X_d 20
 protocol.mng.X_o 150
-protocol.mng.cycle 5
+protocol.mng.cycle 1
 protocol.clt.numberOfTasks 1
 protocol.clt.weight 1
 protocol.clt.CPI 1

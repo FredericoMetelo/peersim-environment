@@ -12,7 +12,9 @@ public record PartialState(
         Coordinates position,
         List<Double> distancesToNeighbours,
         double bandwidth,
-        List<Double> transmissionPower
+        List<Double> transmissionPower,
+
+        int numberOfNeighbours
 ) {
 
 }

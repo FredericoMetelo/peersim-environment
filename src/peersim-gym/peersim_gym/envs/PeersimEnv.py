@@ -15,6 +15,8 @@ from peersim_gym.envs.Utils.PeersimVis import PeersimVis
 import socket
 from contextlib import closing
 
+STATE_NO_NEIGHBOURS = "numberOfNeighbours"
+
 STATE_G_LAYERS = "layers"
 
 STATE_G_OVERLOADED_NODES = "overloadedNodes"
@@ -241,7 +243,6 @@ class PeersimEnv(ParallelEnv):
 
         observations, done, info = self.__get_obs()
 
-
         rewards = self._compute_rewards(original_obs, observations, actions, result, mask)
 
         observations = self.normalize_observations(observations)
@@ -457,7 +458,7 @@ class PeersimEnv(ParallelEnv):
 
         # Check if the target node is within [0, #Neighbours]
         if int(len(source_node_og_info["Q"])) < int(target_of_task) or int(target_of_task) < 0:
-            return -self.UTILITY_REWARD, {"U": -1, "D": 0, "O": 0}
+            return -self.UTILITY_REWARD, {"U": -self.UTILITY_REWARD, "D": 0, "O": 0}
 
         target_layer = self.get_layer(target_of_task)
         target_processing_power = self.PROCESSING_POWERS[target_layer]
@@ -492,8 +493,8 @@ class PeersimEnv(ParallelEnv):
         w_o = 1 if not locally_processed and 0 < q_l - 1 else 0
         w_l = 1 if locally_processed else 0
 
-        if w_l == 0 and w_o == 0:
-            return -self.UTILITY_REWARD, {"U": -self.UTILITY_REWARD, "D": 0, "O": 0}
+        if w_l == 0 and w_o == 0: # queue is empty, nothing to do, no penalty or reward given.
+            return 0, {"U": 0, "D": 0, "O": 0}
 
         miu_l = source_processing_power
         miu_o = target_processing_power
@@ -632,6 +633,9 @@ class PeersimEnv(ParallelEnv):
         processingPower = obs[STATE_PROCESSING_POWER_FIELD]
         processingPower = processingPower / self.AVERAGE_PROCESSING_POWER
         normalized_obs[STATE_PROCESSING_POWER_FIELD] = processingPower
+
+        number_of_neighbours = obs[STATE_NO_NEIGHBOURS]
+        normalized_obs[STATE_NO_NEIGHBOURS] = int(number_of_neighbours)
 
         # Normalize the Q
         Q = obs[STATE_Q_FIELD]
