@@ -494,7 +494,7 @@ class PeersimEnv(ParallelEnv):
         w_l = 1 if locally_processed else 0
 
         if w_l == 0 and w_o == 0: # queue is empty, nothing to do, no penalty or reward given.
-            return 0, {"U": 0, "D": 0, "O": 0}
+            return 0, {"U": 0, "D": 0, "O": 0} # TODO make this maximum reward, as the action itself is not something bad.
 
         miu_l = source_processing_power
         miu_o = target_processing_power
