@@ -215,6 +215,7 @@ class PeersimEnv(ParallelEnv):
         tries = 0
         while not up or not stopped:
             time.sleep(0.5)
+            print("Attempting to connect to the environment")
             up = self.__is_up()
             stopped = self.__is_stopped()
             tries += 1

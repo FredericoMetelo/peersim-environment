@@ -40,6 +40,7 @@ PEERSIM_DEFAULTS = {
     "protocol.clt.T": "150",
     "protocol.clt.I": "4e7",
     "protocol.clt.taskArrivalRate": "0.6",
+    "protocol.clt.layersThatGetTasks": "0",
 
     "protocol.clt.numberOfDAG": "1",
     "protocol.clt.dagWeights": "1",
