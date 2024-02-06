@@ -32,6 +32,9 @@ protocol.clt.dagWeights 1
 protocol.clt.edges 
 protocol.clt.minDeadline 100
 protocol.clt.vertices 1
+
+protocol.clt.layersThatGetTasks 0,1
+
 protocol.props.B 2
 protocol.props.Beta1 0.001
 protocol.props.Beta2 4

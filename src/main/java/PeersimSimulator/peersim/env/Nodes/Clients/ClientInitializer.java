@@ -25,7 +25,6 @@ public class ClientInitializer  implements Control {
      * @config
      */
     private static final String PAR_PROT = "protocol";
-
     // ------------------------------------------------------------------------
     // Fields
     // ------------------------------------------------------------------------

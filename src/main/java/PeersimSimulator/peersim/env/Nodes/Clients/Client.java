@@ -20,6 +20,9 @@ public interface Client extends CDProtocol, EDProtocol {
     String PAR_NAME = "name";
     String PAR_BYTE_SIZE = "T";
 
+    String PAR_LAYERS_THAT_GET_TASKS = "layersThatGetTasks";
+
+
     // DEFAULT VALUES ==========================================================
 
     String DEFAULT_TASK_SIZE = "500";

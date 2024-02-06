@@ -40,6 +40,9 @@ public abstract class AbstractClient implements Client {
     protected final int numberOfTasks;
     protected final double TASK_ARRIVAL_RATE;
 
+    private int[] layersThatGetTasks;
+
+
     // 0.10 % chance of new task being sent to worker per time tick.
     // Assuming poisson process therefore no change!
     protected int id;
@@ -59,6 +62,8 @@ public abstract class AbstractClient implements Client {
         String[] _layers = Configuration.getString(WorkerInitializer.PAR_NO_NODES_PER_LAYERS).split(",");
         layers = Arrays.stream(_layers).mapToInt(Integer::parseInt).toArray();
 
+        String[] _layersThatGetTasks = Configuration.getString(prefix + "." + PAR_LAYERS_THAT_GET_TASKS).split(",");
+        layersThatGetTasks = Arrays.stream(_layersThatGetTasks).mapToInt(Integer::parseInt).toArray();
 
         getTaskMetadata(prefix);
     }
@@ -114,7 +119,7 @@ public abstract class AbstractClient implements Client {
 
         for (int i = 0; i < linkable.degree(); i++) {
             if (nextArrival.get(i) <= CommonState.getTime()
-                    && ((Worker) linkable.getNeighbor(i).getProtocol(Worker.getPid())).getLayer() == 0) { // Not sure of the legality of this...
+                    && canGetTasks(((Worker) linkable.getNeighbor(i).getProtocol(Worker.getPid())).getLayer())) { // Not sure of the legality of this...
                 Node target = linkable.getNeighbor(i);
                 if (!target.isUp()) continue; // This happens task progress is lost.
                 Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
@@ -221,6 +226,10 @@ public abstract class AbstractClient implements Client {
 
     public double getAverageTaskCompletionTime() {
         return averageLatency;
+    }
+
+    private boolean canGetTasks(int layer) {
+        return Arrays.stream(layersThatGetTasks).anyMatch(i -> i == layer);
     }
 
     @Override
