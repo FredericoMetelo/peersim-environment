@@ -25,6 +25,10 @@ STATE_G_OCCUPANCY = "occupancy"
 
 STATE_G_AVERAGE_COMPLETION_TIMES = "averageCompletionTimes"
 STATE_G_Q = "true_Q"
+STATE_G_DROPPED_TASKS = "droppedTasks"
+STATE_G_FINISHED_TASKS = "finishedTasks"
+STATE_G_TOTAL_TASKS = "totalTasks"
+
 
 AGENT_PREFIX = "worker_"
 
@@ -347,7 +351,10 @@ class PeersimEnv(ParallelEnv):
                 STATE_G_Q: global_obs[STATE_Q_FIELD],
                 STATE_G_OVERLOADED_NODES: extracted_data[0],
                 STATE_G_OCCUPANCY: extracted_data[1],
-                STATE_G_AVERAGE_COMPLETION_TIMES: extracted_data[2]
+                STATE_G_AVERAGE_COMPLETION_TIMES: extracted_data[2],
+                STATE_G_DROPPED_TASKS: extracted_data[3],
+                STATE_G_FINISHED_TASKS: extracted_data[4],
+                STATE_G_TOTAL_TASKS: extracted_data[5]
             }
 
             self._info = dbg_info
@@ -597,7 +604,12 @@ class PeersimEnv(ParallelEnv):
         occupancy = [q / self.max_Q_size[mq] for q, mq in zip(Q, layers)]
         # Get the average response time.
         response_time = global_obs[STATE_G_AVERAGE_COMPLETION_TIMES]
-        return overloaded_nodes, occupancy, response_time
+
+        dropped_tasks = global_obs[STATE_G_DROPPED_TASKS]
+        finished_tasks = global_obs[STATE_G_FINISHED_TASKS]
+        total_tasks = global_obs[STATE_G_TOTAL_TASKS]
+
+        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks
 
     def set_random_seed(self):
         seed = cg.randomize_seed(self.config_path)

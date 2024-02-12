@@ -10,6 +10,7 @@ import PeersimSimulator.peersim.env.Nodes.Events.NewApplicationEvent;
 import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 import PeersimSimulator.peersim.env.Nodes.Workers.WorkerInitializer;
 import PeersimSimulator.peersim.env.Tasks.Application;
+import PeersimSimulator.peersim.env.Tasks.Task;
 import PeersimSimulator.peersim.env.Util.Log;
 import PeersimSimulator.peersim.transport.Transport;
 
@@ -40,7 +41,7 @@ public abstract class AbstractClient implements Client {
     protected final int numberOfTasks;
     protected final double TASK_ARRIVAL_RATE;
 
-    private int[] layersThatGetTasks;
+    private final int[] layersThatGetTasks;
 
 
     // 0.10 % chance of new task being sent to worker per time tick.
@@ -50,6 +51,9 @@ public abstract class AbstractClient implements Client {
      * List with Ids of the tasks awaiting response.
      */
     List<AppInfo> tasksAwaiting;
+    private int tasksCompleted;
+    private int totalTasks;
+    private int droppedTasks;
 
     public AbstractClient(String prefix) {
         pid = Configuration.getPid(prefix + "."+PAR_NAME ); //
@@ -64,6 +68,10 @@ public abstract class AbstractClient implements Client {
 
         String[] _layersThatGetTasks = Configuration.getString(prefix + "." + PAR_LAYERS_THAT_GET_TASKS).split(",");
         layersThatGetTasks = Arrays.stream(_layersThatGetTasks).mapToInt(Integer::parseInt).toArray();
+
+        tasksCompleted = 0;
+        droppedTasks = 0;
+        totalTasks = 0;
 
         getTaskMetadata(prefix);
     }
@@ -125,6 +133,7 @@ public abstract class AbstractClient implements Client {
                 Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
                 Application app = generateApplication((int) target.getID());
                 tasksAwaiting.add(new AppInfo(app.getAppID(), CommonState.getTime(), app.getDeadline()));
+                totalTasks++;
                 cltInfoLog(EVENT_TASK_SENT, "target=" + wi.getId());
                 ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                         send(
@@ -137,6 +146,25 @@ public abstract class AbstractClient implements Client {
                 nextArrival.set(i, CommonState.getTime() + selectNextTime());
             }
         }
+        droppedTasks += cleanUpTasks();
+        // Note: This is not the best way to do this. It's O(n), n is the number of tasksAwaiting. A better solution
+        // might be to clean up dropped tasks whenever a task completes. Because tasksAwaiting is a list, the older tasks
+        // will be at the start of the list and the newer ones at the end. So by cleaning up the start of the list we
+        // will get the benefits of making the tasksAwaiting list smaller and also get the droppedTasks count.
+    }
+
+    private int cleanUpTasks() {
+        int dropped = 0;
+        long now = CommonState.getTime();
+        Iterator<AppInfo> it = tasksAwaiting.iterator();
+        while (it.hasNext()) {
+            AppInfo t = it.next();
+            if (t.timeSent + t.deadline < now) {
+                it.remove();
+                dropped++;
+            }
+        }
+        return dropped;
     }
 
     protected int pickTaskType() { // Btw variable is a randDouble not a randInt
@@ -157,6 +185,7 @@ public abstract class AbstractClient implements Client {
                     AppInfo t = tasksAwaiting.remove(i);
                     long timeTaken = endTick - t.timeSent;
                     averageLatency = (averageLatency * noResults + timeTaken) / (++noResults);
+                    tasksCompleted++;
                     cltInfoLog(EVENT_TASK_CONCLUDED, "taskId=" + ev.getTaskId() + " finTime=" + ev.getTickConcluded() + "handlerId=" + ev.getHandlerId());
                     return;
                 }
@@ -175,7 +204,8 @@ public abstract class AbstractClient implements Client {
 
              Note: The task arrival rate of this poisson process is lambda.
          */
-        return (long) (-Math.log(CommonState.r.nextDouble()) / TASK_ARRIVAL_RATE);
+        long time = (long) (-Math.log(CommonState.r.nextDouble()) / TASK_ARRIVAL_RATE);
+        return time;
     }
 
     private void initTaskManagement(int degree) {
@@ -252,6 +282,21 @@ public abstract class AbstractClient implements Client {
 
     }
 
+    @Override
+    public int getTasksCompleted() {
+        return tasksCompleted;
+    }
+
+    @Override
+    public int getTotalTasks() {
+        return totalTasks;
+    }
+
+    @Override
+    public int getDroppedTasks() {
+        return droppedTasks;
+    }
+
     public void cltDbgLog(String msg) {
         Log.logDbg("CLT", this.id, "DEBUG", msg);
     }
@@ -269,6 +314,7 @@ public abstract class AbstractClient implements Client {
         public AppInfo(String id, long timeSent, double deadline) {
             this.id = id;
             this.timeSent = timeSent;
+            this.deadline = deadline;
         }
 
     }

@@ -51,7 +51,7 @@ public class ClientInitializer  implements Control {
     // Methods
     // ------------------------------------------------------------------------
 
-    /**Wotv
+    /**
      * Initialize an aggregation protocol using a peak distribution.
      * That is, one node will get the peek value, the others zero.
      * @return always false

@@ -72,4 +72,10 @@ public interface Client extends CDProtocol, EDProtocol {
     double getAverageTaskCompletionTime();
     @Override
     String toString();
+
+    int getTotalTasks();
+
+    int getTasksCompleted();
+
+    int getDroppedTasks();
 }

@@ -11,6 +11,9 @@ public record GlobalState(
         List<Coordinates> positions,
         List<Double> bandwidths,
         List<Double> transmissionPowers,
-        List<Double> averageCompletionTimes
+        List<Double> averageCompletionTimes,
+        List<Integer> droppedTasks,
+        List<Integer> finishedTasks,
+        List<Integer> totalTasks
 ) {
 }
