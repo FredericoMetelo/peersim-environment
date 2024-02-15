@@ -75,6 +75,7 @@ STATE_NODE_ID_FIELD = "nodeId"
 STATE_Q_FIELD = "Q"
 STATE_QSIZE_FIELD = "queueSize"
 STATE_PROCESSING_POWER_FIELD = "processingPower"
+STATE_FREE_SPACES_FIELD = "freeSpaces"
 
 
 def can_launch_simulation():
@@ -139,6 +140,7 @@ class PeersimEnv(ParallelEnv):
                 {
                     STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
                     STATE_Q_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
+                    STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
                     STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
                 }
             ) for agent in self.possible_agents
@@ -190,6 +192,7 @@ class PeersimEnv(ParallelEnv):
             {
                 STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
                 STATE_Q_FIELD: MultiDiscrete(self.q_list),
+                STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list),
                 STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
             }
         )
@@ -651,13 +654,19 @@ class PeersimEnv(ParallelEnv):
 
         # Normalize the Q
         Q = obs[STATE_Q_FIELD]
+        FS = obs[STATE_FREE_SPACES_FIELD]
         normalized_Q = []
+        normalized_free_spaces = []
         for i in range(len(Q)):
             neighbor_id = self.neighbourMatrix[id][i]
             neighbor_layer = self.get_layer(neighbor_id)
             n_max_Q = self.max_Q_size[neighbor_layer]
             normalized_Q.append(Q[i] / n_max_Q)
+            normalized_free_spaces.append(FS[i] / n_max_Q)
+            assert ((n_max_Q - Q[i]) / n_max_Q == FS[i] / n_max_Q, f"Mismatch: Neighbor {neighbor_id} has Q: {Q[i]} and FS: {FS[i]}")
         if padding:
             normalized_Q += [-1 for _ in range(len(Q), self.number_nodes)]
+            normalized_free_spaces += [-1 for _ in range(len(Q), self.number_nodes)]
         normalized_obs[STATE_Q_FIELD] = normalized_Q
+        normalized_obs[STATE_FREE_SPACES_FIELD] = normalized_free_spaces
         return normalized_obs

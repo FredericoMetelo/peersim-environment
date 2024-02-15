@@ -132,6 +132,7 @@ public abstract class AbstractController implements Controller {
                 oldWi.setAverageTaskSize(newWi.getAverageTaskSize());
                 oldWi.setLayer(newWi.getLayer());
                 oldWi.setLastKnownPosition(newWi.getLastKnownPosition());
+                oldWi.setFreeTaskSlots(newWi.getFreeTaskSlots());
                 nodeUpdateEventList.addLast(oldWi.getId());
                 return;
             }
@@ -213,7 +214,10 @@ public abstract class AbstractController implements Controller {
         updateThisNodeInfo();
         return this.workerInfo.stream().map(WorkerInfo::getTotalTasks).toList();
     }
-
+    private List<Integer> getKnownFreeSpaceNeighbours() {
+        updateThisNodeInfo();
+        return this.workerInfo.stream().map(WorkerInfo::getFreeTaskSlots).toList();
+    }
     /**
      * This method moves the current node to the first position of the list. This is allows the agent to always find the node in the correct position and avoids mistakes
      */
@@ -224,7 +228,7 @@ public abstract class AbstractController implements Controller {
         }
         for (int i = 0; i < this.workerInfo.size(); i++) {
             if (this.workerInfo.get(i).getId() == this.getId()) {
-                WorkerInfo wi = this.workerInfo.get(i);
+                WorkerInfo wi = this.correspondingWorker.compileWorkerInfo();
                 this.workerInfo.remove(i);
                 this.workerInfo.add(0, wi);
                 return;
@@ -249,6 +253,7 @@ public abstract class AbstractController implements Controller {
         return new PartialState(this.getId(),
                 this.correspondingWorker.getTotalNumberOfTasksInNode(),
                 this.getQ(),
+                this.getKnownFreeSpaceNeighbours(),
                 correspondingWorker.getProcessingPower(),
                 correspondingWorker.getAverageWaitingTime(),
                 correspondingWorker.getLayer(),

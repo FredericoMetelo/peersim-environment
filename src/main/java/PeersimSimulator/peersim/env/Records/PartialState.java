@@ -6,6 +6,7 @@ public record PartialState(
         int nodeId,
         int queueSize,
         List<Integer> Q,
+        List<Integer> freeSpaces,
         double processingPower,
         double averageWaitingTime,
         int layer,
