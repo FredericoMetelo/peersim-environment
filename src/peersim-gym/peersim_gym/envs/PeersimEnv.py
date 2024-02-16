@@ -532,8 +532,8 @@ class PeersimEnv(ParallelEnv):
         # Capping the percentages to be between 100 and -100
         # U = max(min(U, self.UTILITY_REWARD), self.UTILITY_REWARD) / self.UTILITY_REWARD
         # Some people call this cheating, I call it not despairing -, _ ,-.
-        D = max(min(D, self.DELAY_WEIGHT), -self.DELAY_WEIGHT) / self.DELAY_WEIGHT * (self.UTILITY_REWARD / 2) # They call it maaaaagic, maaaaagic ~ (This comment was written by codepilot)
-        O = (max(min(O, self.OVERLOAD_WEIGHT), -self.OVERLOAD_WEIGHT) / self.OVERLOAD_WEIGHT) * self.UTILITY_REWARD
+        D = max(min(D, self.DELAY_WEIGHT), -self.DELAY_WEIGHT) / self.DELAY_WEIGHT * self.UTILITY_REWARD
+        O = (max(min(O, self.OVERLOAD_WEIGHT), -self.OVERLOAD_WEIGHT) / self.OVERLOAD_WEIGHT) * self.UTILITY_REWARD * 3
 
         # computing reward and normalizing it
         reward = U - (D + O)
