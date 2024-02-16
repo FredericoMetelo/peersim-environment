@@ -163,6 +163,7 @@ public abstract class AbstractWorker implements Worker {
         int linkableID = FastConfig.getLinkable(protocolID);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
         wrkInfoLog(EVENT_WORKER_INFO_SEND, "Q_size=" + this.queue.size() + " rcv_Apps=" + this.recievedApplications.size() + " working=" + !(current == null));
+        WorkerInfo wi = this.compileWorkerInfo();
         for (int i = 0; i < linkable.degree(); i++) {
             Node controller = linkable.getNeighbor(i);
             if (!controller.isUp()) {
@@ -173,7 +174,7 @@ public abstract class AbstractWorker implements Worker {
                     send(
                             node,
                             controller,
-                            compileWorkerInfo(),
+                            wi,
                             Controller.getPid()
                     );
         }
@@ -412,7 +413,7 @@ public abstract class AbstractWorker implements Worker {
 
     @Override
     public WorkerInfo compileWorkerInfo() {
-        return new WorkerInfo(this.id, this.getTotalNumberOfTasksInNode(), this.unprocessedTasksInApps(), averageTaskSize(), processingPower, qMAX - this.getTotalNumberOfTasksInNode(), this.getLayer(), this.getProps().getCoordinates());
+        return new WorkerInfo(this.id, this.queue.size(), this.unprocessedTasksInApps(), averageTaskSize(), processingPower, qMAX - this.getTotalNumberOfTasksInNode(), this.getLayer(), this.getProps().getCoordinates());
 
     }
 
@@ -501,7 +502,7 @@ public abstract class AbstractWorker implements Worker {
 
     @Override
     public int unprocessedTasksInApps() {
-        return this.recievedApplications.stream().map(Application::applicationSize).reduce(0, Integer::sum);
+        return toAddSize; // this.recievedApplications.stream().map(Application::applicationSize).reduce(0, Integer::sum);
     }
 
     @Override
