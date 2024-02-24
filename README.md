@@ -164,6 +164,9 @@ conda activate PeersimGym
 To install the Peersim Module we will have to add the local PeersimGym module to conda in development mode. In a terminal go from project root to `src/peersim-gym` then execute the following command:
 ```
 conda develop . -n PeersimGym
+
+Note: In latter versions of Conda, the conda-develop seems to have been removed, as it was deprecated for almost 2 years. Use pip instead:
+pip install --no-build-isolation --no-deps -e .
 ```
 <a name="Utilizing"></a>
 ## Utilizing the Environment

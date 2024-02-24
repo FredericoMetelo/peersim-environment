@@ -150,7 +150,6 @@ public abstract class AbstractWorker implements Worker {
             ITask finishedTask = ev.getTask();
             handleTaskConcludedEvent(node, pid, finishedTask);
         }
-
         // Note: Updates internal state only sends data to user later
     }
 

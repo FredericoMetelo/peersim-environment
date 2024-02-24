@@ -41,9 +41,20 @@ public class WorkerInitializer implements Control {
     public final double[] variations;
     private static final String PAR_VARIATIONS = "VARIATIONS";
 
+    private final boolean manualConfig;
+    private static final String PAR_MANUAL_CONFIG = "MANUAL_CONFIG";
+    private static final String PAR_MANUAL_CORES = "MANUAL_CORES";
+    private static final String PAR_MANUAL_FREQS = "MANUAL_FREQS";
+    private static final String PAR_MANUAL_QMAX = "MANUAL_QMAX";
+
+
+
+
+
 
     public int hasCloud;
     private static final String PAR_HAS_CLOUD = "CLOUD_EXISTS";
+
 
 
     // ------------------------------------------------------------------------
@@ -62,33 +73,61 @@ public class WorkerInitializer implements Control {
      */
     public WorkerInitializer(String prefix) {
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
+        manualConfig = Configuration.contains(PAR_MANUAL_CONFIG);
+        int size;
+        if(!manualConfig) {
+            size = Configuration.getInt(PAR_NETWORK_SIZE);
+            noLayers = Configuration.getInt(PAR_NO_LAYERS, 1);
+            hasCloud = Configuration.getInt(PAR_HAS_CLOUD, 0);
+            String[] _NO_NODES_PER_LAYERS = Configuration.getString(PAR_NO_NODES_PER_LAYERS, Integer.toString(size)).split(",");
+
+            String[] _CPU_FREQ = Configuration.getString(PAR_CPU_FREQ, "1e7").split(",");
+            String[] _CPU_NO_CORES = Configuration.getString(PAR_CPU_NO_CORES, "4").split(",");
+            String[] _Q_MAX = Configuration.getString(PAR_Q_MAX, "10").split(",");
+            String[] _VARIATIONS = Configuration.getString(PAR_VARIATIONS, "0").split(",");
+
+            numberOfNodesPerLayer = Arrays.stream(_NO_NODES_PER_LAYERS).mapToInt(Integer::parseInt).toArray();
+            coresPerLayer = Arrays.stream(_CPU_NO_CORES).mapToInt(Integer::parseInt).toArray();
+            cpuFreqsPerLayer = Arrays.stream(_CPU_FREQ).mapToDouble(Double::parseDouble).toArray();
+            qmaxPerLayer = Arrays.stream(_Q_MAX).mapToInt(Integer::parseInt).toArray();
+            variations = Arrays.stream(_VARIATIONS).mapToDouble(Double::parseDouble).toArray();
 
 
-        int size = Configuration.getInt(PAR_NETWORK_SIZE);
-        noLayers = Configuration.getInt(PAR_NO_LAYERS, 1);
-        hasCloud = Configuration.getInt(PAR_HAS_CLOUD, 0);
-        String[] _NO_NODES_PER_LAYERS = Configuration.getString(PAR_NO_NODES_PER_LAYERS, Integer.toString(size)).split(",");
+        }else {
+            hasCloud = 0; // No cloud supported in this mode yet.
+            String[] _MANUAL_CORES = Configuration.getString(PAR_MANUAL_CORES).split(";");
+            String[] _MANUAL_FREQS = Configuration.getString(PAR_MANUAL_FREQS).split(";");
+            String[] _MANUAL_QMAX = Configuration.getString(PAR_MANUAL_QMAX).split(";");
 
-        String[] _CPU_FREQ = Configuration.getString(PAR_CPU_FREQ, "1e7").split(",");
-        String[] _CPU_NO_CORES = Configuration.getString(PAR_CPU_NO_CORES, "4").split(",");
-        String[] _Q_MAX = Configuration.getString(PAR_Q_MAX, "10").split(",");
-        String[] _VARIATIONS = Configuration.getString(PAR_VARIATIONS, "0").split(",");
+            size = _MANUAL_CORES.length;
+            noLayers = _MANUAL_CORES.length;
+            numberOfNodesPerLayer = new int[noLayers];
+            coresPerLayer = new int[noLayers];
+            cpuFreqsPerLayer = new double[noLayers];
+            qmaxPerLayer = new int[noLayers];
+            variations = new double[noLayers];
+            for (int i = 0; i < noLayers; i++) {
+                int core = Integer.parseInt(_MANUAL_CORES[i]);
+                double freq = Double.parseDouble(_MANUAL_FREQS[i]);
+                int qmax = Integer.parseInt(_MANUAL_QMAX[i]);
+                numberOfNodesPerLayer[i] = core;
+                coresPerLayer[i] = core;
+                cpuFreqsPerLayer[i] = freq;
+                qmaxPerLayer[i] = qmax;
+                variations[i] = 0;
+            }
+        }
 
-        numberOfNodesPerLayer = Arrays.stream(_NO_NODES_PER_LAYERS).mapToInt(Integer::parseInt).toArray();
-        coresPerLayer = Arrays.stream(_CPU_NO_CORES).mapToInt(Integer::parseInt).toArray();
-        cpuFreqsPerLayer  = Arrays.stream(_CPU_FREQ).mapToDouble(Double::parseDouble).toArray();
-        qmaxPerLayer = Arrays.stream(_Q_MAX).mapToInt(Integer::parseInt).toArray();
-        variations = Arrays.stream(_VARIATIONS).mapToDouble(Double::parseDouble).toArray();
-
-        if((Arrays.stream(numberOfNodesPerLayer).sum() + hasCloud) != (size + hasCloud)
-            || (noLayers != numberOfNodesPerLayer.length && Arrays.stream(numberOfNodesPerLayer).noneMatch(i -> i == 0) )
-            || (noLayers != cpuFreqsPerLayer.length && Arrays.stream(cpuFreqsPerLayer).noneMatch(i -> i == 0) )
-            || (noLayers != coresPerLayer.length && Arrays.stream(coresPerLayer).noneMatch(i -> i == 0) )
-            || (noLayers != qmaxPerLayer.length && Arrays.stream(qmaxPerLayer).noneMatch(i -> i == 0) )
-            || (noLayers != variations.length)
+        if ((Arrays.stream(numberOfNodesPerLayer).sum() + hasCloud) != (size + hasCloud)
+                || (noLayers != numberOfNodesPerLayer.length && Arrays.stream(numberOfNodesPerLayer).noneMatch(i -> i == 0))
+                || (noLayers != cpuFreqsPerLayer.length && Arrays.stream(cpuFreqsPerLayer).noneMatch(i -> i == 0))
+                || (noLayers != coresPerLayer.length && Arrays.stream(coresPerLayer).noneMatch(i -> i == 0))
+                || (noLayers != qmaxPerLayer.length && Arrays.stream(qmaxPerLayer).noneMatch(i -> i == 0))
+                || (noLayers != variations.length)
         ) {
             throw new RuntimeException("Mismatched number of nodes in the network and number of parameters off each layer.");
         }
+
     }
 
     // ------------------------------------------------------------------------
