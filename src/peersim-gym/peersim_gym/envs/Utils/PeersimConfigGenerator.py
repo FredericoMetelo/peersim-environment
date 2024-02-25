@@ -58,6 +58,11 @@ PEERSIM_DEFAULTS = {
 
     "RANDOMIZETOPOLOGY": "true",
     "init.Net1.TOPOLOGY": "0,1,2,3,6,8;1,0,2,3,4,5,6,7,8,9;2,0,1,3,6,8,9;3,0,1,2,6,8,9;4,1,5,7;5,1,4,7;6,0,1,2,3,8,9;7,1,4,5;8,0,1,2,3,6;9,1,2,3,6",
+    "MANUAL_CONFIG": "false",
+    "MANUAL_CORES": "1",
+    "MANUAL_FREQS": "1e7",
+    "MANUAL_QMAX": "10",
+
 }
 
 def generate_config_file(config_dict, simtype, explicit_lines=False):
