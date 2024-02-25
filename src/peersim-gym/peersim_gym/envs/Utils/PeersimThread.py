@@ -11,6 +11,7 @@ import os
 
 def run_peersim(config_path, jar_path="Environment/peersim-srv-0.0.1-SNAPSHOT.jar", output_redirect=None):
     # subprocess.call("pwd", cwd="/home/fm/Documents/Thesis/peersim-srv")
+    # os.system("java --version")
     if output_redirect is None:
         return subprocess.Popen(['java', '-jar', f'{jar_path}', f'{config_path}'], cwd="/", stderr=subprocess.DEVNULL,
                                 stdout=subprocess.DEVNULL)

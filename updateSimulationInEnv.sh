@@ -1,5 +1,6 @@
 #!/bin/bash
 rm ./src/peersim-gym/peersim_gym/envs/Environment/*
+java --version
 if [[ -z "$(ls ./src/peersim-gym/peersim_gym/envs/Environment)" ]]
 then
     echo "Environment files were cleaned in the environmment directory"
