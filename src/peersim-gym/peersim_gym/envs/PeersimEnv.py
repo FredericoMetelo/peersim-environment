@@ -2,8 +2,11 @@ import math
 import os
 import time
 from random import randint
+from typing import Callable
 
+import gymnasium
 import requests
+from gymnasium import Space
 from gymnasium.spaces import MultiDiscrete, Dict, Discrete, Box
 from pettingzoo import ParallelEnv
 
@@ -86,15 +89,17 @@ def can_launch_simulation():
 class PeersimEnv(ParallelEnv):
     metadata = {"render_modes": ["ansi", "human"], "render_fps": 4}
 
-    def init(self, render_mode=None, configs=None, log_dir=None, randomize_seed=False):
-        self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed)
+    def init(self, render_mode=None, configs=None, log_dir=None, randomize_seed=False, phy_rs_term:Callable[[Space], float]=None):
+        self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed, phy_rs_term=phy_rs_term)
 
-    def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False):
+    def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False,
+                 phy_rs_term:Callable[[Space], float]=None):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
         # (aka if number_nodes is 10 there is a total of 11 nodes (1 controller + 10 workers))
 
+        self.phy_rs_term = phy_rs_term
         validate_simulation_type(simtype)
         self.render_mode = render_mode
         self.randomize_seed = randomize_seed
@@ -540,8 +545,11 @@ class PeersimEnv(ParallelEnv):
 
         # computing reward and normalizing it
         reward = U - (D + O)
-
-        return (reward, {"U": U, "D": D, "O": O})
+        F = 0
+        if self.phy_rs_term is not None:
+            F = self.phy_rs_term(agent_obs) - self.phy_rs_term(agent_og_obs)
+        reward += F
+        return (reward, {"U": U, "D": D, "O": O, "F": F})
 
     def _compute_avg_task_data(self):
         task_sizes = self.config_archive["protocol.clt.T"].strip().split(",")
