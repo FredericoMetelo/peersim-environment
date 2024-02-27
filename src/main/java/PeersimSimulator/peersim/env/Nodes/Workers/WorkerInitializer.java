@@ -73,7 +73,7 @@ public class WorkerInitializer implements Control {
      */
     public WorkerInitializer(String prefix) {
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
-        manualConfig = Configuration.contains(PAR_MANUAL_CONFIG);
+        manualConfig = Configuration.getBoolean(PAR_MANUAL_CONFIG);
         int size;
         if(!manualConfig) {
             size = Configuration.getInt(PAR_NETWORK_SIZE);
