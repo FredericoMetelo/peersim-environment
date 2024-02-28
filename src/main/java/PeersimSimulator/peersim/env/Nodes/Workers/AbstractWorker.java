@@ -412,7 +412,7 @@ public abstract class AbstractWorker implements Worker {
 
     @Override
     public WorkerInfo compileWorkerInfo() {
-        return new WorkerInfo(this.id, this.queue.size(), this.unprocessedTasksInApps(), averageTaskSize(), processingPower, qMAX - this.getTotalNumberOfTasksInNode(), this.getLayer(), this.getProps().getCoordinates());
+        return new WorkerInfo(this.id, this.getTotalNumberOfTasksInNode(), this.unprocessedTasksInApps(), averageTaskSize(), processingPower, qMAX - this.getTotalNumberOfTasksInNode(), this.getLayer(), this.getProps().getCoordinates());
 
     }
 
