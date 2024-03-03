@@ -37,3 +37,6 @@ build/
 
 ### Spyder ###
 **/.spyderproject
+
+## Other ###
+Datasets/*.csv

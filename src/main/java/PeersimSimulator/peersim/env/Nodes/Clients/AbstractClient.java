@@ -104,6 +104,10 @@ public abstract class AbstractClient implements Client {
         return result;
     }
 
+    /**
+     * This method should extract the required information to generate tasks for the given implementation of the client.
+     * @param prefix
+     */
     protected abstract void getTaskMetadata(String prefix);
 
     @Override
