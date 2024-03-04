@@ -390,7 +390,7 @@ class PeersimEnv(ParallelEnv):
             self._result = result
             return result
         except requests.exceptions.Timeout:
-            print("Failed to send action, could not connect to the environment. Returning old result.")
+            print("Failed  to send action, could not connect to the environment. Returning old result.")
             return self._result
 
     def __get_net_data(self):

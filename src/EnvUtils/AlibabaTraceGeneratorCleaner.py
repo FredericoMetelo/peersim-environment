@@ -25,23 +25,27 @@ def read_data_form_csv(file_path: str):
                 task_dependencies = []
                 independent_task_id += 1
             else:
-                task_id = task_id_dependencies[0][:1] # Ignore the first letter.
+                task_id = task_id_dependencies[0][1:] # Ignore the first letter.
                 task_dependencies = task_id_dependencies[1:]
-            task_duration = data[3]
-            task_cpu = data[4]
-            task_mem = data[5]
-            task_no_instances = data[6]
-            job_dict = jobs_dictionary[job_id]
-            if job_dict is None or task_id not in job_dict:
+            task_duration = float(data[3])
+            task_cpu = float(data[4])
+            task_mem = float(data[5])
+            task_no_instances = float(data[6])
+            job_dict = jobs_dictionary.get(job_id, None)
+            if job_dict is None:
                 jobs_dictionary[job_id] = {}
             jobs_dictionary[job_id][task_id] = [task_id, task_dependencies, task_duration, task_cpu, task_mem, task_no_instances]
-    return data
 
-def topological_sort(job: dict):
+    return jobs_dictionary
+
+def get_longest_path(job: dict):
     """
     Sort the tasks in a job in topological order, given that Job is represented as a dictionary with entries of the form
      task: [dependencies].
-    Note: CahtGPT generated the following code. I adapted it to my scenario.
+    Generates the NetworkX graph and then uses the method dag_longest_path() to get the longest path in the graph.
+    This method uses the code at:
+        https://networkx.org/documentation/stable/_modules/networkx/algorithms/dag.html#dag_longest_path
+
     :param job:
     :return: the critial path of the job
     """
@@ -54,32 +58,11 @@ def topological_sort(job: dict):
             G.add_node(task)
         dependencies = job[task][1]
         for dependency in dependencies:
+            task_duration = job[dependency][2]
             if dependency not in G.nodes:
                 G.add_node(dependency)
-            G.add_edge(dependency, task)
-
-    # Calculate the earliest start time for each task
-    earliest_start_time = nx.topological_sort(G)
-    start_times = {node: 0 for node in G.nodes}
-
-    for node in earliest_start_time:
-        for successor in G.successors(node):
-            start_times[successor] = max(start_times[successor], start_times[node] + 1)
-
-    # Calculate the latest start time for each task
-    latest_start_time = nx.topological_sort(G.reverse())
-    end_times = {node: start_times[node] for node in G.nodes}
-
-    for node in latest_start_time:
-        for predecessor in G.predecessors(node):
-            end_times[predecessor] = min(end_times[predecessor], end_times[node] - 1)
-
-    # Find the critical path
-    critical_path = []
-    for node in G.nodes:
-        if start_times[node] == end_times[node]:
-            critical_path.append(node)
-
+            G.add_edge(dependency, task, weight=task_duration)
+    critical_path = nx.dag_longest_path(G)
     return critical_path
 
 
@@ -95,31 +78,51 @@ def process_data(filename: str = "alibaba_trace.csv"):
     """
     data = read_data_form_csv(filename)
     output_data = {}
+    simple_entry = {}
     for job in data:
         job_dict = data[job]
-        critical_path = topological_sort(job_dict)
-        cpu_resources = 0
-        mem_resources = 0
-        instances = 0
+        critical_path = get_longest_path(job_dict)
+        total_cpu_resources = 0
+        total_mem_resources = 0
+        total_instances = 0
+        cp_cpu_resources = 0
+        cp_mem_resources = 0
+
         for task in job_dict:
-            cpu_resources += job_dict[task][3]
-            mem_resources += job_dict[task][4]
-            instances += job_dict[task][5]
+            total_cpu_resources += job_dict[task][3]
+            total_mem_resources += job_dict[task][4]
+            total_instances += job_dict[task][5]
+        for task in critical_path:
+            cp_cpu_resources += job_dict[task][3]
+            cp_mem_resources += job_dict[task][4]
+
         # Write the job to the new file
         output_data[job] = {}
         output_data[job]["critical_path"] = critical_path
         output_data[job]["tasks"] = job_dict
 
-        output_data[job]["resources_cpu"] = cpu_resources
-        output_data[job]["resources_mem"] = mem_resources
-        output_data[job]["resources_instances"] = instances
-    return output_data
+        output_data[job]["total_resources_cpu"] = total_cpu_resources
+        output_data[job]["total_resources_mem"] = total_mem_resources
+        output_data[job]["total_resources_instances"] = total_instances
+
+        output_data[job]["critical_path_resources_cpu"] = cp_cpu_resources
+        output_data[job]["critical_path_resources_mem"] = cp_mem_resources
+
+        simple_entry[job] = {}
+        simple_entry[job]["critical_path_resources_cpu"] = cp_cpu_resources
+        simple_entry[job]["critical_path_resources_mem"] = cp_mem_resources
+        simple_entry[job]["total_resources_cpu"] = total_cpu_resources
+        simple_entry[job]["total_resources_mem"] = total_mem_resources
+        simple_entry[job]["total_resources_instances"] = total_instances
 
 
-if "__name__" == "__main__":
+    return output_data, simple_entry
+
+
+if __name__ == "__main__":
     print("Cleaning up the alibaba trace generated by the All-less/trace-generator")
-    output_data = process_data("./Datasets/batch_task.csv")
+    output_data, simple_data = process_data("./Datasets/batch_task.csv")
     with open("./Datasets/alibaba_trace_cleaned.json", "w") as file:
-        json.dump(output_data, file)
+        json.dump(simple_data, file)
     print("Done.")
 

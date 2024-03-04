@@ -1,14 +1,26 @@
 package PeersimSimulator.peersim.env.Nodes.Clients;
 
+import PeersimSimulator.peersim.config.Configuration;
+import PeersimSimulator.peersim.env.Records.AlibabaClusterJob;
 import PeersimSimulator.peersim.env.Tasks.Application;
+import PeersimSimulator.peersim.env.Util.JsonToJobListHelper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public class AlibabaTraceClient  extends AbstractClient {
+
+    private static final String WORKLOAD_PATH = "workloadPath";
+    private String workloadPath;
     public AlibabaTraceClient(String prefix) {
         super(prefix);
+        workloadPath = Configuration.getString(WORKLOAD_PATH);
+
     }
 
     @Override
@@ -18,7 +30,7 @@ public class AlibabaTraceClient  extends AbstractClient {
         of entries in the CPI, BYTE_SIZE, NO_INSTR, and TASK_WEIGHTS arrays. Based on the data in the .csv file. This
         way I have to change a lot less code to make the simulator work with the Alibaba trace.
         */
-
+        List<AlibabaClusterJob> jobList = JsonToJobListHelper.readJsonToJobList(workloadPath);
 
 
     }
@@ -28,22 +40,12 @@ public class AlibabaTraceClient  extends AbstractClient {
         return null;
     }
 
-    private void readCSV(String csvFile) {
-        // Read the .csv file and populate the arrays with the data.
-        // ChatGPT generated the following code:
-        try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                // Split the line into an array of values
-                String[] values = line.split(",");
+    private void readJSONToDict(String path) {
+        try {
+            File jsonFile = new File(path);
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map jsonMap = objectMapper.readValue(jsonFile, Map.class);
 
-                // Process each value as needed
-                for (String value : values) {
-                    System.out.print(value + " ");
-                }
-
-                System.out.println(); // Move to the next line for the next CSV row
-            }
         } catch (IOException e) {
             e.printStackTrace();
         }
