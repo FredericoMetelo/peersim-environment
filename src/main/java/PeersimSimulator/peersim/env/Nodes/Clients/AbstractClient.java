@@ -38,7 +38,7 @@ public abstract class AbstractClient implements Client {
     protected double averageTaskSize;
 
     protected final int[] layers;
-    protected final int numberOfTasks;
+    protected int numberOfTasks;
     protected final double TASK_ARRIVAL_RATE;
 
     private final int[] layersThatGetTasks;

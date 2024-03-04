@@ -34,14 +34,16 @@ public class JsonToJobListHelper {
                             job.get("critical_path_resources_mem"),
                             job.get("total_resources_cpu"),
                             job.get("total_resources_mem"),
-                            job.get("total_resources_instances")
+                            job.get("total_resources_instances"),
+                            job.get("total_resources_duration"),
+                            job.get("critical_path_duration")
                     )
             ).toList();
 
             // Print the list of Job objects
-            for (AlibabaClusterJob job : jobList) {
-                System.out.println(job);
-            }
+//            for (AlibabaClusterJob job : jobList) {
+//                System.out.println(job);
+//            }
             return jobList;
 
         } catch (IOException e) {

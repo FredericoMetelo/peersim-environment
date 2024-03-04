@@ -48,6 +48,10 @@ PEERSIM_DEFAULTS = {
     "protocol.clt.minDeadline": "100",
     "protocol.clt.vertices": "1",
 
+    "protocol.clt.defaultCPUWorkload": "100000000",
+    "protocol.clt.defaultMemoryWorkload": "100",
+    "protocol.clt.workloadPath": "/home/fm/IdeaProjects/peersim-environment/Datasets/alibaba_trace_cleaned.json",
+
     "protocol.props.B": "2",
     "protocol.props.Beta1": "0.001",
     "protocol.props.Beta2": "4",

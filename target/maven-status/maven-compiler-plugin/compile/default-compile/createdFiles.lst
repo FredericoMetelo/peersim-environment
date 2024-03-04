@@ -15,6 +15,7 @@ PeersimSimulator/peersim/vector/Setter.class
 PeersimSimulator/peersim/env/Records/LoseTaskInfo.class
 PeersimSimulator/peersim/core/GeneralNode.class
 PeersimSimulator/peersim/env/Nodes/Events/NewApplicationEvent.class
+PeersimSimulator/peersim/env/Nodes/Clients/AlibabaTraceClient.class
 PeersimSimulator/peersim/core/Control.class
 PeersimSimulator/peersim/config/ConfigProperties.class
 PeersimSimulator/peersim/edsim/ControlEvent.class
@@ -29,6 +30,7 @@ PeersimSimulator/peersim/reports/GraphPrinter.class
 PeersimSimulator/peersim/cdsim/Shuffle.class
 PeersimSimulator/peersim/config/Configuration.class
 PeersimSimulator/peersim/env/Tasks/Application.class
+PeersimSimulator/peersim/env/Util/JsonToJobListHelper.class
 PeersimSimulator/peersim/edsim/NextCycleEvent.class
 PeersimSimulator/peersim/env/Nodes/Clients/AbstractClient$AppInfo.class
 PeersimSimulator/peersim/cdsim/FullNextCycle.class
@@ -37,6 +39,7 @@ PeersimSimulator/peersim/dynamics/WireWS.class
 PeersimSimulator/example/aggregation/AverageFunction.class
 PeersimSimulator/example/aggregation/PeakDistributionInitializer.class
 PeersimSimulator/peersim/cdsim/CDState.class
+PeersimSimulator/peersim/env/Records/AlibabaClusterJob.class
 PeersimSimulator/peersim/env/Records/SimulationData/BatchSimulationData.class
 PeersimSimulator/peersim/core/Protocol.class
 PeersimSimulator/peersim/env/Nodes/Controllers/BatchController.class

@@ -63,7 +63,7 @@ def average_of_floats_in_string(s):
 
 
 def validate_simulation_type(simtype):
-    if simtype not in ['basic', 'batch', 'dag']:
+    if simtype not in ['basic', 'batch', 'dag', 'basic-workload']:
         raise ValueError("Invalid argument: %s (NOTE: capitalization matters)" % simtype)
     if simtype == "dag":
         raise ValueError("dag is not yet supported")
@@ -375,7 +375,7 @@ class PeersimEnv(ParallelEnv):
 
         payload = [
             {
-                ACTION_TYPE_FIELD: self.simtype,
+                ACTION_TYPE_FIELD: self.simtype.split("-")[0],
                 ACTION_NEIGHBOUR_IDX_FIELD: int(action.get(name).get(ACTION_NEIGHBOUR_IDX_FIELD)),
                 ACTION_HANDLER_ID_FIELD: int(self.agent_name_mapping.get(name))
             } for name in self.agent_name_mapping.keys()

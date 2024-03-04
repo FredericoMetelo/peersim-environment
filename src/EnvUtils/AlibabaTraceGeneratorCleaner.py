@@ -85,16 +85,21 @@ def process_data(filename: str = "alibaba_trace.csv"):
         total_cpu_resources = 0
         total_mem_resources = 0
         total_instances = 0
+        total_duration = 0
+
         cp_cpu_resources = 0
         cp_mem_resources = 0
+        cp_duration = 0
 
         for task in job_dict:
             total_cpu_resources += job_dict[task][3]
             total_mem_resources += job_dict[task][4]
             total_instances += job_dict[task][5]
+            total_duration += job_dict[task][2]
         for task in critical_path:
             cp_cpu_resources += job_dict[task][3]
             cp_mem_resources += job_dict[task][4]
+            cp_duration += job_dict[task][2]
 
         # Write the job to the new file
         output_data[job] = {}
@@ -104,18 +109,19 @@ def process_data(filename: str = "alibaba_trace.csv"):
         output_data[job]["total_resources_cpu"] = total_cpu_resources
         output_data[job]["total_resources_mem"] = total_mem_resources
         output_data[job]["total_resources_instances"] = total_instances
+        output_data[job]["total_duration"] = total_duration
 
         output_data[job]["critical_path_resources_cpu"] = cp_cpu_resources
         output_data[job]["critical_path_resources_mem"] = cp_mem_resources
-
+        output_data[job]["critical_path_duration"] = cp_duration
         simple_entry[job] = {}
         simple_entry[job]["critical_path_resources_cpu"] = cp_cpu_resources
         simple_entry[job]["critical_path_resources_mem"] = cp_mem_resources
         simple_entry[job]["total_resources_cpu"] = total_cpu_resources
         simple_entry[job]["total_resources_mem"] = total_mem_resources
         simple_entry[job]["total_resources_instances"] = total_instances
-
-
+        simple_entry[job]["total_resources_duration"] = total_duration
+        simple_entry[job]["critical_path_duration"] = cp_duration
     return output_data, simple_entry
 
 
