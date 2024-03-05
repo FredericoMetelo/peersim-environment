@@ -87,6 +87,9 @@ def process_data(filename: str = "alibaba_trace.csv"):
         total_instances = 0
         total_duration = 0
 
+        max_cpu = float("-inf")
+        max_mem = float("-inf")
+
         cp_cpu_resources = 0
         cp_mem_resources = 0
         cp_duration = 0
@@ -96,6 +99,10 @@ def process_data(filename: str = "alibaba_trace.csv"):
             total_mem_resources += job_dict[task][4]
             total_instances += job_dict[task][5]
             total_duration += job_dict[task][2]
+            if job_dict[task][3] > max_cpu:
+                max_cpu = job_dict[task][3]
+            if job_dict[task][4] > max_mem:
+                max_mem = job_dict[task][4]
         for task in critical_path:
             cp_cpu_resources += job_dict[task][3]
             cp_mem_resources += job_dict[task][4]
@@ -114,6 +121,7 @@ def process_data(filename: str = "alibaba_trace.csv"):
         output_data[job]["critical_path_resources_cpu"] = cp_cpu_resources
         output_data[job]["critical_path_resources_mem"] = cp_mem_resources
         output_data[job]["critical_path_duration"] = cp_duration
+
         simple_entry[job] = {}
         simple_entry[job]["critical_path_resources_cpu"] = cp_cpu_resources
         simple_entry[job]["critical_path_resources_mem"] = cp_mem_resources
@@ -122,6 +130,8 @@ def process_data(filename: str = "alibaba_trace.csv"):
         simple_entry[job]["total_resources_instances"] = total_instances
         simple_entry[job]["total_resources_duration"] = total_duration
         simple_entry[job]["critical_path_duration"] = cp_duration
+        simple_entry[job]["max_mem"] = max_mem
+        simple_entry[job]["max_cpu"] = max_cpu
     return output_data, simple_entry
 
 

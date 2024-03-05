@@ -40,7 +40,7 @@ public class AlibabaTraceClient  extends AbstractClient {
         */
 
         workloadPath = Configuration.getString(prefix + "." + WORKLOAD_PATH);
-        defaultCPUWorkload = Configuration.getDouble(prefix + "." + DEFAULT_CPU_WORKLOAD, 100000000);
+        defaultCPUWorkload = Configuration.getDouble(prefix + "." + DEFAULT_CPU_WORKLOAD, 2.4e+9); // AMD EPYC™ 9654 and Raspberry 5 frequencies
         defaultMemoryWorkload = Configuration.getDouble(prefix + "." + DEFAULT_MEMORY_WORKLOAD, 100);
         List<AlibabaClusterJob> jobList = JsonToJobListHelper.readJsonToJobList(workloadPath);
         this.applicationCandidates = jobList;
@@ -100,16 +100,17 @@ public class AlibabaTraceClient  extends AbstractClient {
     private double getCPUFromJob(AlibabaClusterJob job){
         // TODO Define the unit for this value
         /*
-               requested CPU: every 100 unit means 1 core
+               requested CPU: every 100 unit means 1 core.
+               we assumed the time was in milliseconds, so we need to divide by 1000 to get seconds
          */
-        return job.getCriticalPathResourcesCPU()/100 * job.getCriticalPathDuration() * defaultCPUWorkload;
+        return job.getMaxCPU()/100 * job.getTotalResourcesDuration()/1000 * defaultCPUWorkload;
     }
     private double getMemoryFromJob(AlibabaClusterJob job) {
         // TODO Define the unit for this value
         /*
                 requested memory: every 100 unit we will consider 1GB
          */
-        return job.getCriticalPathResourcesMemory() * defaultMemoryWorkload;
+        return job.getMaxMemory() * defaultMemoryWorkload;
     }
 
 }

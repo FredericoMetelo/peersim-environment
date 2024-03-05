@@ -36,7 +36,9 @@ public class JsonToJobListHelper {
                             job.get("total_resources_mem"),
                             job.get("total_resources_instances"),
                             job.get("total_resources_duration"),
-                            job.get("critical_path_duration")
+                            job.get("critical_path_duration"),
+                            job.get("max_mem"),
+                            job.get("max_cpu")
                     )
             ).toList();
 
@@ -53,8 +55,12 @@ public class JsonToJobListHelper {
         return null;
     }
     public static void main(String[] args) {
+        // Testing only.
         String filePath = "/home/fm/IdeaProjects/peersim-environment/Datasets/alibaba_trace_cleaned.json";
-        readJsonToJobList(filePath);
+        List<AlibabaClusterJob> a = readJsonToJobList(filePath);
+        for (AlibabaClusterJob job : a) {
+            System.out.println(job);
+        }
 
     }
 }

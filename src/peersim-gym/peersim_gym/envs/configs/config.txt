@@ -1,4 +1,4 @@
-random.seed 2345473187497
+random.seed 600468984637
 SIZE 10
 CYCLE 1
 CYCLES 1000
@@ -33,7 +33,7 @@ protocol.clt.dagWeights 1
 protocol.clt.edges 
 protocol.clt.minDeadline 100
 protocol.clt.vertices 1
-protocol.clt.defaultCPUWorkload 100000000
+protocol.clt.defaultCPUWorkload 2.4e+9
 protocol.clt.defaultMemoryWorkload 100
 protocol.clt.workloadPath /home/fm/IdeaProjects/peersim-environment/Datasets/alibaba_trace_cleaned.json
 protocol.props.B 2

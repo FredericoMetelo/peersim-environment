@@ -9,8 +9,19 @@ public class AlibabaClusterJob {
     public double totalResourcesMemory;
     public double totalResourcesInstances;
     public double totalResourcesDuration;
+    public double maxMemory;
+    public double maxCPU;
 
-    public AlibabaClusterJob(double criticalPathResourcesCPU, double criticalPathResourcesMemory, double totalResourcesCPU, double totalResourcesMemory, double totalResourcesInstances, double totalResourcesDuration, double criticalPathDuration) {
+    public AlibabaClusterJob(double criticalPathResourcesCPU,
+                             double criticalPathResourcesMemory,
+                             double totalResourcesCPU,
+                             double totalResourcesMemory,
+                             double totalResourcesInstances,
+                             double totalResourcesDuration,
+                             double criticalPathDuration,
+                             double maxMemory,
+                             double maxCPU
+    ) {
         //this.jobId = jobId;
         this.criticalPathResourcesCPU = criticalPathResourcesCPU;
         this.criticalPathResourcesMemory = criticalPathResourcesMemory;
@@ -19,6 +30,8 @@ public class AlibabaClusterJob {
         this.totalResourcesMemory = totalResourcesMemory;
         this.totalResourcesInstances = totalResourcesInstances;
         this.totalResourcesDuration = totalResourcesDuration;
+        this.maxMemory = maxMemory;
+        this.maxCPU = maxCPU;
     }
 
     public double getCriticalPathResourcesCPU() {
@@ -47,6 +60,14 @@ public class AlibabaClusterJob {
 
     public double getTotalResourcesInstances() {
         return totalResourcesInstances;
+    }
+
+    public double getMaxMemory() {
+        return maxMemory;
+    }
+
+    public double getMaxCPU() {
+        return maxCPU;
     }
 
     @Override
