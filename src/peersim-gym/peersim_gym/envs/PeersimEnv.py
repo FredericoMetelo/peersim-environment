@@ -134,6 +134,8 @@ class PeersimEnv(ParallelEnv):
 
         self.no_nodes_per_layer = [int(no_nodes) for no_nodes in
                                    self.config_archive["NO_NODES_PER_LAYERS"].strip().split(",")]
+
+        self.layers_that_get_tasks = [int(layer) for layer in self.config_archive["protocol.clt.layersThatGetTasks"].strip().split(",")]
         if isinstance(self.max_Q_size, list):
             self.q_list = self._gen_node_Q_max()
 
@@ -464,19 +466,20 @@ class PeersimEnv(ParallelEnv):
         # https://datascience.stackexchange.com/questions/20098/should-i-normalize-rewards-in-reinforcement-learning
 
         # Prepare data
-        source_of_task = agent_obs[STATE_NODE_ID_FIELD]
-        target_of_task = action[ACTION_NEIGHBOUR_IDX_FIELD]
+        source_of_task_global_index = agent_obs[STATE_NODE_ID_FIELD]
+        target_of_task_neighbourhood_index = action[ACTION_NEIGHBOUR_IDX_FIELD]
 
         source_node_og_info = agent_og_obs
         source_node_info = agent_obs
         target_node_worker_info = agent_result[RESULT_WORKER_INFO_FIELD]
+        target_of_task_global_index = target_node_worker_info["id"]
         locally_processed = agent_obs[STATE_NODE_ID_FIELD] == target_node_worker_info["id"]
 
         # Check if the target node is within [0, #Neighbours]
-        if int(len(source_node_og_info["Q"])) < int(target_of_task) or int(target_of_task) < 0:
+        if int(len(source_node_og_info["Q"])) < int(target_of_task_neighbourhood_index) or int(target_of_task_neighbourhood_index) < 0:
             return -self.UTILITY_REWARD, {"U": -self.UTILITY_REWARD, "D": 0, "O": 0}
 
-        target_layer = self.get_layer(target_of_task)
+        target_layer = self.get_layer(target_of_task_global_index)
         target_processing_power = self.PROCESSING_POWERS[target_layer]
         target_max_q = self.max_Q_size[target_layer]
 
@@ -485,19 +488,18 @@ class PeersimEnv(ParallelEnv):
             source_rank = 1
             target_rank = 1
         else:
-            target_global_index = target_node_worker_info["id"]
-            source_rank = len(self.neighbourMatrix[source_of_task]) if self.get_layer(source_of_task) == 0 else 0
-            target_rank = len(self.neighbourMatrix[target_global_index]) if self.get_layer(target_global_index) == 0 else 0
+            source_rank = len(self.neighbourMatrix[source_of_task_global_index]) if self.get_layer(source_of_task_global_index) in self.layers_that_get_tasks else 0
+            target_rank = len(self.neighbourMatrix[target_of_task_global_index]) if self.get_layer(target_of_task_global_index)  in self.layers_that_get_tasks else 0
 
-        source_layer = self.get_layer(source_of_task)
+        source_layer = self.get_layer(source_of_task_global_index)
         source_processing_power = self.PROCESSING_POWERS[source_layer]
         source_max_q = self.max_Q_size[source_layer]
 
         q_l = source_node_og_info["queueSize"]
         q_o = target_node_worker_info["queueSize"]
 
-        source_var = self.TASK_ARRIVAL_RATE - self.AVERAGE_TASK_INSTR/source_processing_power
-        target_var = self.TASK_ARRIVAL_RATE - self.AVERAGE_TASK_INSTR/target_processing_power
+        source_var = self.TASK_ARRIVAL_RATE * source_rank - source_processing_power/self.AVERAGE_TASK_INSTR
+        target_var = self.TASK_ARRIVAL_RATE * target_rank - target_processing_power/self.AVERAGE_TASK_INSTR
         q_expected_l = q_l if locally_processed else max(q_l - 1, 0)
         q_expected_o = q_o if locally_processed else q_o + 1
 
@@ -510,7 +512,8 @@ class PeersimEnv(ParallelEnv):
         w_l = 1 if locally_processed else 0
 
         if w_l == 0 and w_o == 0: # queue is empty, nothing to do, no penalty or reward given.
-            return 0, {"U": 0, "D": 0, "O": 0} # TODO make this maximum reward, as the action itself is not something bad.
+            print("Empty queue. No action taken.")
+            return self.UTILITY_REWARD, {"U": self.UTILITY_REWARD/2, "D": 0, "O": 0} # TODO make this maximum reward, as the action itself is not something bad.
 
         miu_l = source_processing_power
         miu_o = target_processing_power
@@ -519,13 +522,19 @@ class PeersimEnv(ParallelEnv):
         U = self.UTILITY_REWARD # * math.log(1 + w_l + w_o)
 
         # Compute Delay
+
         t_w = not_zero(w_l) * (q_l / miu_l) + not_zero(w_o) * ((q_l / miu_l) + (q_o / miu_o))  # q_l/miu_l on the second term represents the time spent waiting in queue before being selected for offloading
-        r_i_j = self.BANDWIDTH * math.log(
-            1 + (self.PATH_LOSS_CONSTANT * math.pow(d_i_j, self.PATH_LOSS_EXPONENT) * self.TRANSMISSION_POWER) / (
-                    self.BANDWIDTH * self.NORMALIZED_THERMAL_NOISE_POWER))
-        t_c = w_o * self.AVERAGE_TASK_SIZE / r_i_j if d_i_j != 0 else 0 # This should also include a call back if that is the case, that was probably the reason for the 2
-        t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
-        D =  (t_w + t_c + t_e) # / (w_l + w_o)
+        if d_i_j == 0:
+            t_c = 0
+        else:
+            r_i_j = self.BANDWIDTH * math.log10(
+                1 + (self.PATH_LOSS_CONSTANT * math.pow(d_i_j, -self.PATH_LOSS_EXPONENT) * self.TRANSMISSION_POWER) / (
+                        self.BANDWIDTH * self.NORMALIZED_THERMAL_NOISE_POWER))
+            t_c = w_o * self.AVERAGE_TASK_SIZE / r_i_j
+
+        # og: t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
+        t_e = self.AVERAGE_TASK_INSTR / target_processing_power - self.AVERAGE_TASK_INSTR / source_processing_power
+        D =  t_w + t_c + t_e # / (w_l + w_o)
 
         # Compute Overload
         # q_prime_l = q_expected_l  # min(max(0, q_l - avg_tasks_processed_per_node) + w_l, self.AVERAGE_MAX_Q)
@@ -533,15 +542,16 @@ class PeersimEnv(ParallelEnv):
         # p_overload_l = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_l)
         # p_overload_o = max(0.0, self.TASK_ARRIVAL_RATE - q_prime_o)
 
-        distance_to_Ovl_l = max((source_max_q - q_expected_l) / source_max_q, 0.0001)  # Normalized manhattan distance
-        distance_to_Ovl_o = max((target_max_q - q_expected_o) / target_max_q, 0.0001)  # 0.0001 is to avoid log(0)
-        O = -self.OVERLOAD_WEIGHT * math.log((w_l * distance_to_Ovl_l + w_o * distance_to_Ovl_o))  # I may need to remove
+        distance_to_Ovl_l = max((source_max_q - q_expected_l) / source_max_q, 0.001)  # Normalized manhattan distance
+        distance_to_Ovl_o = max((target_max_q - q_expected_o) / target_max_q, 0.001)  # 0.0001 is to avoid log(0)
+        O = -math.log10(w_l * distance_to_Ovl_l + w_o * distance_to_Ovl_o)  # we subtract O, therfore the minus
+                                                                                  # Was using the ln before, now using log
 
         # Capping the percentages to be between 100 and -100
         # U = max(min(U, self.UTILITY_REWARD), self.UTILITY_REWARD) / self.UTILITY_REWARD
         # Some people call this cheating, I call it not despairing -, _ ,-.
-        D = max(min(D, self.DELAY_WEIGHT), -self.DELAY_WEIGHT) / self.DELAY_WEIGHT * self.UTILITY_REWARD
-        O = (max(min(O, self.OVERLOAD_WEIGHT), -self.OVERLOAD_WEIGHT) / self.OVERLOAD_WEIGHT) * self.UTILITY_REWARD * 3
+        D = min(D, self.UTILITY_REWARD) * self.DELAY_WEIGHT
+        O = O/3 * self.UTILITY_REWARD * self.OVERLOAD_WEIGHT # I cap the delay distance at 0.001 (0.1% to overload) therefore the log will only go down to 3
 
         # computing reward and normalizing it
         reward = U - (D + O)

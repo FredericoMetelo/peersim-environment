@@ -1,4 +1,4 @@
-random.seed 600468984637
+random.seed 809000031931
 SIZE 10
 CYCLE 1
 CYCLES 1000
@@ -19,7 +19,7 @@ protocol.cld.VMProcessingPower 100000000
 init.Net1.r 50
 protocol.mng.r_u 10
 protocol.mng.X_d 1
-protocol.mng.X_o 150
+protocol.mng.X_o 2
 protocol.mng.cycle 5
 protocol.clt.numberOfTasks 1
 protocol.clt.weight 1
@@ -38,7 +38,7 @@ protocol.clt.defaultMemoryWorkload 100
 protocol.clt.workloadPath /home/fm/IdeaProjects/peersim-environment/Datasets/alibaba_trace_cleaned.json
 protocol.props.B 2
 protocol.props.Beta1 0.001
-protocol.props.Beta2 4
+protocol.props.Beta2 2.7
 protocol.props.P_ti 20
 RANDOMIZEPOSITIONS False
 init.Net0.POSITIONS 15.55895350495783,17.02475796027715;47.56499372388999,57.28732691557995;5.366872150976409,43.28729893321355;17.488160666668694,29.422819514162434;81.56549175388358,53.14564532018814;85.15660881172089,74.47408014762478;18.438454887921974,44.310130148722195;72.04311826903107,62.06952644109185;25.60125368295145,15.54795598202745;17.543669122835837,70.7258178169151
@@ -74,7 +74,7 @@ protocol.cld.step CYCLE
 protocol.cld.transport tr
 
 
-protocol.clt PeersimSimulator.peersim.env.Nodes.Clients.AlibabaTraceClient
+protocol.clt PeersimSimulator.peersim.env.Nodes.Clients.BasicClient
 protocol.clt.linkable lnk
 protocol.clt.name clt
 protocol.clt.step CYCLE
@@ -102,7 +102,7 @@ protocol.props.name props
 protocol.lnk PeersimSimulator.peersim.env.Links.TableProtocol
 
 #--------Define Transport Protocol
-protocol.urt PeersimSimulator.peersim.transport.UniformRandomTransport
+protocol.urt PeersimSimulator.peersim.env.Transport.BaseDelayTransport
 protocol.urt.mindelay (CYCLE*MINDELAY)/100
 protocol.urt.maxdelay (CYCLE*MAXDELAY)/100
 
