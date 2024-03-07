@@ -1,4 +1,4 @@
-random.seed 809000031931
+random.seed 538849440382
 SIZE 10
 CYCLE 1
 CYCLES 1000
@@ -10,6 +10,7 @@ CLOUD_EXISTS 0
 NO_LAYERS 3
 NO_NODES_PER_LAYERS 1,1,8
 CLOUD_ACCESS 0,0,0
+clientLayers 1
 FREQS 20000000,20000000,20000000
 NO_CORES 1,1,1
 Q_MAX 8,8,8
@@ -17,14 +18,11 @@ VARIATIONS 0,0,0
 protocol.cld.no_vms 1
 protocol.cld.VMProcessingPower 100000000
 init.Net1.r 50
-protocol.mng.r_u 10
-protocol.mng.X_d 1
-protocol.mng.X_o 2
 protocol.mng.cycle 5
 protocol.clt.numberOfTasks 1
 protocol.clt.weight 1
 protocol.clt.CPI 1
-protocol.clt.T 150
+protocol.clt.T 50
 protocol.clt.I 320000000
 protocol.clt.taskArrivalRate 0.8
 protocol.clt.layersThatGetTasks 1
@@ -33,12 +31,12 @@ protocol.clt.dagWeights 1
 protocol.clt.edges 
 protocol.clt.minDeadline 100
 protocol.clt.vertices 1
-protocol.clt.defaultCPUWorkload 2.4e+9
+protocol.clt.defaultCPUWorkload 100000000
 protocol.clt.defaultMemoryWorkload 100
 protocol.clt.workloadPath /home/fm/IdeaProjects/peersim-environment/Datasets/alibaba_trace_cleaned.json
 protocol.props.B 2
 protocol.props.Beta1 0.001
-protocol.props.Beta2 2.7
+protocol.props.Beta2 4
 protocol.props.P_ti 20
 RANDOMIZEPOSITIONS False
 init.Net0.POSITIONS 15.55895350495783,17.02475796027715;47.56499372388999,57.28732691557995;5.366872150976409,43.28729893321355;17.488160666668694,29.422819514162434;81.56549175388358,53.14564532018814;85.15660881172089,74.47408014762478;18.438454887921974,44.310130148722195;72.04311826903107,62.06952644109185;25.60125368295145,15.54795598202745;17.543669122835837,70.7258178169151

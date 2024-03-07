@@ -250,7 +250,7 @@ public abstract class AbstractClient implements Client {
 
     protected void printParams() {
         //if(active)
-        cltDbgLog("DAGClient Params: CPI<" + Arrays.toString(this.CPI) + "> T<" + Arrays.toString(this.BYTE_SIZE) + "> I<" + Arrays.toString(this.NO_INSTR) + ">");
+        cltDbgLog("Client Params: CPI<" + Arrays.toString(this.CPI) + "> T<" + Arrays.toString(this.BYTE_SIZE) + "> I<" + Arrays.toString(this.NO_INSTR) + ">");
     }
 
     @Override
@@ -268,7 +268,7 @@ public abstract class AbstractClient implements Client {
 
     @Override
     public String toString() {
-        return (active) ? "DAGClient{" +
+        return (active) ? "Client("+this.getId()+"){" +
 
                 " tasksAwaiting=" + tasksAwaiting.size() +
                 ", averageLatency=" + averageLatency +

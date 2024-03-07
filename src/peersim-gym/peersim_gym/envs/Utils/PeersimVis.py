@@ -50,6 +50,8 @@ class PeersimVis(object):
         pygame.display.set_caption("Peersim Simulaiton Visualization")
         self.display.fill((255, 255, 255))
         self.display.blit(self.display, (0, 0))
+        self.step = 0
+        self.last_state = None
 
     def draw(self):
         pygame.display.update()
@@ -73,8 +75,11 @@ class PeersimVis(object):
         # Clear the display
         self.display.fill((255, 255, 255))
 
-        self.draw_links(neighborsMatrix, global_positions, actions)
+        self.draw_links(neighborsMatrix, global_positions, actions, global_Q)
         self.draw_nodes(global_Q, global_ids, global_layers, global_positions, max_Q)
+        self.draw_step_info(step=self.step)
+        self.last_state = global_state
+        self.step += 1
 
     def draw_nodes(self, global_Q, global_ids, global_layers, global_positions, max_Q):
         for i in range(len(global_ids)):
@@ -86,12 +91,12 @@ class PeersimVis(object):
             overloaded = Q >= max_Q[layer]
             # To identify if an action passed through this link, we check if the last action of the node was to the
             # target node
+            new_tasks = self.get_new_tasks(id, Q)
 
 
+            self.draw_node(x, y, layer, Q, id, overloaded, new_tasks)
 
-            self.draw_node(x, y, layer, Q, id, overloaded)
-
-    def draw_node(self, x, y, layer, Q_size, id, overloaded=False):
+    def draw_node(self, x, y, layer, Q_size, id, overloaded=False, new_tasks=0):
         color = NODE_COLOR if not overloaded else NODE_OVERLOADED_COLOR
         info_x = x + NODE_W / 2
         info_y = y + NODE_W / 2
@@ -108,8 +113,22 @@ class PeersimVis(object):
 
         info_rect_height = info_rect.height
         self.display.blit(Q_surface, (info_x + 10, info_y + 10))
+        if new_tasks > 0:
+            new_tasks_text_surface = self.font.render(f"+{new_tasks}", True, NODE_INFO_TEXT_COLOR)
+            new_tasks_rect = new_tasks_text_surface.get_rect(topright=(info_rect.right + 5, info_rect.top - 5))
+            self.display.blit(new_tasks_text_surface, new_tasks_rect)
 
-    def draw_links(self, link_matrix, positions, actions):
+    def get_new_tasks(self, id, Q):
+        if self.last_state is None:
+            return 0
+        old_Q = self.last_state[GLOBAL_STATE_Q][id]
+        return Q - old_Q
+
+
+    def project_y(self, node_idx, positions):
+        return positions[node_idx][COORD_Y] * 10
+
+    def draw_links(self, link_matrix, positions, actions, queues):
         """
         Draw the links between the nodes.
         :param link_matrix: The link matrix.
@@ -126,9 +145,11 @@ class PeersimVis(object):
                 target = link_matrix[i][j]
                 key = f"{source}-{target}"
                 rev_key = f"{target}-{source}"
+                can_offload = queues[source] > 0 # Might not be entirely correct. The node may have assigned tasks that it can't offload, but Q wouldn't be 0.
+
+
                 if target == len(positions) and self.has_cloud >= 1:
                     continue
-                # Problem, the lines are being drawn on top of each other, therefore erasing one another.
                 # Another potential problem for later is that there isn't really any distinction between the direction
                 # of the task being offloaded.
 
@@ -145,13 +166,13 @@ class PeersimVis(object):
                 y1 = self.project_y(source, positions) + NODE_H / 2
                 x2 = self.project_x(target, positions) + NODE_W / 2
                 y2 = self.project_y(target, positions) + NODE_H / 2
-                self.draw_line(x1, y1, x2, y2, is_target)
+                self.draw_line(x1, y1, x2, y2, is_target, can_offload)
 
                 if is_target: # Guarantee that drawn lines are not overriden
                     do_not_overrride[key] = target
                     do_not_overrride[rev_key] = target
 
-                if source == target and is_target:
+                if source == target and is_target and can_offload:
                     local_rect_x = self.project_x(source, positions) + NODE_W
                     local_rect_y = self.project_y(source, positions)
                     local_rect = pygame.draw.rect(self.display, LOCAL_PROCESSING_BACKGROUND_COLOR,
@@ -160,12 +181,14 @@ class PeersimVis(object):
                     local_text_rect = local_text_surface.get_rect(center=local_rect.center)
                     self.display.blit(local_text_surface, local_text_rect)
 
-    def project_y(self, node_idx, positions):
-        return positions[node_idx][COORD_Y] * 10
-
     def project_x(self, node_idx, positions):
         return positions[node_idx][COORD_X] * 10
 
-    def draw_line(self, x1, y1, x2, y2, is_target):
-        color = LINK_PASSED_TASK_COLOR if is_target else LINK_NO_ACTION_COLOR
+    def draw_line(self, x1, y1, x2, y2, is_target, can_offload):
+        color = LINK_PASSED_TASK_COLOR if is_target and can_offload else LINK_NO_ACTION_COLOR
         pygame.draw.line(self.display, color, (x1, y1), (x2, y2), 1)
+
+    def draw_step_info(self, step):
+        step_text_surface = self.font.render(f"Step: {step}", True, NODE_INFO_TEXT_COLOR)
+        step_rect = step_text_surface.get_rect(topleft=(10, 10))
+        self.display.blit(step_text_surface, step_rect)

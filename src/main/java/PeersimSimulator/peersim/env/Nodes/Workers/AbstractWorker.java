@@ -280,7 +280,6 @@ public abstract class AbstractWorker implements Worker {
         Application app = ev.getApp();
 
         this.totalTasksRecieved++;
-        this.tasksRecievedSinceLastCycle++;
 
         if (this.getTotalNumberOfTasksInNode() + app.applicationSize() > qMAX) {
             droppedLastCycle++;
@@ -288,6 +287,8 @@ public abstract class AbstractWorker implements Worker {
             wrkInfoLog(EVENT_OVERLOADED_NODE, " DroppedApp=" + app.getAppID());
             return;
         }
+
+        this.tasksRecievedSinceLastCycle++;
 
         wrkInfoLog(EVENT_NEW_APP_RECIEVED, " appId=" + ev.getAppID());
         app.setHandlerID(this.id);
@@ -459,8 +460,8 @@ public abstract class AbstractWorker implements Worker {
     @Override
     public String toString() {
         String curr = (current != null) ? current.getId() : "NULL";
-        return (this.active) ? "DAGWorker ID<" + this.getId() + "> | Q: " + this.queue.size() + " W: " + this.recievedApplications.size() + " Current: " + curr
-                : "DAGWorker <INACTIVE>";
+        return (this.active) ? "Worker ID<" + this.getId() + "> | Q: " + this.queue.size() + " W: " + this.recievedApplications.size() + " Current: " + curr
+                : "Worker <INACTIVE>";
     }
 
     /**

@@ -18,6 +18,7 @@ PEERSIM_DEFAULTS = {
     "NO_LAYERS": "2",
     "NO_NODES_PER_LAYERS": "5,1",
     "CLOUD_ACCESS": "0,1",
+    "clientLayers": "0",
 
     "FREQS": "1e7,3e7",
     "NO_CORES": "4,8",
@@ -29,9 +30,9 @@ PEERSIM_DEFAULTS = {
 
     "init.Net1.r": "500",
 
-    "protocol.mng.r_u": "1",
-    "protocol.mng.X_d": "1",
-    "protocol.mng.X_o": "150",
+    # "protocol.mng.r_u": "1",
+    # "protocol.mng.X_d": "1",
+    # "protocol.mng.X_o": "150",
     "protocol.mng.cycle": "5",
 
     "protocol.clt.numberOfTasks": "1",

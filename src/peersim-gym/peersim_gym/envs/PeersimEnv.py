@@ -172,14 +172,14 @@ class PeersimEnv(ParallelEnv):
         self.simulator = None
         # self.simulator = PeersimThread(name='Run0', configs=self.config_path)
         # self.simulator.run()
-        self.UTILITY_REWARD = float(self.config_archive["protocol.mng.r_u"])
-        self.DELAY_WEIGHT = float(self.config_archive["protocol.mng.X_d"])
-        self.OVERLOAD_WEIGHT = float(self.config_archive["protocol.mng.X_o"])
+        self.UTILITY_REWARD = self.config_archive["utility_reward"]
+        self.DELAY_WEIGHT = self.config_archive["delay_weight"]
+        self.OVERLOAD_WEIGHT = self.config_archive["overload_weight"]
         self.TRANSMISSION_POWER = float(self.config_archive["protocol.props.P_ti"])
         self.PATH_LOSS_CONSTANT = float(self.config_archive["protocol.props.Beta1"])
         self.PATH_LOSS_EXPONENT = float(self.config_archive["protocol.props.Beta2"])
         self.BANDWIDTH = float(self.config_archive["protocol.props.B"])
-        self.NORMALIZED_THERMAL_NOISE_POWER = 174
+        self.NORMALIZED_THERMAL_NOISE_POWER = -174
         self.AVERAGE_TASK_SIZE, self.AVERAGE_TASK_INSTR, self.TASK_ARRIVAL_RATE = self._compute_avg_task_data()
         self.AVERAGE_PROCESSING_POWER, self.AVERAGE_MAX_Q, self.PROCESSING_POWERS = self._compute_worker_data()
         self.NODES_PER_LAYER = [int(no_nodes) for no_nodes in self.config_archive["NO_NODES_PER_LAYERS"].strip().split(",")]
@@ -187,6 +187,8 @@ class PeersimEnv(ParallelEnv):
         self.min_neighbours = -1
         self.max_neighbours = -1
         self.neighbourMatrix = []
+        self.clients_per_node = []
+        self.clients_per_layer = [int(no_nodes) for no_nodes in self.config_archive["clientLayers"].strip().split(",")]
         self.has_cloud = int(self.config_archive["CLOUD_EXISTS"])
 
         self.last_reward_components = {}
@@ -460,6 +462,24 @@ class PeersimEnv(ParallelEnv):
                 print(f"Action of agent {agent} was not found in the actions sent.")
         return rewards
 
+    def _compute_delay(self, d_i_j, w_o):
+        if d_i_j == 0:
+            t_c = 0
+        else:
+            T = self.AVERAGE_TASK_SIZE * 8e6;
+            W = self.BANDWIDTH * 1e6;
+            lambda_wavelength = 3e8 / 2.4e9
+            P_t = self.TRANSMISSION_POWER
+            N_0 = self.NORMALIZED_THERMAL_NOISE_POWER + 10 * math.log10(W)
+            h = 10 * math.log10((lambda_wavelength**2) / (16 * math.pi**2)) - 20 * math.log10(d_i_j)
+
+            SNR_db = P_t + h - N_0
+            SNR_linear = 10 ** (SNR_db / 10)
+            C = W * math.log2(1 + SNR_linear)
+
+            t_c = w_o * T / C
+        return t_c
+
     def _compute_agent_reward(self, agent_og_obs, agent_obs, action, agent_result, agent_idx):
         # Long story short... having a large range of rewards is making it so that the agent is not learning. Q-values
         # are exploding. The kind people in stack exchange have recommended that I keep the rewards in a small range [-1, 1]
@@ -488,8 +508,8 @@ class PeersimEnv(ParallelEnv):
             source_rank = 1
             target_rank = 1
         else:
-            source_rank = len(self.neighbourMatrix[source_of_task_global_index]) if self.get_layer(source_of_task_global_index) in self.layers_that_get_tasks else 0
-            target_rank = len(self.neighbourMatrix[target_of_task_global_index]) if self.get_layer(target_of_task_global_index)  in self.layers_that_get_tasks else 0
+            source_rank = self.clients_per_node[source_of_task_global_index] if self.get_layer(source_of_task_global_index) in self.layers_that_get_tasks else 0
+            target_rank = self.clients_per_node[target_of_task_global_index] if self.get_layer(target_of_task_global_index)  in self.layers_that_get_tasks else 0
 
         source_layer = self.get_layer(source_of_task_global_index)
         source_processing_power = self.PROCESSING_POWERS[source_layer]
@@ -524,16 +544,15 @@ class PeersimEnv(ParallelEnv):
         # Compute Delay
 
         t_w = not_zero(w_l) * (q_l / miu_l) + not_zero(w_o) * ((q_l / miu_l) + (q_o / miu_o))  # q_l/miu_l on the second term represents the time spent waiting in queue before being selected for offloading
-        if d_i_j == 0:
-            t_c = 0
-        else:
-            r_i_j = self.BANDWIDTH * math.log10(
-                1 + (self.PATH_LOSS_CONSTANT * math.pow(d_i_j, -self.PATH_LOSS_EXPONENT) * self.TRANSMISSION_POWER) / (
-                        self.BANDWIDTH * self.NORMALIZED_THERMAL_NOISE_POWER))
-            t_c = w_o * self.AVERAGE_TASK_SIZE / r_i_j
+        t_c = self._compute_delay(d_i_j, w_o)
 
         # og: t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
         t_e = self.AVERAGE_TASK_INSTR / target_processing_power - self.AVERAGE_TASK_INSTR / source_processing_power
+
+        t_w = min(t_w, self.UTILITY_REWARD * self.DELAY_WEIGHT["queue"])
+        t_e = min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
+        t_c = min(t_c, self.UTILITY_REWARD * self.DELAY_WEIGHT["comm"])
+
         D =  t_w + t_c + t_e # / (w_l + w_o)
 
         # Compute Overload
@@ -550,7 +569,7 @@ class PeersimEnv(ParallelEnv):
         # Capping the percentages to be between 100 and -100
         # U = max(min(U, self.UTILITY_REWARD), self.UTILITY_REWARD) / self.UTILITY_REWARD
         # Some people call this cheating, I call it not despairing -, _ ,-.
-        D = min(D, self.UTILITY_REWARD) * self.DELAY_WEIGHT
+
         O = O/3 * self.UTILITY_REWARD * self.OVERLOAD_WEIGHT # I cap the delay distance at 0.001 (0.1% to overload) therefore the log will only go down to 3
 
         # computing reward and normalizing it
@@ -559,6 +578,7 @@ class PeersimEnv(ParallelEnv):
         if self.phy_rs_term is not None:
             F = self.phy_rs_term(agent_obs) - self.phy_rs_term(agent_og_obs)
         reward += F
+        print(f"Action:{source_of_task_global_index}->{target_of_task_global_index}         Reward: U:{U} | D:{D} [t_C {t_c} ; t_w {t_w} ; t_e {t_e}] | O:{O}) | F:{F}")
         return (reward, {"U": U, "D": D, "O": O, "F": F})
 
     def _compute_avg_task_data(self):
@@ -594,6 +614,7 @@ class PeersimEnv(ParallelEnv):
         while self.neighbourMatrix is None or len(self.neighbourMatrix) == 0:
             print(f"Pooling for net stats {iter}")
             self.min_neighbours, self.max_neighbours, self.avg_neighbours, self.neighbourMatrix = self.__get_net_data()
+            self.clients_per_node = self._compute_clients_per_node()
             iter += 1
             time.sleep(0.05)
 
@@ -688,3 +709,13 @@ class PeersimEnv(ParallelEnv):
         normalized_obs[STATE_Q_FIELD] = normalized_Q
         normalized_obs[STATE_FREE_SPACES_FIELD] = normalized_free_spaces
         return normalized_obs
+
+    def _compute_clients_per_node(self) -> list[int]:
+        clients_per_node = []
+        for i in range(self.number_nodes):
+            clients_count = 0
+            for j in self.neighbourMatrix[i]:
+                if self.get_layer(j) in self.clients_per_layer:
+                    clients_count += 1
+            clients_per_node.append(clients_count)
+        return clients_per_node

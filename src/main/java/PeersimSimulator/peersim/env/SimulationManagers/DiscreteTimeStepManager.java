@@ -28,30 +28,12 @@ public class DiscreteTimeStepManager implements CDProtocol {
      */
     private static final String PAR_NAME = "name";
 
-    private final static String PAR_UTILITY_REWARD = "r_u";
-
-    private final static String PAR_DELAY_WEIGHT = "X_d";
-
-    private final static String PAR_OVERLOAD_WEIGHT = "X_o";
     private final static String PAR_CYCLE = "CYCLE";
     private final static String PAR_CTR_ID = "CONTROLLERS";
 
     private static final String PAR_HAS_CLOUD = "CLOUD_EXISTS";
 
 
-    public final int UTILITY_REWARD;
-    public final int DELAY_WEIGHT;
-    public final int WRONG_MOVE_PUNISHMENT;
-    public final int OVERLOAD_WEIGHT;
-
-
-    /**
-     protocol.mng.r_u 1
-     protocol.mng.X_d 1
-     protocol.mng.X_o 150
-     protocol.mng.cycle 5
-     protocol.mng.SimulationManagers 0
-     */
     public final int CYCLE_SIZE;
 
     public final double EXPECTED_TASK_ARRIVAL_RATE;
@@ -102,12 +84,9 @@ public class DiscreteTimeStepManager implements CDProtocol {
         pid = Configuration.getPid(prefix + "." + PAR_NAME);
         up = false;
         stop = false;
-        DELAY_WEIGHT = Configuration.getInt(prefix + "." + PAR_DELAY_WEIGHT, 1);
-        OVERLOAD_WEIGHT = Configuration.getInt(prefix + "." + PAR_OVERLOAD_WEIGHT, 150);
-        UTILITY_REWARD = Configuration.getInt(prefix + "." + PAR_UTILITY_REWARD, 1);
+
         CYCLE_SIZE = Configuration.getInt(PAR_CYCLE, 100);
         hasCloud = Configuration.getInt(PAR_HAS_CLOUD, 0);
-        WRONG_MOVE_PUNISHMENT = -200 * UTILITY_REWARD;
         EXPECTED_TASK_ARRIVAL_RATE = Configuration.getDouble(prefix + "." + Client.PAR_TASKARRIVALRATE, Client.DEFAULT_TASKARRIVALRATE);
 
 

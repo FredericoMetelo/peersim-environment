@@ -151,6 +151,7 @@ public final class BaseDelayTransport implements Transport
             return;
         }
         /*
+        => Option One: C
          We wish to use the Shannon-Hartley theorem to calculate the delay. We will use the following formula:
 
          t^c = \frac{T}{C}
@@ -172,24 +173,32 @@ public final class BaseDelayTransport implements Transport
          https://moonrakeronline.com/us/blog/what-is-antenna-gain-dbi-db
          https://www.antenna-theory.com/design/raspberry-pi-antenna.php // To add later, this dude measured gaion for Rbpi3
 
+        => Option 2: C_2
+        https://dsp.stackexchange.com/questions/89698/how-to-calculate-the-signal-to-noise-ratio-snr-in-db-different-units
+
          Note:
           d >> \lambda
           Inacurate because we assume no obstacles. We will use the Free Space Path Loss Equation.
        */
         double T = msgSize * 8e6; // Convert from MBytes to bits
         double W = srcProps.getBANDWIDTH() * 1e6; // Convert from Mhz to Hz
-        double gain_tx = 6; // dBi
-        double gain_rx = 6; // dBi
+//        double gain_tx = 6; // dBi
+//        double gain_rx = 6; // dBi
         double d = distance(srcProps, dstProps); // m
-        double lambda = 3e8 / 2.4e9; // wavelenght : c/f [m] ; c = 3e8 m/s ; f = 2.4e9 Hz;
-        double P_t_dB = 10 * Math.log10(Math.pow(10, srcProps.getTRANSMISSION_POWER() / 10.0)); // [dB] convert from dBm to dB
-        double P_r = srcProps.getTRANSMISSION_POWER() + gain_tx + gain_rx + 20 * log2(lambda/(4 * Math.PI * d));
-        //                  [dBm]                         [dBi]    [dBi]
-        double C = W * log2(1 + P_r / (SPECTRAL_NOISE_POWER * W)); // Channel Capacity [bit/s]
+        double lambda = 3e8 / 2.4e9; // wavelength : c/f [m] ; c = 3e8 m/s ; f = 2.4e9 Hz;
+        double P_t = srcProps.getTRANSMISSION_POWER(); // [dBm]
 
+        double N_0 = SPECTRAL_NOISE_POWER + 10*Math.log10(W); // [dBm] convert from dBm/Hz to dBm
+        double h = 10 * Math.log10(((lambda* lambda) / (16 * Math.PI * Math.PI))) - 20 * Math.log10(d); // [dB]
 
+        double SNR_dB = P_t + h - N_0; // [dB]
+        double SNR_linear = Math.pow(10, SNR_dB/10); // [linear]
+        double C_2 = W * log2(1 + SNR_linear); // Channel Capacity [bit/s]
 
-        long delay = Math.round( T / C);
+//        double P_r = P_t + gain_tx + gain_rx + 20 * log2(lambda/(4 * Math.PI * d));
+//        double C = W * log2(1 + P_r / (N_0)); // Channel Capacity [bit/s]
+
+        long delay = Math.max(Math.round( T / C_2), 1);
 //        delay += (range==1?min:min + CommonState.r.nextLong(range));
         EDSimulator.add(delay, msg, dest, pid);
     }

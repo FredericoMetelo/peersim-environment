@@ -25,6 +25,9 @@ public class ClientInitializer  implements Control {
      * @config
      */
     private static final String PAR_PROT = "protocol";
+
+    private static final String LAYERS_THAT_GENERATE_TASKS = "clientLayers";
+
     // ------------------------------------------------------------------------
     // Fields
     // ------------------------------------------------------------------------
@@ -32,6 +35,7 @@ public class ClientInitializer  implements Control {
     /** Protocol identifier; obtained from config property {@link #PAR_PROT}. */
     private final int pid;
     private final int[] layers;
+    private final int[] clientLayers;
 
     // ------------------------------------------------------------------------
     // Constructor
@@ -45,6 +49,9 @@ public class ClientInitializer  implements Control {
 
         String[] _layers = Configuration.getString(WorkerInitializer.PAR_NO_NODES_PER_LAYERS).split(",");
         layers = Arrays.stream(_layers).mapToInt(Integer::parseInt).toArray();
+
+        String[] _clientLayers = Configuration.getString(LAYERS_THAT_GENERATE_TASKS).split(",");
+        clientLayers = Arrays.stream(_clientLayers).mapToInt(Integer::parseInt).toArray();
     }
 
     // ------------------------------------------------------------------------
@@ -58,11 +65,18 @@ public class ClientInitializer  implements Control {
      */
     public boolean execute() {
         // Initialize the Clients
-        for(int i = 0; i < layers[0]; i++){
-            Client c = ((Client) Network.get(i).getProtocol(pid));
-            c.setActive(true);
-            c.setId(i);
-            // Set other Variables like CPU speed and others here.
+        int base = 0;
+        for( int layer = 0 ; layer < layers.length; layer++) {
+            int l = layer;
+            if (Arrays.stream(clientLayers).anyMatch(x -> x == l)) {
+                for (int i = base; i < base + layers[layer]; i++) {
+                    Client c = ((Client) Network.get(i).getProtocol(pid));
+                    c.setActive(true);
+                    c.setId(i);
+                    // Set other Variables like CPU speed and others here.
+                }
+             }
+            base += layers[layer];
         }
         return false;
     }
