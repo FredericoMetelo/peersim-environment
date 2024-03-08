@@ -37,18 +37,18 @@ public class BasicController extends AbstractController {
         if(!(action instanceof BasicAction a)) throw new RuntimeException("Wrong Class of Action being used.");
 
         if (!active || a == null || a.controllerId() < 0 || a.neighbourIndex() < 0) {
-            return new FailledActionSimulationData(this.getId());
+            return new FailledActionSimulationData(this.getId(), false);
         }
         int neigh = a.neighbourIndex();
         Linkable l = (Linkable) Network.get(a.controllerId()).getProtocol(FastConfig.getLinkable(Controller.getPid()));
         if(neigh < 0 || neigh >= l.degree()){
             ctrErrLog("An action failed because the specified index of the neighbourhood is out of bounds");
-            return new FailledActionSimulationData(this.getId());
+            return new FailledActionSimulationData(this.getId(), false);
 
         }
         if(!l.getNeighbor(neigh).isUp()){
             ctrErrLog("An action failed because the node of the specified index of the neighbourhood is down");
-            return new FailledActionSimulationData(this.getId());
+            return new FailledActionSimulationData(this.getId(), false);
 
         }
 
@@ -61,10 +61,10 @@ public class BasicController extends AbstractController {
         ctrInfoLog(EVENT_SEND_ACTION_RECIEVED, "TARGET_INDEX=" + neighbourIndex);
         double reward = 0; //calculatReward(linkable, node, targetNode, 1);
         this.currentInstructions = new BasicOffloadInstructions(neighbourIndex);
-        this.correspondingWorker.offloadInstructions(Worker.getPid(), this.currentInstructions);
+        boolean success = this.correspondingWorker.offloadInstructions(Worker.getPid(), this.currentInstructions);
         // allow progress
         stop = false;
-        return this.compileSimulationData(neighbourIndex, this.getId());
+        return this.compileSimulationData(neighbourIndex, this.getId(), success);
     }
 
 
@@ -77,7 +77,7 @@ public class BasicController extends AbstractController {
 
     //=== Reward Function
     @Override
-    public BasicSimulationData compileSimulationData(Object nI, int sourceID){
+    public BasicSimulationData compileSimulationData(Object nI, int sourceID, boolean success){
 
         int neighbourIndex = (int) nI;
         int srcLinkableId = FastConfig.getLinkable(Worker.getPid());
@@ -87,7 +87,7 @@ public class BasicController extends AbstractController {
         SDNNodeProperties propsTarget = (SDNNodeProperties) srcLinkable.getNeighbor(neighbourIndex).getProtocol(SDNNodeProperties.getPid());
 
         double d_i_j = Math.sqrt(Math.pow(propsNode.getY() - propsTarget.getY(), 2) + Math.pow(propsNode.getX() - propsTarget.getX(), 2));
-        return new BasicSimulationData(sourceID, d_i_j, this.getWorkerInfo().get(neighbourIndex), this.extractCompletedTasks());
+        return new BasicSimulationData(sourceID, d_i_j, this.getWorkerInfo().get(neighbourIndex), this.extractCompletedTasks(), success);
     }
 
     //=== Logging and Debugging

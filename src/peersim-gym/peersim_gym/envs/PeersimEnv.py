@@ -287,7 +287,7 @@ class PeersimEnv(ParallelEnv):
         print("Last Reward Components:" + json.dumps(self.last_reward_components))
 
     def __render_human(self):
-        self.vis.update_state(self._global_obs, self.max_Q_size, self.neighbourMatrix, self.last_actions, self.controllers, self.agent_name_mapping)
+        self.vis.update_state(self._global_obs, self.max_Q_size, self.neighbourMatrix, self.last_actions, self.controllers, self.agent_name_mapping, self._result)
         self.vis.draw()  # TODO Project the coordinates to the render space...
 
     def close(self):

@@ -14,6 +14,8 @@ public record GlobalState(
         List<Double> averageCompletionTimes,
         List<Integer> droppedTasks,
         List<Integer> finishedTasks,
-        List<Integer> totalTasks
+        List<Integer> totalTasks,
+
+        List<Integer> isWorking
 ) {
 }

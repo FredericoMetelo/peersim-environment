@@ -110,4 +110,6 @@ public interface Worker extends CDProtocol, EDProtocol {
 
     double getCpuFreq();
     int getQueueCapacity();
+
+    int isWorking();
 }

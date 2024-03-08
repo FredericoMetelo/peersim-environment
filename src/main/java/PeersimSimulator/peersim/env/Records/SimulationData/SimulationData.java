@@ -15,10 +15,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 })
 public abstract class SimulationData {
         protected int srcId;
+        protected boolean success;
 
-
-        public SimulationData(int srcId){
+        public SimulationData(int srcId, boolean success){
                 this.srcId = srcId;
+                this.success = success;
         }
 
         public int getSrcId() {
@@ -28,6 +29,8 @@ public abstract class SimulationData {
         public void setSrcId(int srcId) {
                 this.srcId = srcId;
         }
+
+        public boolean getSuccess(){return success;}
 }
 
 

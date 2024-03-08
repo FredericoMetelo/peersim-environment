@@ -484,6 +484,9 @@ public abstract class AbstractWorker implements Worker {
         return this.queue.isEmpty() && this.recievedApplications.isEmpty() && this.current == null; //  && (this.current == null || this.current.done())
     }
 
+    public int isWorking() {
+        return this.current == null ? 0 : 1;
+    }
     /**
      * This method computes the amount of tasks currently in the system. Which includes the tasks awaiting processing in
      * the received applications. The tasks currently in the queue and the task being processed right now.

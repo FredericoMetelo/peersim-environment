@@ -16,7 +16,8 @@ private List<ITask> tasksCompleted;
 
     //  int srcId,  List<Double> distance,  List<ITask> tasksCompleted
     @JsonCreator
-    public FailledActionSimulationData(@JsonProperty("srcId")int srcId) {
-        super(srcId);
+    public FailledActionSimulationData(@JsonProperty("srcId")int srcId,
+                                       @JsonProperty("success") boolean success){
+        super(srcId, success);
     }
 }

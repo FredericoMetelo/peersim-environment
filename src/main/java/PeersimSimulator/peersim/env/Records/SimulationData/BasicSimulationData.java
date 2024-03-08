@@ -30,11 +30,13 @@ public class BasicSimulationData extends SimulationData {
     public BasicSimulationData(@JsonProperty("srcId")int srcId,
                                @JsonProperty("distance") double distance,
                                @JsonProperty("wi") WorkerInfo wi,
-                               @JsonProperty("tasksCompleted") List<ITask> tasksCompleted) {
-        super(srcId);
+                               @JsonProperty("tasksCompleted") List<ITask> tasksCompleted,
+                               @JsonProperty("success") boolean success){
+        super(srcId, success);
         this.distance = distance;
         this.wi = wi;
         this.tasksCompleted = tasksCompleted;
+
     }
 
     public double getDistance() {

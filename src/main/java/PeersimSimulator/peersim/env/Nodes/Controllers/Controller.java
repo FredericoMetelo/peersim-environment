@@ -31,7 +31,7 @@ public interface Controller extends CDProtocol, EDProtocol {
     void processEvent(Node node, int pid, Object event);
 
     SimulationData sendAction(Action a);
-    SimulationData compileSimulationData(Object neighbourIndex, int sourceID);
+    SimulationData compileSimulationData(Object neighbourIndex, int sourceID, boolean success);
     List<ITask> extractCompletedTasks();
 
     Worker getCorrespondingWorker();

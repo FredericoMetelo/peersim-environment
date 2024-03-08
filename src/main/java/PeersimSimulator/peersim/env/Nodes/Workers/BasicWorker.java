@@ -106,7 +106,7 @@ public class BasicWorker extends AbstractWorker{
         if ((current == null || current.done()) && queue.isEmpty() && !recievedApplications.isEmpty()) {
             applicationSerialization();
         }
-        this.current = this.selectNextAvailableTask();
+        this.current = this.selectNextAvailableTask(false);
         boolean taskAssigend = this.current != null;
         if(taskAssigend) {
             this.current.addEvent(TaskHistory.TaskEvenType.SELECTED_FOR_PROCESSING, this.id, CommonState.getTime());
@@ -117,8 +117,8 @@ public class BasicWorker extends AbstractWorker{
         return this.changedWorkerState;
     }
 
-    private ITask selectNextAvailableTask() {
-        if (this.current != null) {
+    private ITask selectNextAvailableTask(boolean offloading) {
+        if (this.current != null && !offloading) {
             return this.current;
         }
         if (!this.queue.isEmpty()) {
@@ -136,7 +136,7 @@ public class BasicWorker extends AbstractWorker{
         if(this.awaitingSerialization()) applicationSerialization();
         BasicOffloadInstructions oi = (BasicOffloadInstructions) offloadInstructions;
 
-        ITask task = this.selectNextAvailableTask();
+        ITask task = this.selectNextAvailableTask(true);
         // ngl, it's late... There is for sure a better way of implementing this. This boolean overloading the method
         // does not look very good.
         if(task == null) {
@@ -181,7 +181,7 @@ public class BasicWorker extends AbstractWorker{
                             selectOffloadTargetPid(oi.getNeighbourIndex(), target)
                     );
             this.changedWorkerState = true;
-            this.current = null;
+            //this.current = null;
         }else{
             // oi.getNeighbourIndex() == this.getId()
             this.tasksToBeLocallyProcessed.add(task.getId());

@@ -18,8 +18,9 @@ public class BatchSimulationData extends SimulationData{
     @JsonCreator
     public BatchSimulationData(@JsonProperty("srcId") int srcId,
                                @JsonProperty("distances") List<Double> distances,
-                               @JsonProperty("tasksCompleted") List<ITask> tasksCompleted) {
-        super(srcId);
+                               @JsonProperty("tasksCompleted") List<ITask> tasksCompleted,
+                               @JsonProperty("success") boolean success){
+        super(srcId, success);
         this.distances = distances;
         this.tasksCompleted = tasksCompleted;
     }

@@ -253,6 +253,7 @@ public abstract class AbstractClient implements Client {
         cltDbgLog("Client Params: CPI<" + Arrays.toString(this.CPI) + "> T<" + Arrays.toString(this.BYTE_SIZE) + "> I<" + Arrays.toString(this.NO_INSTR) + ">");
     }
 
+
     @Override
     public double getAverageByteSize() {
         return averageByteSize;

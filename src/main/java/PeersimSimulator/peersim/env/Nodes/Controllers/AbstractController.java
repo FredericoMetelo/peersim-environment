@@ -179,7 +179,7 @@ public abstract class AbstractController implements Controller {
 
     //=== Reward Function
     @Override
-    public abstract SimulationData compileSimulationData(Object neighbourIndex, int sourceID);
+    public abstract SimulationData compileSimulationData(Object neighbourIndex, int sourceID, boolean success);
 
     //======================================================================================================
     @Override

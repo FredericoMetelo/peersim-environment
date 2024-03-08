@@ -38,11 +38,11 @@ public class BatchController extends AbstractController {
         if(!(action instanceof BatchAction a))
             throw new RuntimeException("Wrong Class of Action being used.");
         if (!active || a == null || a.controllerId() < 0) {
-            return new FailledActionSimulationData(this.getId());
+            return new FailledActionSimulationData(this.getId(), false);
 
         }
         if(a.neighbourIndexes().isEmpty()){
-           return this.compileSimulationData(a.neighbourIndexes(), this.getId());
+           return this.compileSimulationData(a.neighbourIndexes(), this.getId(), false);
         }
 
         List<Integer> neigh = a.neighbourIndexes();
@@ -56,10 +56,10 @@ public class BatchController extends AbstractController {
 
 
         this.currentInstructions = new BatchOffloadInstructions(neighbourIndex);
-        this.correspondingWorker.offloadInstructions(Worker.getPid(), this.currentInstructions);
+        boolean success = this.correspondingWorker.offloadInstructions(Worker.getPid(), this.currentInstructions);
         // allow progress
         stop = false;
-        return this.compileSimulationData(neighbourIndex, this.getId());
+        return this.compileSimulationData(neighbourIndex, this.getId(), success);
     }
 
 
@@ -72,7 +72,7 @@ public class BatchController extends AbstractController {
 
     //=== Reward Function
     @Override
-    public SimulationData compileSimulationData(Object nI, int sourceID){
+    public SimulationData compileSimulationData(Object nI, int sourceID, boolean success){
 
        List<Integer> neighbourIndex = (List<Integer>) nI;
 
@@ -88,7 +88,7 @@ public class BatchController extends AbstractController {
                 }
         ).toList();
 
-        return new BatchSimulationData(sourceID, distance, this.extractCompletedTasks());
+        return new BatchSimulationData(sourceID, distance, this.extractCompletedTasks(), success);
     }
 
     //=== Logging and Debugging
