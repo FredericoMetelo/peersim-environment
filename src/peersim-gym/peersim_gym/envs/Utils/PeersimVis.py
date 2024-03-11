@@ -1,4 +1,5 @@
 import pygame
+import math
 
 PROCESSING_BOX_COLOR = (0, 0, 0)
 
@@ -40,7 +41,7 @@ windowclock = pygame.time.Clock()
 
 
 class PeersimVis(object):
-    def __init__(self, has_cloud):
+    def __init__(self, has_cloud, no_step_per_episode):
         # Display dimensions
         self.displayw = displayw
         self.displayh = displayh
@@ -56,6 +57,7 @@ class PeersimVis(object):
         self.display.blit(self.display, (0, 0))
         self.step = 0
         self.last_state = None
+        self.no_step_per_episode = no_step_per_episode
 
     def draw(self):
         pygame.display.update()
@@ -212,6 +214,8 @@ class PeersimVis(object):
         pygame.draw.line(self.display, color, (x1, y1), (x2, y2), 1)
 
     def draw_step_info(self, step):
-        step_text_surface = self.font.render(f"Step: {step}", True, NODE_INFO_TEXT_COLOR)
+        episode = math.floor(step / self.no_step_per_episode)
+        step_in_episode = step % self.no_step_per_episode
+        step_text_surface = self.font.render(f"Ep: {episode} Step:{step_in_episode}/{self.no_step_per_episode} (total:{step})", True, NODE_INFO_TEXT_COLOR)
         step_rect = step_text_surface.get_rect(topleft=(10, 10))
         self.display.blit(step_text_surface, step_rect)

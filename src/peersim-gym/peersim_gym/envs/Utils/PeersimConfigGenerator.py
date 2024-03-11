@@ -67,6 +67,7 @@ PEERSIM_DEFAULTS = {
     "MANUAL_CORES": "1",
     "MANUAL_FREQS": "1e7",
     "MANUAL_QMAX": "10",
+    "protocol.clt.clientIsSelf": "1",
 
 }
 

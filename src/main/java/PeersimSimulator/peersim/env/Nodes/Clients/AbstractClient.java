@@ -19,6 +19,8 @@ import java.util.*;
 public abstract class AbstractClient implements Client {
 
     protected static int pid;
+    private static final String PAR_CLIENT_IS_SELF = "clientIsSelf";
+    private final int clientIsSelf;
 
     protected double[] BYTE_SIZE; // Mbytes
     protected double averageByteSize;
@@ -69,6 +71,7 @@ public abstract class AbstractClient implements Client {
         String[] _layersThatGetTasks = Configuration.getString(prefix + "." + PAR_LAYERS_THAT_GET_TASKS).split(",");
         layersThatGetTasks = Arrays.stream(_layersThatGetTasks).mapToInt(Integer::parseInt).toArray();
 
+        clientIsSelf = Configuration.getInt(prefix + "." + PAR_CLIENT_IS_SELF, 0);
         tasksCompleted = 0;
         droppedTasks = 0;
         totalTasks = 0;
@@ -128,26 +131,15 @@ public abstract class AbstractClient implements Client {
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
 
         if (nextArrival == null) initTaskManagement(linkable.degree());
-
-        for (int i = 0; i < linkable.degree(); i++) {
-            if (nextArrival.get(i) <= CommonState.getTime()
-                    && canGetTasks(((Worker) linkable.getNeighbor(i).getProtocol(Worker.getPid())).getLayer())) { // Not sure of the legality of this...
-                Node target = linkable.getNeighbor(i);
-                if (!target.isUp()) continue; // This happens task progress is lost.
-                Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
-                Application app = generateApplication((int) target.getID());
-                tasksAwaiting.add(new AppInfo(app.getAppID(), CommonState.getTime(), app.getDeadline()));
-                totalTasks++;
-                cltInfoLog(EVENT_TASK_SENT, "target=" + wi.getId());
-                ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
-                        send(
-                                node,
-                                target,
-                                new NewApplicationEvent(app.getAppID(), this.id, app.getInitialDataSize(), app),
-                                Worker.getPid()
-                        );
-
-                nextArrival.set(i, CommonState.getTime() + selectNextTime());
+        if(this.clientIsSelf == 1 && nextArrival.get(0) <= CommonState.getTime()
+                    && canGetTasks(((Worker) linkable.getNeighbor(0).getProtocol(Worker.getPid())).getLayer())){
+            sendTaskAndDecideNextEventTime(node, linkable, 0); // Send to self which is always on position 0.
+        }else{
+            for (int i = 0; i < linkable.degree(); i++) {
+                if (nextArrival.get(i) <= CommonState.getTime()
+                        && canGetTasks(((Worker) linkable.getNeighbor(i).getProtocol(Worker.getPid())).getLayer())) { // Not sure of the legality of this...
+                    sendTaskAndDecideNextEventTime(node, linkable, i);
+                }
             }
         }
         droppedTasks += cleanUpTasks();
@@ -155,6 +147,25 @@ public abstract class AbstractClient implements Client {
         // might be to clean up dropped tasks whenever a task completes. Because tasksAwaiting is a list, the older tasks
         // will be at the start of the list and the newer ones at the end. So by cleaning up the start of the list we
         // will get the benefits of making the tasksAwaiting list smaller and also get the droppedTasks count.
+    }
+
+    private void sendTaskAndDecideNextEventTime(Node node, Linkable linkable, int i) {
+        Node target = linkable.getNeighbor(i);
+        if (!target.isUp()) return;
+        Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
+        Application app = generateApplication((int) target.getID());
+        tasksAwaiting.add(new AppInfo(app.getAppID(), CommonState.getTime(), app.getDeadline()));
+        totalTasks++;
+        cltInfoLog(EVENT_TASK_SENT, "target=" + wi.getId());
+        ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+                send(
+                        node,
+                        target,
+                        new NewApplicationEvent(app.getAppID(), this.id, app.getInitialDataSize(), app),
+                        Worker.getPid()
+                );
+
+        nextArrival.set(i, CommonState.getTime() + selectNextTime());
     }
 
     private int cleanUpTasks() {
