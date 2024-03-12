@@ -553,7 +553,7 @@ class PeersimEnv(ParallelEnv):
         t_e = min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
         t_c = min(t_c, self.UTILITY_REWARD * self.DELAY_WEIGHT["comm"])
 
-        D =  t_w + t_c + t_e # / (w_l + w_o)
+        D = t_w + t_c + t_e  # / (w_l + w_o)
 
         # Compute Overload
         # q_prime_l = q_expected_l  # min(max(0, q_l - avg_tasks_processed_per_node) + w_l, self.AVERAGE_MAX_Q)
