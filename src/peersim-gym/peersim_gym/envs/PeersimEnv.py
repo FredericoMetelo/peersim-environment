@@ -194,7 +194,7 @@ class PeersimEnv(ParallelEnv):
         self.last_reward_components = {}
 
         if self.render_mode == "human":
-            self.vis = PeersimVis(self.has_cloud)
+            self.vis = PeersimVis(self.has_cloud, int(self.config_archive["CYCLES"]))
 
     def observation_space(self, agent):
         return Dict(
@@ -550,7 +550,7 @@ class PeersimEnv(ParallelEnv):
         t_e = self.AVERAGE_TASK_INSTR / target_processing_power - self.AVERAGE_TASK_INSTR / source_processing_power
 
         t_w = min(t_w, self.UTILITY_REWARD * self.DELAY_WEIGHT["queue"])
-        t_e = min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
+        t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]), -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
         t_c = min(t_c, self.UTILITY_REWARD * self.DELAY_WEIGHT["comm"])
 
         D = t_w + t_c + t_e  # / (w_l + w_o)
