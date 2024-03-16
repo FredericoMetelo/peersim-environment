@@ -196,7 +196,7 @@ public class WorkerInitializer implements Control {
     }
 
     /**
-     * ChatGPT written method
+     * Format an int array to a string.
      * @param intArray
      * @return
      */

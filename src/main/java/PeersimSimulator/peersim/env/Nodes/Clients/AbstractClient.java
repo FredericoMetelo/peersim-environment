@@ -80,8 +80,7 @@ public abstract class AbstractClient implements Client {
     }
 
     /**
-     * Binary search for the index of the first bigger value. This is ChatGPT generated but I've confirmed by hand it
-     * works as intended.
+     * Binary search for the index of the first bigger value.
      *
      * @param sortedArray
      * @param target
