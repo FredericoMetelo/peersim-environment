@@ -1,133 +1,149 @@
 # Peersim-Env
+
+PeersimGym, an environment to train task-offloading MARL algorithms on Edge network simulations. The simulation behind the environment is built using the [Peersim Peer-to-Peer simulator tool](https://peersim.sourceforge.net/) that we adapted to simulate Edge Systems, and an API following the [PettingZoo Framework](https://pettingzoo.farama.org/) is provided in _Python_.
+
 This repository contains the implementation of Peersim-env. This is composed of two parts. A Gym environment python class, and
 a server that wraps the simultion of the peersim environment in a REST API allowing the passing of information to the python Gym environment.
 # Index
 1.[How The Simulation Works](##HowTheSimulationWorks)<br>
-&nbsp;1.1.[The Simulation Server](###TheSimulationServer)<br>
-&nbsp;1.2.[MDP](###MDP)<br>
-&nbsp;1.3.[Network Topology](###NetworkTopology)<br>
-&nbsp;1.4.[REST API](###RESTAPI)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.1.[The Simulation Server](###TheSimulationServer)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.2.[MDP](###MDP)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.3.[Network Topology](###NetworkTopology)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.4.[REST API](###RESTAPI)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.5.[Implementing your own protocols for the Simulation](###CustomizingSim)<br>
 2.[Quickstart](#Quickstart)<br>
-&nbsp;2.1.[Setting Up](##SettingUp)<br>
-&nbsp;2.1.1.[External Tools](###ExternalTools)<br>
-&nbsp;2.1.2.[Setup Anaconda](###SetupAnaconda)<br>
-&nbsp;2.2.[Utilizing the Environmnet](##Utilizing)<br>
-&nbsp;&nbsp;2.2.1.[Utilization Example](###UsingTheEnvironment)<br>
-&nbsp;&nbsp;2.2.2.[Configurations](##Configurations)<br>
-&nbsp;&nbsp;2.2.3.[Configuring The Simulation](###ConfiguringTheSimulation)<br>
-&nbsp;&nbsp;2.2.4.[Configuring The Controller](###ConfiguringTheController)<br>
-&nbsp;&nbsp;2.2.5.[Configuring The Client](###ConfiguringTheClient)<br>
-&nbsp;&nbsp;2.2.6.[Configuring The Workers](###ConfigurationOfTheWorker)<br>
-&nbsp;&nbsp;2.2.7.[Configuring The Links](###ConfigurationsOfTheLinks)<br>
-&nbsp;2.3.[Developing the Simulation](##Developing)<br>
-&nbsp;&nbsp;2.3.1.[Setup The Simulator](###SetupTheSimulator)<br>
-&nbsp;&nbsp;2.3.2.[Maven Dependencies](###MavenDependencies)<br>
-&nbsp;&nbsp;2.3.3.[Compiling The Simulator](###CompilingTheSimulator)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.1.[Setting Up](##SettingUp)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.1.1.[External Tools](###ExternalTools)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.1.2.[Setup Anaconda](###SetupAnaconda)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2.[Utilizing the Environmnet](##Utilizing)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2.1.[Utilization Example](###UsingTheEnvironment)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2.2.[Configurations](##Configurations)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2.3.[Configuring The Simulation](###ConfiguringTheSimulation)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2.4.[Configuring The Controller](###ConfiguringTheController)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2.5.[Configuring The Client](###ConfiguringTheClient)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2.6.[Configuring The Workers](###ConfigurationOfTheWorker)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.2.7.[Configuring The Links](###ConfigurationsOfTheLinks)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.[Developing the Simulation](##Developing)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.1.[Setup The Simulator](###SetupTheSimulator)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.2.[Maven Dependencies](###MavenDependencies)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.3.[Compiling The Simulator](###CompilingTheSimulator)<br>
 
 <a name="HowTheSimulationWorks"></a>
 ## How the Simltion Works
 <a name="TheSimulationServer"></a>
 ### The Simulation Model
-We build a simulation based on the Network used in the paper by J.-y. Baek, G. Kaddoum, S. Garg, K. Kaur and V. Gravel, "[Managing Fog Networks using Reinforcement
-Learning Based Load Balancing Algorithm](https://ieeexplore.ieee.org/document/8885745)". The tool we use to support our simulation is the [Peersim Simulation Tool](https://peersim.sourceforge.net/).
+ 
+The structure of the simulator (assumes a set of client devices $\mathcal{C}$, generating data to be processed, similar to sensors in IoT devices. This data is then sent to a worker node, which can either process the task locally or offload it to other nodes with available resources. Each device $w_i$, in a set of worker nodes $\mathcal{W}$, is characterized by the following features, which can be included in the system or neglected:
+
+
+-  **Task queue**, $Q_i$, a structure that allows at most $Q_i^{\text{max}}$ received tasks to be stored and await to be processed in a first-in-first-out fashion. Any tasks received above the capacity of the node will be dropped.
+-  **Number of processors**, $N_{\phi}^i$, of frequency, $\phi_i$, in $MHz$. Therefore, the node can process $N_{\phi}^i\phi_i$ instructions per time step. Tasks are processed sequentially, and all the available cores are utilized when processing a single task. Upon completion, the node will send the result to the origin ---  either the client that generated the task, or to other node from where the task was received, which will repeat the process until the client receives the results.
+-  **Transmission power**, $P_i$, that affects the communication delays.
+-  **Position**, $l_i$, which also affects the communication delay and other proximity-based mechanisms.
+ 
+
+
+The set of workers $\mathcal{W}$ can be divided into tiers/layers. All nodes within a tier are generated with similar resource specs. The tier/layer system is useful for modeling hierarchical networks like in the Fog Computing paradigm. Optionally, a user can include a cloud server in the system. The cloud does not have a maximum queue capacity and consists of multiple virtual machines (VM) that are assigned to tasks in the order they arrive.
+Hence, the inclusion or exclusion of tiers or clouds allows one to cover a wide range of structures, from a decentralized peer-to-peer (P2P) to a hierarchical n-tier network.
+
+A set of the worker nodes in the network hosts a Controller protocol -- which allows that worker to offload tasks to its neighbors. The responsibilities of the controller protocol can be summed up by 1.) maintaining information on the state of the node’s neighboring workers, and 2.) making offloading decisions.
 
 **Simulation Components**<br>
-We simulate a static network (we are planning to make the topology configurable like in an actual SDN in later updates (Still not implemented!)). All the Nodes in the Network know each other from the start and communicate through a reliable (can be configured to be unreliable) link.
-The Network simulated has three types of nodes, that are:
+The simulation works by using the Peersim simulation tool as its base, which offers two engines an event-driven and a cycle-driven engine, although the cycle-driven engine can be imitated by scheduling an event at each time step. The tool works by implementing a network as a list of nodes that run a group of user-specified protocols, which for PeersimGym's simulator are the client, worker, and controller protocols and a special Simulation Manager protocol;
+The Simulation Manager Protocol will at a configurable interval stop the simulation and await a request with an action to be posted to the _Spring Boot_ server. It will then distribute the actions described in the post actions request and resume the simulation until the interval to stop has passed again.
 
-- Worker Nodes: Simulate the execution of tasks, offload tasks on request by the controller and communicate status messages to the controller.
-  - Controller Node: Some worker nodes have the controller function. This allows them to keep information on the status of each node in their
-  neighbourhood and receive offload instructions from the agents outside the simulation, and subsequently pass them to the relevant worker node. The worker node to be offloaded to is selected on a round robin style across all nodes.
-- Client Nodes: Only one client that will for each node generate and request tasks following a poisson process. the Client also keeps an
-  average of the time the requests took to be processed in the time internal to the simulator.
+The other protocols at each time step execute a cyclical predefined behavior:
 
-**Simulating the passage of time**<br>
+- For the worker protocol, this behavior consists of processing the first available task in the queue, by updating a counter of instructions for that task. Whenever a task is finished, the result is sent back to the client that generated it, using multiple hops if the task was offloaded multiple times, and the next available task is selected or if the queue is empty the worker becomes idle, remaining that way until another task arrives.
+- For the client protocol, this behavior consists of deciding whether to send a task to each of the workers in their neighborhood that can receive tasks based on a Poisson process. The worker's that can receive tasks are defined through the configurations.
+- For the controller protocol, this behavior consists of checking if the worker has had any changes in its internal state. If it did then a one-hop broadcast to its neighborhood with the updated state information.
 
-To simulate the passage of time we make use of the built-in schedulling properties of the Peersim simulation tool, by utilizing 
-having our protocols extend the CDScheduler Class and execute something at each time-step, each simulation time-step represents
-a second, and all the protocols execute at each time-step.
-We have a special protocol, DiscreteTimeStepManager that controls the stopping of the simulation, so that the agents can send
-their offloading instructions to the simulation.
-The other protocols also execute every time-step, but none of them affects the flow of the simulation. Their functions encopass
 
-The worker at each time-step processes the tasks it has received by how many instructions per second it can do. If any changes 
-to its internal state happened it will broadcast its state information to its neighbourhood. 
+For accurate simulation, we also utilize events in our simulation, each protocol will initiate a routine for dealing with different events:
 
-The clients will generate and send tasks to the nodes following a Poisson Process, every time-step they check what workers
-are scheduled to receive a task. They then generate that task and send it to the worker. For every worker that was sent a task the client node will use the poisson process to
-see on how many time-steps it will have to send the next task to said worker.
+- The worker protocol
+  - Receive Task from an offload event, the worker is responsible for receiving a task from another node, and if there is available space add the task to be processed in the node, otherwise the task is dropped.
+  - Receive a new Task event, the worker is responsible for receiving a task directly from a client, and if there is available space add the task to be processed in the node, otherwise the task is dropped.
+  - Receive a concluded task's result event, the worker is responsible for redirecting the task towards the client that generated it, wither by offloading to a closer worker, or by sending it back to the client if it is in the neighborhood.
+
+- The Client protocol:
+  - Task completed event, the client is responsible for handling a task completion, and registering the required metrics.
+
+- The Controller protocol
+  - Neighbour State update event, the controller is responsible for updating the node's information on the state of the neighbor that emitted the event.
+
+
+In the case of the controller protocol, the offloading event is different from the other events. The instructions are received through the REST request from the simulation and are passed by a special class evoking a method directly on each of the controllers which will take the actions immediately
+
 
 **Communication between the agent and the environment.**<br>
-To allow communicating with external agents we wrap the agent up in a Local Spring Server that exposes a REST API for the agent to send actions to the environment and observe it's state.
+As the clients generate tasks and the workers receive them, nodes with a _controller protocol_ might decide to offload tasks instead of processing them locally, and the controller protocols will share their local information through the one-hop broadcasts. All the communication in the network, i.e., offloading of the tasks between the nodes, is assumed wireless. To compute the number of bits sent per second, we consider the _Shannon-Hartley_ theorem, where the latency to communicate $\alpha$ bits from node $w_i$ to  $w_j$ is
+$$
+T^{\text{comm}}_{i,j}(\alpha) =\frac{\alpha}{B_{i,j} \cdot \text{log}(1 + 10^{\frac{P_i + G_{i,j} - \omega_0}{10}})},
+$$
+
+where $B_{i,j}$ is the channel bandwidth, $G_{i,j}$ is the channel gain, $P_i$ is the power of the node's transceiver, $\omega_o$ and $\eta$ are the noise power and a constant representing the noise power spectral density respectively, s.t. $\omega_0 =  \eta + 10 \log_{10}(B_{i,j})$.
+
+**Task Model**<br>
+All the workload in the simulation comes in the form of the processing demands of the tasks. A task $\tau_i$ is a computational requirement generated by a client and is represented as a tuple  $\tau_i = \langle i, \rho_i, \alpha_i^{\text{in}}, \alpha_i^{\text{out}}, \xi_i, \delta_i \rangle$, where
+- $i$ is a unique identifier of the task;
+- $\rho_i$ is the number of instructions to be processed;
+- $\alpha_i^{\text{in}}$ is the total data size of the input;
+- $\alpha_i^{\text{out}}$ is the data size of the output/results;
+- $\xi_i$ is the cost in CPU cycles per instruction;
+- $\delta_i$ is the deadline of the task, i.e., the maximum allowed latency for returning the results (see Tab.~\ref{tab:notation}).
+
+The time is logically divided into discrete time slots of a unit size $t=1,..., T$. Tasks are generated following a \textit{Poisson} distribution with the arrival rate $\lambda>0$.
+Clients deliver their generated tasks to nearby worker nodes, who are responsible for processing them (see Fig.~\ref{fig:FullDiagram}). Received tasks are stored in the queue, awaiting for the processing resources to become available, unless the queue is already full, in which case the task is dropped.
 
 <a name="MDP"></a>
-### MDP 
+### MDP
 
-```
-TODO: This has basically not changed, except there is a list of states and actions in the action space instead! I didn't
- alter this yet as I'm execting it will change a lot in the future.
+To be applied to Reinforcement Learning the problem needed to be specified as an Markov Game.
+In our setting, in a network of $N$ nodes, an MG is represented as a tuple $\langle n, \mathcal{S}, \mathcal{A}, P, R, \gamma \rangle$, where $n$ is the number of agents (i.e., nodes with a controller protocol), $\mathcal{S}$ is the state space, $\mathcal{A}$ is the action space, $P$ is an (unknown) transition probability function, $R$ is the reward function, and $\gamma$ is a reward discount factor. In the following, we introduce these constructs in more detail.
 
-TODO: This part of the explanation is basically paraphrasing (and times directly quoting) what the authors have said
-in the paper "Managing Fog Networks using Reinforcement Learning Based Load Balancing Algorithm".
+- **State Space**: Different Edge System settings will have different definitions of state and action space, and shaping the reward will decide what are the important and less important objectives for the agent. In this paper, we consider a wide set of state spaces that can be customized by excluding or combining specific options to model the system of interest. At time step $t$, each node will broadcast its local state to each of its neighbors and receive their local states to build a local state representation before deciding on the action. The state space is represented by a tuple $\textit{S}=(\mathcal{I}, \mathcal{K}, \mathcal{Q}^t,\mathcal{F}, \mathcal{L},\{\mathcal{B}_1,...,\mathcal{B}_n\}, \{\mathcal{P}_1,...,\mathcal{P}_n\})$, where
+    -  $\mathcal{I}=\{1,...,n\}$ is an array with the IDs of all the nodes in the network. All the following arrays respect the ordering of the IDs in this array;
+    -  $\mathcal{K}=\{\kappa_1,...,\kappa_n\}$ is an array specifying the layer/tier for each node;
+    -  $\mathcal{Q}^t=\{Q^t_1,..., Q^t_n\}$ is an array storing the queue size for each node in the network, at time step $t$;
+    -  $\mathcal Q_i^{\text{max}}=\{Q_1^{\text{max}},..., Q_n^{\text{max}}\}$ is an array storing the maximum capacity of the queues for each node in the network;
+    -  $\mathcal{N}_n$, which is an array with the ids of the nodes that belong to node $n$'s neighborhood.
+    -  $\mathcal{F}=\{N_{\phi}^1\phi_1,...,N_{\phi}^n\phi_n\}$ is an array storing the processing power for each node in the network;
+    -  $\mathcal{L}=\{l_1,...,l_n\}$ is an array storing the position for each node in the network;
+    -  $\mathcal{B}_i=\{B_{i,1},...,B_{i,n}\}$ is an array storing the bandwidth of the channels for node $w_i$ to all its neighbors;
+    -  $P_i$ is the transmission power of  node $w_i$’s antenna.
+
+- **Action Space**: Action Space, $A$, corresponds to the output layer of a DRL agent (see Fig.~\ref{fig:StateAction}). The action $a_t\in\{1,...,N\}$ represents the index of the destination node, which might be one of the neighboring workers or the observed node itself, in case it decides to process the task locally. We use $a_t$ interchangeably to denote both the index of the destination node and the act of sending a task to that node, as long as clarity is maintained within the context.
+
+- **Transition Function**: This is the unknown transition function.
+- **Reward Function**: A reward function guides an RL agent when choosing the action to perform, and it might have a different structure even when the system model does not change, depending on the desired objective. In this paper, we will adopt a reward function as defined in~\cite{baek2019managing}, i.e., a reward function for agent $w_i$, $R_i$, is structured to maximize the utility, $U_i(s_t, a_t)$, and minimize the total delay, $D_i(s_t, a_t)$, and the overloading cost, $O_i(s_t, a_t)$. In particular, the reward for the action $a_t$ in state $s_t$, received by an agent $w_i$ by offloading (or not) task $\tau_k$, is given by
+  $$
+  \label{eq:rwrdFunciton}
+  R_i(s_t, a_t) = r_u - (D_i(s_t, a_t) + \chi_OO_i(s_t, a_t)),
+  $$ where $r_u$ is a utility reward and represents the gain over completed tasks. Each term of the reward function is explained in detail below. Let $I_i(a_t)$ be an indicator function, such that we will have $I_i(a_t)=1$ iff the task is left for local computing on node $w_i$, and $I_j(a_t)=1$ iff it is offloaded to a neighboring node $w_j$, with $j\neq i$.
  
-I wanted to repurpose this in my chapter about the environment developed, but to be honest I am reluctant
-to do it as I fear this might count as plagiaism. 
-But I also do not see a way around this as I am trying to implement and solve the MDP in the paper. Is there a better
-way of going around this. Is this Plagiarism?
-```
+  -  Delay function,
+  $$
+  D_i(s_t, a_t) = \chi_D^{\text{wait}} T_{i,a_t}^{\text{wait}}(\tau_k) + \chi_D^{\text{comm}} T_{i,a_t}^{\text{comm}}(\alpha_k^{\text{out}}) + \chi_D^{\text{exc}} T_{i,a_t}^{\text{exc}}(\tau_k),
+  $$
+  is a weighted sum of three time-related terms, with hyperparameters $\chi_D^{\text{wait}}$, $\chi_D^{\text{comm}}, \chi_D^{\text{exc}} \geq 0$; namely,
+  $T_{i,a_t}^{\text{wait}}(\tau_k) = \frac{Q_i^t}{N^i_{\phi}\phi_i} + \sum_{j\neq i}\frac{Q_j}{N^j_{\phi}\phi_j} I_j(a_t)$ is the time task $\tau_k$ will be waiting in the queue of node $w_i$ (and $w_j$ in case it is offloaded), where $\phi_i$ is the computing service rate of node $w_i$, and $N^i_{\phi}$ is the number of processors it has.
+  $T_{i,a_t}^{\text{comm}}(\alpha_k^{\text{out}})$ is the communication cost of task offloading, expressed as a delay, as defined in (\ref{eq:time_communication}). Note that if the task is executed locally, this term is zero.
+  $T_{i,a_t}^{\text{exc}}(\tau_k)= \frac{t\rho_k \xi_k}{N_{\phi}^{a_t}\phi_{a_t}} - \frac{t\rho_k \xi_k}{N_{\phi}^{i}\phi_{i}}$ represents the difference in execution cost of the tasks between processing the task locally compared to processing it in the target node. Here, $\rho_k$ is the number of instructions per task, and $\xi_k$ is the number of CPU cycles per instruction.
+  -  Cost of overloading,
+  $O_i(s_t, a_t) = -\log (p_t^{Oa_t})/3$,
+  is weighted by the parameter $\chi_O\geq 0$, where
+  $p_t^{O{a_t}} =  max(0, \frac{Q_{a_t}^{\text{max}} - Q_{a_t}}{Q_{a_t}^{\text{max}}})$, represents the distance to overloading node $w_i$, and
+  $Q'_{a_t} = min( max(0, Q_{a_t} - \phi_{a_t}) + 1, Q_{a_t}^{\text{max}})$ is the expected state of the queue at node $w_{a_t}$, after taking action $a_t$.
+  - $\gamma$ is a reward discount factor.
 
-To be applied to Reinforcement Learning the problem needed to be specified as an Markov Decision Process. Utilize the MDP definition 
-for a Load Distribution Problem in a Network with a central controller node following closely the definition of MDP the authors at "[Managing Fog Networks using Reinforcement
-Learning Based Load Balancing Algorithm](https://ieeexplore.ieee.org/document/8885745)" give.
-
-The MDP is defined as a tuple <S, A, P, R>, the explanaition the authors give to the elements of this tuple is:
-- **State Space, S**: S is the set of all possible states, these states are tuples $s = (n^l, w, Q)$. 
-  - $n^l$ is the index of the node that is currently being evaluated for offloading. $n^l \in N \land 1 \leq n^l \leq N$
-  - W, as the authors define, is the number of tasks to be allocated per unit of time. I consider this to be the average number of
-    tasks being processed per unit of time in the node $n^l$. This value is  $w \in N ∧ 1 \leq w \leq W_{max}$
-  - Q represents the current state of all node queues, how many tasks each has. $Q = {(Q1, ..., QN)|Qi \in 0,...,Q_{max\_size}}$
-- **Action Space, A**: A is the set of all possible actions to be taken for the node currently being evaluated. The
-  An action is a pair of the form $a = (n^o, w^o)$.
-  - $n^o$ is the index of a node neighbour to the node currently being evaluated. $n^o \in N ∧ 1 \leq n^o \leq N$
-    n^o will also never be a node that has bigger queue length than the current node. `TODO Guarantee this n^o property!!!`
-  - $w^o$ is the number of tasks being offloaded to a neighbouring node.
-
-  And after executing the action we will process locally $w^l$ tasks.
-
-- **Transition Function, P**: This is the unknown transition function.
-- **Reward Function, R**: The objective is to obtain an optimal offloading so that we maximize a utility function,
-  U(s, a) and minimize the processing delay, D(s, a) and the overload probability, O(s, a). Therefore the reward
-  for action a in state s is given by:
-  $$ R(s, a) = U(s, a) − (D(s, a) + O(s, a)) $$
-    - The Utility U(s, a) is given by: $U(s, a) = r_u * log(1 + w^l + w^o)$ and represents the amount of tasks ”solved” by taking the action $a$ on state $s$. $r_u$ is a utility reward.
-    - The Delay function has three components given by: $D(s, a) = \chi_d\frac{t^w + t^c + t^e}{w^l + w^o}$
-      - $t^w$, average time a task will be sitting in the queue of the fog node $n^l$. The expression to compute $t^w$
-      is $t^w = \frac{Q^l}{\mu^l}* \mathbb{1}(w^l \neq 0) + (\frac{Q^l}{\mu^l} + \frac{Q^o}{\mu^o})* \mathbb{1}(w^o \neq 0)$.
-      where $\mu^i$ is the s the computing service rate of node $n^i$, I interpreted this as the service rates on queue theory, tasks processed/unit of time.
-      - $t^c$ is the communication cost in time of offloading $w^o$ tasks. The expression to compute is $t^c = \frac{2 * T * w^o}{r_{l,o}}$, where
-      T is the data size of the tasks to be offloaded from $n^l$ to $n^o$, $r_{l,o}$ is the is the transmission service rate between the nodes, given by
-      $r_{l,o} = B*\log(1 + \frac{g_{i,j}*P_{t_x, i}}{B*N_0})$ in this expression B is the bandwidth of the channel between the nodes and $d_{i,j}$ is the distance of the nodes
-      and $\Beta_1$ and $\Beta_2$ are the ath loss constant and path loss exponent, respectively, $P_{t_x,i}$ is the power of the nodes transciever, and $N_0$ is a constant
-      representing the noise power spectral density.
-      - $t^e$ is the last element of the Delay function and represents the execution cost of the tasks on the nodes they will be executed on.
-      The expression for this term is $t^e = \frac{I * CPI * w^l}{f^l} + \frac{I * CPI * w^l}{f^l}$, where I is the average number of instructions per task, 
-      CPI is the average  number of cycles per instruction in the 
-      - 
-      - CPU of the nodes, and $f^i$ is the frequency of said CPUs,  we also consider that we may 
-      be dealing with multi-core machines and in $f^i$ we also consider the number of cores on the CPU ($f^i = frequency * Number_of_cores$).
-- The last element being considereed in the reward function is the probability of overloading of one of the nodes involved in the offloading. 
-  The expression for this is $O(s,a) = \chi_o * \frac{w^l * P_{overload, l} + w^o * P_{overload, o}}{w^l + w^o}$, where $\chi_o$ is a cosntant factor representing the weight of overloading,
-  and $P_{overload, l} =  \frac{max(0, \lamba_i - (Q_{i, max} - Q'_i))}{\lamba_i }$, where $\lamba_i$ is the task arrival rate of the poisson proccess governing task arrival
-  $Q'_i$ is the state of the queue at node i after taking action a ($Q'_i = min(max(0 - Q_i - \bar{\mu^i}) + w^i, Q_{i, max})$, this means that the next queue state considers the number of tasks proccessed and is capped by the maximum number of tasks in the queue.)
 <a name="NetworkTopology"></a>
 
 ### The Network Topology
 The network we use is static and defined when the simulation is created. The nodes will be able to communicate with any
 node within a circle around it which we call its neighbourhood, the size of the neighbourhood is defined in the configurations.
 
-The nodes can't communicate with any nodes outside its neighbourhood. Although we allow direct communication to the clients.
-
-TODO: Confirm if this behaviour is acceptable, otherwise, I'll implement a multi-hop mechanism.
+The nodes can't communicate with any nodes outside its neighbourhood.
 
 ### REST API
 To allow receiving instructions from the model in python we wrap the simulator in a simple REST API built on top of a Spring Server. The API has provides
@@ -136,6 +152,16 @@ two endpoints:
 - GET: http://localhost:8080/state - This endpoint will return the list of states with the state of every controller in the simulation at request time. 
 - POST: http://localhost:8080/action -  This endpoint will send a list of the offloading instructions  each of the agents picked to the simulator.
   and returns a set of information complementary to the state, for purposes of computing the reward.
+
+<a name="CustomizingSim"></a>
+### Implementing your own protocols for the Simulation
+PeersimGym's simulator allows for in-depth customization by changing the very protocols that model the workers, clients, and controllers.
+
+To implement your own protocol you need to create new classes that extends the `PeersimSimulator.peersim.env.Nodes.Workers.AbstractWorker`, `PeersimSimulator.peersim.env.Nodes.Controllers.AbstractController` or `PeersimSimulator.peersim.env.Nodes.Clients.AbstractClient` classes. See the classes in question for the methods that need to be implemented, we provide detailed descriptions of each in the Javadocs.
+
+Note: In-depth documentation is still a work in progress, so not all methods are properly documented yet.
+
+Furthermore, it is also possible to add action types by implementing the `PeersimSimulator.peersim.env.Records.Actions.Action` interface, and it's possible to retrieve different information from the network by implementing different `PeersimSimulator.peersim.env.Records.SimulationData.SimulationData`, note that this would reuire implementing Controller and Worker protocols that are capable of dealing with the new types. When implementing new action types or simulation datas, the new classes will need to be registered in the respective interface to be able to marshal them with jackson, see the interfaces in question for examples.
 
 <a name="Quickstart"></a>
 # Quickstart
@@ -259,30 +285,41 @@ The global configurations encompass six domains: Global Configurations, Worker-s
   ```
   CONTROLLERS 0,1,2
   ```
+- **Define what layers can be clients**, this parameter specifies the layers that have clients generating tasks.
+  ```
+  clientLayers 0,1
+  ```
 
 - **The flag that manages the existence of the Cloud** This flag can take values of either 1 or 0. If the flag is set to 1 an extra node not included in the nodes specified from 'SIZE' is created. This means that if 'SIZE 10' and 'CLUD_EXISTS 1' then there is a total of 11 nodes.
     ```
     CLOUD_EXISTS 1
     ```
-
+- **Set the random seed** This value set's the value for the random seed in the simulation. This is used to ensure that the simulation is reproducible. Can be changed by the environment at each episode.
+    ```
+    random.seed 1234567890
+    ```
 <a name="ConfiguringTheController"></a>
 #### Configurations of the DiscreteTimeStepManager and PettingZoo environment
 - **Utility Reward..** a parameter of the reward function acts as a weight in the expression that computes the utility of a reward. This parameter receives an int. It is directly used by the environment and not the simulation.
     ```
-    protocol.mng.r_u 1
+    utility_reward 1
     ```
 
 - **Delay Weight.** A parameter of the reward function acts as a weight in the expression that computes the cost associated with the delay induced by taking an action. This parameter receives an int. It is directly used by the environment and not the simulation.
     ``` 
-    protocol.mng.X_d 1
+    delay_weight 1
     ```
 
 - **Overload Weight..** a parameter of the reward function acts as a weight in the expression that computes the cost associated with node overloading (overloading of a node happens when the node has too many tasks assigned and starts losing tasks) induced by taking an action.
 This parameter receives an int. It is directly used by the environment and not the simulation.
     ``` 
-    protocol.mng.X_o 150
+    overload_weight 150
     ```
- 
+- **Frequency of Actions** The frequency of actions is the number of time steps that the environment will wait before awaiting a new set of actions to be distributed to the controllers in the simulation.  
+   ```
+      protocol.mng.cycle 1
+    ```
+
 <a name="ConfiguringTheClient"></a>
 ### Configurations of the Client
 All the work generated on the simulation is in the form of applications, which in turn consist of groups of tasks. The Clients generate applications, and the types of applications generated have different properties depending on the type of simulation being implemented. In the case of Binary-Online and batch offloading an application consists of a single task. In a simulation with dependencies, an application consists of a Directed Acyclic Graph(DAG) of tasks.
@@ -298,6 +335,10 @@ For each of the DAG or task types, all the configurations must be specified, oth
 - **Task Arrival Rate per Client**. This parameter acts as the event rate of an exponential distribution, that rules when the next application to be sent to a given node will be generated. Each client keeps track of when to send a new application to each of the workers it can see independently. The computation of the time for the next event is done by inverting the cumulative distribution function of the exponential distribution and sampling a uniform distribution between 0 and 1, by applying the inversed distribution on the sampled value we obtain the time for the next event corresponding to the sampled value.
     ```
     protocol.clt.taskArrivalRate 0.1
+    ```
+- **Self Generated Tasks** Specifies if the clients generate tasks only the worker in the same node or if they send tasks to all the workers in their neighborhood. Takes value 1 if true or 0 if false.
+    ```
+    protocol.clt.clientIsSelf 1
     ```
 
 #### Task Parameters
@@ -488,7 +529,29 @@ We consider the cloud as a collection of virtual machines that allow for process
     ```
     protocol.cld.VMProcessingPower 1e8
     ```
-
+### Configuration specific to the Ether Topology integration
+- **Ether Configuration Flag** Indicates to the simulation that the ether topology is to be used.
+    ```
+    MANUAL_CONFIG true
+    ```
+- **Ether Cores Default**: Specifies the number of cores in each node in the ether topology. The value for each layer is separated by a ','. For example, given the value '4,8', the nodes in the layer index 0 will have 4 cores and the nodes in the layer index 1 will have 8 cores.
+    ```
+    MANUAL_CORES 4,8
+    ```
+- **Ether Frequencies Default** Specifies the frequency of the CPU of each node in the ether topology. The value for each layer is separated by a ','. For example, given the value '1e7,3e7', the nodes in the layer index 0 will have a frequency of 1e7 instr/second and the nodes in the layer index 1 will have a frequency of 3e7 instr/second.
+    ```
+    MANUAL_FREQS 1e7,3e7
+    ```
+- **Ether Q Maxes Default** Specifies the maximum queue size of each node in the ether topology. The value for each layer is separated by a ','. For example, given the value '10,50', the nodes in the layer index 0 will have a maximum queue size of 10 and the nodes in the layer index 1 will have a maximum queue size of 50.
+    ```
+    MANUAL_QMAX 10,50
+    ```
+  
+### Configuration specific to the Trace Generation integration
+-**Workload File** - This parameter specifies the path to the json file that contains the workload to be used in the simulation. 
+    ```
+    protocol.clt.workload_file /home/user/peersim-env/configs/examples/trace.json
+    ```
 <a name="Developing"></a>
 # Developing the Simulation
 <a name="SetupTheSimulator"></a>

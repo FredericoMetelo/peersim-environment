@@ -87,9 +87,18 @@ public abstract class AbstractController implements Controller {
         up = true;
     }
 
+    /**
+     * This method is responsible for sending the action to the respective worker.
+     * @param action
+     * @return
+     */
     @Override
     public abstract SimulationData sendAction(Action action);
 
+    /**
+     * This method is responsible for extracting the completed tasks from the worker since the last time-step.
+     * @return List of completed tasks since the last time-step.
+     */
     @Override
     public List<ITask> extractCompletedTasks() {
         return this.correspondingWorker.extractCompletedTasks();
@@ -122,6 +131,10 @@ public abstract class AbstractController implements Controller {
         this.correspondingWorker = correspondingWorker;
     }
 
+    /**
+     * This method receives the state information from the neighbours and stores them in the workerInfo list.
+     * @param newWi
+     */
     protected void updateNode(WorkerInfo newWi) {
         for (WorkerInfo oldWi : workerInfo) {
             if (oldWi.getId() == newWi.getId()) {
