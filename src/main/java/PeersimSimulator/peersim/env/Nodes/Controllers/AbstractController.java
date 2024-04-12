@@ -51,7 +51,7 @@ public abstract class AbstractController implements Controller {
     protected volatile boolean up;
     SDNNodeProperties props;
     List<WorkerInfo> workerInfo;
-
+    
     public AbstractController() {
         active = false;
         selectedNode = this.getId(); // Ignores the controller.
