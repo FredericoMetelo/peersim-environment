@@ -42,7 +42,6 @@ def not_zero(num):
 
 def average_of_ints_in_string(s):
     '''
-    ChatGPT function.
     Computes the average of a string of numbers separated by commas.
     '''
     # Convert the string to a list of integers
@@ -53,7 +52,6 @@ def average_of_ints_in_string(s):
 
 def average_of_floats_in_string(s):
     '''
-    ChatGPT function.
     Computes the average of a string of numbers separated by commas.
     '''
     # Convert the string to a list of integers

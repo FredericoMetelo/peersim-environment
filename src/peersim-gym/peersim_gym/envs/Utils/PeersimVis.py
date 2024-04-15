@@ -35,8 +35,8 @@ LOCAL_PROCESSING_BACKGROUND_COLOR = (0, 0, 255)  # BLUE
 LOCAL_PROCESSING_TEXT_COLOR = (255, 255, 255)  # WHITE
 
 pygame.init()
-displayw = 1000 + INFO_W
-displayh = 1000 + INFO_H
+displayw = 1000 + 2*INFO_W
+displayh = 1000 + 2*INFO_H
 windowclock = pygame.time.Clock()
 
 

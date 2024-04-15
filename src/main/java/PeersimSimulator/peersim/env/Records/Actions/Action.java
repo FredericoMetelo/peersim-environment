@@ -5,10 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-// May the beautiful people that make tutorials at Baeldung be blessed with 100 years of health for them and their children.
-// And may the beautiful people at OpenAI also be blessed with 50 years of health for them and their children for the
-// creation of ChatGPT, assuming they don't screw up the world with all those for-profit shenanigans.
-// src: https://www.baeldung.com/jackson-inheritance + ChatGPT
+// guide to dealing with the Jackson problems. src: https://www.baeldung.com/jackson-inheritance
 
 @JsonTypeInfo
         (use = JsonTypeInfo.Id.NAME,
