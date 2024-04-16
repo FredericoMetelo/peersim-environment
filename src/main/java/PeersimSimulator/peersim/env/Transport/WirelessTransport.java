@@ -181,38 +181,31 @@ public final class BaseDelayTransport implements Transport
           Inacurate because we assume no obstacles. We will use the Free Space Path Loss Equation.
        */
         double T = msgSize * 8e6; // Convert from MBytes to bits
-        double W = srcProps.getBANDWIDTH() * 1e6; // Convert from Mhz to Hz
-//        double gain_tx = 6; // dBi
-//        double gain_rx = 6; // dBi
-        double d = distance(srcProps, dstProps); // m
-        double lambda = 3e8 / 2.4e9; // wavelength : c/f [m] ; c = 3e8 m/s ; f = 2.4e9 Hz;
-        double P_t = srcProps.getTRANSMISSION_POWER(); // [dBm]
-
-        double N_0 = SPECTRAL_NOISE_POWER + 10*Math.log10(W); // [dBm] convert from dBm/Hz to dBm
-        double h = 10 * Math.log10(((lambda* lambda) / (16 * Math.PI * Math.PI))) - 20 * Math.log10(d); // [dB]
-
-        double SNR_dB = P_t + h - N_0; // [dB]
+        double W = srcProps.getBANDWIDTH() * 1e6;
+        double SNR_dB = getSNR_dB(srcProps, dstProps, T);
         double SNR_linear = Math.pow(10, SNR_dB/10); // [linear]
         double C_2 = W * log2(1 + SNR_linear); // Channel Capacity [bit/s]
 
-//        double P_r = P_t + gain_tx + gain_rx + 20 * log2(lambda/(4 * Math.PI * d));
-//        double C = W * log2(1 + P_r / (N_0)); // Channel Capacity [bit/s]
+
 
         long delay = Math.max(Math.round( T / C_2), 1);
 //        delay += (range==1?min:min + CommonState.r.nextLong(range));
         EDSimulator.add(delay, msg, dest, pid);
     }
 
-    /*  Old Code
-        double bandwidth = srcProps.getBANDWIDTH(); // * 1e+6; // Convert from Mhz to Hz
-        double numberOfBytes = msgSize; // * 1e+6; // convert from MBytes to Bytes
-        double transmissionPower = srcProps.getTRANSMISSION_POWER() ; // Math.pow(10, srcProps.getTRANSMISSION_POWER()/10); // convert dBm to Watts
-        double spectralNoisePower = SPECTRAL_NOISE_POWER; // Math.pow(10, SPECTRAL_NOISE_POWER/10); // convert dBm/Hz to Watts/Hz
 
-        double transmissionRate = bandwidth * Math.log10(1 +
-                (getChannelGain(srcProps, dstProps) * transmissionPower)
-                / (bandwidth * spectralNoisePower)) ;
-     */
+    public double getSNR_dB(SDNNodeProperties srcProps, SDNNodeProperties dstProps, double bandwidth_Hz){
+         // Convert from Mhz to Hz
+        double d = distance(srcProps, dstProps); // m
+        double lambda = 3e8 / 2.4e9; // wavelength : c/f [m] ; c = 3e8 m/s ; f = 2.4e9 Hz;
+        double P_t = srcProps.getTRANSMISSION_POWER(); // [dBm]
+
+        double N_0 = SPECTRAL_NOISE_POWER + 10*Math.log10(bandwidth_Hz); // [dBm] convert from dBm/Hz to dBm
+        double h = 10 * Math.log10(((lambda* lambda) / (16 * Math.PI * Math.PI))) - 20 * Math.log10(d); // [dB]
+
+        double SNR_dB = P_t + h - N_0; // [dB]
+        return SNR_dB;
+    }
 
     public double log2(double n){
         return Math.log(n) / Math.log(2);
