@@ -36,6 +36,8 @@ public class MaxCapacityTransport implements Transport {
     protected static final String PAR_BANDWIDTH = "B";
 
     protected static final String PAR_RANDOMIZETOPOLOGY = "RANDOMIZETOPOLOGY";
+    protected static final String PAR_NO_LAYERS= "NO_LAYERS";
+
     protected final boolean RANDOMIZETOPOLOGY;
 
     // ====== End of original class by peersim ======
@@ -62,6 +64,7 @@ public class MaxCapacityTransport implements Transport {
         protocol.urt.channelTypesBetweenLayers 0,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,1;-1,0,-1,-1,-1,-1,-1,-1,1,-1,-1,1;-1,-1,0,-1,-1,-1,-1,-1,1,-1,-1,1;-1,-1,-1,0,-1,-1,-1,-1,1,-1,-1,1;-1,-1,-1,-1,0,-1,-1,-1,1,-1,-1,1;-1,-1,-1,-1,-1,0,-1,-1,1,-1,-1,1;-1,-1,-1,-1,-1,-1,0,-1,1,-1,-1,1;-1,-1,-1,-1,-1,-1,-1,0,1,-1,-1,1;0,0,0,0,0,0,0,0,1,1,1,1;-1,-1,-1,-1,-1,-1,-1,-1,1,1,-1,1;-1,-1,-1,-1,-1,-1,-1,-1,1,-1,1,1;0,0,0,0,0,0,0,0,1,1,1,1
          */
         pid = Configuration.getPid(prefix + "." + PAR_NAME);
+        int no_layers = Configuration.getInt(PAR_NO_LAYERS);
         RANDOMIZETOPOLOGY = Configuration.getBoolean(PAR_RANDOMIZETOPOLOGY, true);
         BANDWIDTH = Configuration.getDouble( PROPERTY_PROTOCOL + "." + PAR_BANDWIDTH, 2); // 2Mhz
         min = Configuration.getLong(prefix + "." + PAR_MINDELAY);
@@ -73,6 +76,10 @@ public class MaxCapacityTransport implements Transport {
 
         channelTypes = getChannelSNRCalculator(Configuration.getString(prefix + ".channelTypes"), prefix);
         channelTypePerLayer = getChannelTypeBetweenLayers(Configuration.getString(prefix + ".channelTypesBetweenLayers"));
+        if(channelTypePerLayer.size() != no_layers){
+            throw new IllegalParameterException(prefix+"."+PAR_NO_LAYERS,
+                    "The channelTypesBetweenLayers should be a square matrix of size no_layers per no_layers. Current size is " + channelTypePerLayer.size() + " per " + channelTypePerLayer.get(0).size() + "; And no_layers: "+ no_layers+".");
+        }
     }
 
     /**

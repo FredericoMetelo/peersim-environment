@@ -8,7 +8,7 @@ public class OpticalFiberSNR implements SNRCalculator{
     public static final String PAR_SNR = "SNR";
     public double SNR_dB;
     public OpticalFiberSNR(String prefix) {
-        SNR_dB = Configuration.getDouble(prefix + "." + PAR_SNR, 0);
+        SNR_dB = Configuration.getDouble(prefix + "." + PAR_SNR, 45);
     }
     public double getSNR_dB(SDNNodeProperties srcProps, SDNNodeProperties dstProps, double bandwidth_Hz) {
         /*
@@ -22,6 +22,6 @@ public class OpticalFiberSNR implements SNRCalculator{
          * [1] http://opticalcloudinfra.com/index.php/2017/07/09/shannon-limit-sets-upper-bar-optical-networks/
          * [n] https://www.youtube.com/watch?v=UOLRP52oOPI  (Video on Converting BER to SNR, pretty good explanation)
          */
-        return 0;
+        return SNR_dB; // TODO make this user definable.
     }
 }

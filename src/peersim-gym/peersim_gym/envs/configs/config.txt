@@ -1,4 +1,4 @@
-random.seed 758024766475
+random.seed 372120521992
 SIZE 10
 CYCLE 1
 CYCLES 1000
@@ -48,7 +48,8 @@ MANUAL_FREQS 1e7
 MANUAL_QMAX 10
 clientIsSelf 0
 protocol.urt.channelTypes PeersimSimulator.peersim.env.Transport.OpticalFiberSNR;PeersimSimulator.peersim.env.Transport.WirelessSNR
-protocol.urt.channelTypesBetweenLayers 0,0,0,0,-1,-1,0,-1,1,-1;0,0,0,0,0,0,0,0,1,1;0,0,0,0,-1,-1,0,-1,1,1;0,0,0,0,-1,-1,0,-1,1,1;-1,0,-1,-1,0,0,-1,0,-1,-1;-1,0,-1,-1,0,0,-1,0,-1,-1;0,0,0,0,-1,-1,0,-1,1,1;-1,0,-1,-1,0,0,-1,0,-1,-1;0,0,0,0,-1,-1,0,-1,1,-1;-1,0,0,0,-1,-1,0,-1,-1,1
+protocol.urt.channelTypesBetweenLayers 0,0,1;0,0,1;1,1,1
+protocol.urt.SNR 45
 
 #=============Define Simulation Globals
 
