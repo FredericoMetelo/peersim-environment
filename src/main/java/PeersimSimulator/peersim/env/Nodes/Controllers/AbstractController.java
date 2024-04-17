@@ -49,6 +49,7 @@ public abstract class AbstractController implements Controller {
      */
     protected volatile boolean stop;
     protected volatile boolean up;
+
     SDNNodeProperties props;
     List<WorkerInfo> workerInfo;
 

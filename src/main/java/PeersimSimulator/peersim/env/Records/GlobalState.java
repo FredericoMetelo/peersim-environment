@@ -15,7 +15,7 @@ public record GlobalState(
         List<Integer> droppedTasks,
         List<Integer> finishedTasks,
         List<Integer> totalTasks,
-
-        List<Integer> isWorking
+        List<Integer> isWorking,
+        List<Double> energyConsumed
 ) {
 }

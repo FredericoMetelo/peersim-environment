@@ -28,6 +28,7 @@ public class BasicWorker extends AbstractWorker{
         if (!active) return;
         // Advance Task processing and update status.
         double remainingProcessingPower = processingPower;
+
         while (remainingProcessingPower > 0 && !this.idle()) {
             if (this.current == null || this.current.done()) {
                 changedWorkerState = nextProcessableTask(node, pid);
@@ -42,6 +43,7 @@ public class BasicWorker extends AbstractWorker{
                 current = null;
             }
         }
+        this.addProcessingEnergyCost(processingPower - remainingProcessingPower);
         cleanExpiredApps();
         if ((CommonState.getTime() % RANK_EVENT_DELAY) == 0 || this.awaitingSerialization() ) { // && !this.recievedApplications.isEmpty() // if offloaded a task and does not run this then no cleanup.
             applicationSerialization();

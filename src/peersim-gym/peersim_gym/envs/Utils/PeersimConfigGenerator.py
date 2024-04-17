@@ -71,6 +71,9 @@ PEERSIM_DEFAULTS = {
     "protocol.urt.channelTypes": "PeersimSimulator.peersim.env.Transport.WirelessSNR",
     "protocol.urt.channelTypesBetweenLayers": "0,0,0,0,-1,-1,0,-1,1,-1;0,0,0,0,0,0,0,0,1,1;0,0,0,0,-1,-1,0,-1,1,1;0,0,0,0,-1,-1,0,-1,1,1;-1,0,-1,-1,0,0,-1,0,-1,-1;-1,0,-1,-1,0,0,-1,0,-1,-1;0,0,0,0,-1,-1,0,-1,1,1;-1,0,-1,-1,0,0,-1,0,-1,-1;0,0,0,0,-1,-1,0,-1,1,-1;-1,0,0,0,-1,-1,0,-1,-1,1",
     "protocol.urt.SNR": "45",
+
+    "protocol.wrk.energyCostComm": "10",
+    "protocol.wrk.energyCostComp": "1",
 }
 
 def generate_config_file(config_dict, simtype, explicit_lines=False):
