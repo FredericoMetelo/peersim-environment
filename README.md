@@ -338,7 +338,7 @@ For each of the DAG or task types, all the configurations must be specified, oth
     ```
 - **Self Generated Tasks** Specifies if the clients generate tasks only the worker in the same node or if they send tasks to all the workers in their neighborhood. Takes value 1 if true or 0 if false.
     ```
-    protocol.clt.clientIsSelf 1
+    clientIsSelf 1
     ```
 
 #### Task Parameters

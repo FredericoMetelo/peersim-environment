@@ -1,8 +1,11 @@
 package PeersimSimulator.peersim.env.Transport;
 
 import PeersimSimulator.peersim.config.Configuration;
+import PeersimSimulator.peersim.config.FastConfig;
 import PeersimSimulator.peersim.config.IllegalParameterException;
 import PeersimSimulator.peersim.core.CommonState;
+import PeersimSimulator.peersim.core.Linkable;
+import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.edsim.EDSimulator;
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
@@ -31,6 +34,10 @@ public class MaxCapacityTransport implements Transport {
     protected static final String PAR_MAXDELAY = "maxdelay";
     protected static final String PROPERTY_PROTOCOL = "protocol.props";
     protected static final String PAR_BANDWIDTH = "B";
+
+    protected static final String PAR_RANDOMIZETOPOLOGY = "RANDOMIZETOPOLOGY";
+    protected final boolean RANDOMIZETOPOLOGY;
+
     // ====== End of original class by peersim ======
     protected static int pid;
     protected static final String PAR_NAME = "name";
@@ -45,9 +52,6 @@ public class MaxCapacityTransport implements Transport {
     protected final long range;
     protected final double BANDWIDTH;
 
-    protected OpticalFiberSNR fiberChannel;
-    protected WirelessSNR wirelessChannel;
-
     protected List<List<Integer>> channelTypePerLayer;
     protected final List<SNRCalculator> channelTypes;
 
@@ -56,8 +60,9 @@ public class MaxCapacityTransport implements Transport {
         /* Test helper
         protocol.urt.channelTypes PeersimSimulator.peersim.env.Transport.OpticalFiberSNR;PeersimSimulator.peersim.env.Transport.WirelessSNR
         protocol.urt.channelTypesBetweenLayers 0,-1,-1,-1,-1,-1,-1,-1,1,-1,-1,1;-1,0,-1,-1,-1,-1,-1,-1,1,-1,-1,1;-1,-1,0,-1,-1,-1,-1,-1,1,-1,-1,1;-1,-1,-1,0,-1,-1,-1,-1,1,-1,-1,1;-1,-1,-1,-1,0,-1,-1,-1,1,-1,-1,1;-1,-1,-1,-1,-1,0,-1,-1,1,-1,-1,1;-1,-1,-1,-1,-1,-1,0,-1,1,-1,-1,1;-1,-1,-1,-1,-1,-1,-1,0,1,-1,-1,1;0,0,0,0,0,0,0,0,1,1,1,1;-1,-1,-1,-1,-1,-1,-1,-1,1,1,-1,1;-1,-1,-1,-1,-1,-1,-1,-1,1,-1,1,1;0,0,0,0,0,0,0,0,1,1,1,1
-
          */
+        pid = Configuration.getPid(prefix + "." + PAR_NAME);
+        RANDOMIZETOPOLOGY = Configuration.getBoolean(PAR_RANDOMIZETOPOLOGY, true);
         BANDWIDTH = Configuration.getDouble( PROPERTY_PROTOCOL + "." + PAR_BANDWIDTH, 2); // 2Mhz
         min = Configuration.getLong(prefix + "." + PAR_MINDELAY);
         long max = Configuration.getLong(prefix + "." + PAR_MAXDELAY,min);
@@ -78,6 +83,17 @@ public class MaxCapacityTransport implements Transport {
      */
     private List<List<Integer>> getChannelTypeBetweenLayers(String channelTypePerLayer) {
         List<List<Integer>> channelTypePerLayerList = new ArrayList<>();
+        if(RANDOMIZETOPOLOGY){
+            for(int i = 0; i< Network.size(); i++){
+                List<Integer> channelTypeList = new ArrayList<>();
+//                Linkable l = (Linkable) Network.get(i).getProtocol(FastConfig.getLinkable(CommonState.getPid()));
+//                int l_pos = 0;
+                for(int j = 0; j< Network.size(); j++){
+                    channelTypeList.add(0); // In random mode, everything communicates through the same channel type.
+                }
+                channelTypePerLayerList.add(channelTypeList);
+            }
+        }
         String[] layers = channelTypePerLayer.split(";");
         for (String layer : layers) {
             String[] channelTypes = layer.split(",");
@@ -119,8 +135,8 @@ public class MaxCapacityTransport implements Transport {
 
         // Could this be implemented in a better manner? Absolutely, but right now getting the layer from the worker or
         // adding it to the SDNNodeProperties is the same. ; _ ;
-        int srcLayer = ((Worker) src).getLayer();
-        int dstLayer = ((Worker) dest).getLayer();
+        int srcLayer = ((Worker) src.getProtocol(Worker.getPid())).getLayer();
+        int dstLayer = ((Worker) dest.getProtocol(Worker.getPid())).getLayer();
         SDNNodeProperties srcProps = (SDNNodeProperties) src.getProtocol(SDNNodeProperties.getPid());
         SDNNodeProperties dstProps = (SDNNodeProperties) dest.getProtocol(SDNNodeProperties.getPid());
         double msgSize = 1; // MBytes

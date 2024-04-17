@@ -133,7 +133,7 @@ class PeersimEnv(ParallelEnv):
         self.no_nodes_per_layer = [int(no_nodes) for no_nodes in
                                    self.config_archive["NO_NODES_PER_LAYERS"].strip().split(",")]
 
-        self.layers_that_get_tasks = [int(layer) for layer in self.config_archive["protocol.clt.layersThatGetTasks"].strip().split(",")]
+        self.layers_that_get_tasks = [int(layer) for layer in self.config_archive["layersThatGetTasks"].strip().split(",")]
         if isinstance(self.max_Q_size, list):
             self.q_list = self._gen_node_Q_max()
 

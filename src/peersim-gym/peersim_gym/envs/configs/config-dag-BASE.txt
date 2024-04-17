@@ -55,7 +55,7 @@ protocol.lnk PeersimSimulator.peersim.env.Links.TableProtocol
 protocol.urt PeersimSimulator.peersim.env.Transport.MaxCapacityTransport
 protocol.urt.mindelay (CYCLE*MINDELAY)/100
 protocol.urt.maxdelay (CYCLE*MAXDELAY)/100
-
+protocol.urt.name urt
 protocol.tr PeersimSimulator.peersim.transport.UnreliableTransport
 protocol.tr.transport urt
 protocol.tr.drop DROP

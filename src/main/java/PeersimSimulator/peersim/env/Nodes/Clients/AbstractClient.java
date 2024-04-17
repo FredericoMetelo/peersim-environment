@@ -68,10 +68,10 @@ public abstract class AbstractClient implements Client {
         String[] _layers = Configuration.getString(WorkerInitializer.PAR_NO_NODES_PER_LAYERS).split(",");
         layers = Arrays.stream(_layers).mapToInt(Integer::parseInt).toArray();
 
-        String[] _layersThatGetTasks = Configuration.getString(prefix + "." + PAR_LAYERS_THAT_GET_TASKS).split(",");
+        String[] _layersThatGetTasks = Configuration.getString(PAR_LAYERS_THAT_GET_TASKS).split(",");
         layersThatGetTasks = Arrays.stream(_layersThatGetTasks).mapToInt(Integer::parseInt).toArray();
 
-        clientIsSelf = Configuration.getInt(prefix + "." + PAR_CLIENT_IS_SELF, 0);
+        clientIsSelf = Configuration.getInt(PAR_CLIENT_IS_SELF, 0);
         tasksCompleted = 0;
         droppedTasks = 0;
         totalTasks = 0;

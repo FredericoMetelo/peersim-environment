@@ -20,6 +20,7 @@ PeersimSimulator/peersim/core/Control.class
 PeersimSimulator/peersim/config/ConfigProperties.class
 PeersimSimulator/peersim/edsim/ControlEvent.class
 PeersimSimulator/peersim/env/Records/QueueStates.class
+PeersimSimulator/peersim/env/Transport/OpticalFiberSNR.class
 PeersimSimulator/example/loadbalance/QuotaObserver.class
 PeersimSimulator/peersim/vector/VectorComparator.class
 PeersimSimulator/peersim/env/Nodes/Workers/DAGWorker.class
@@ -72,6 +73,7 @@ PeersimSimulator/peersim/core/OverlayGraph.class
 PeersimSimulator/peersim/env/Nodes/CloudInitializer.class
 PeersimSimulator/peersim/util/FileNameGenerator.class
 PeersimSimulator/peersim/dynamics/WireScaleFreeBA.class
+PeersimSimulator/peersim/env/Transport/WirelessSNR.class
 PeersimSimulator/example/newscast/SimpleNewscast.class
 PeersimSimulator/peersim/core/Node.class
 PeersimSimulator/peersim/util/LinearIterator.class
@@ -97,6 +99,7 @@ PeersimSimulator/peersim/rangesim/ProcessHandler.class
 PeersimSimulator/peersim/dynamics/MethodInvoker.class
 PeersimSimulator/peersim/vector/SingleValueComparator.class
 PeersimSimulator/peersim/env/Links/SDNNodeProperties.class
+PeersimSimulator/peersim/env/Transport/SNRCalculator.class
 PeersimSimulator/peersim/vector/Normalizer.class
 PeersimSimulator/peersim/dynamics/WireByMethod.class
 PeersimSimulator/example/loadbalance/LBObserver.class
@@ -111,7 +114,6 @@ PeersimSimulator/peersim/vector/LinearDistribution.class
 PeersimSimulator/peersim/graph/Graph.class
 PeersimSimulator/peersim/Simulator.class
 PeersimSimulator/peersim/env/Nodes/Events/AppConcludedEvent.class
-PeersimSimulator/peersim/env/Transport/BaseDelayTransport.class
 PeersimSimulator/peersim/cdsim/DaemonProtocol.class
 PeersimSimulator/peersim/dynamics/OscillatingNetwork.class
 PeersimSimulator/peersim/env/Nodes/Events/NewTaskEvent.class
@@ -120,6 +122,7 @@ PeersimSimulator/peersim/dynamics/WireScaleFreeDM.class
 PeersimSimulator/peersim/env/Tasks/ITask.class
 PeersimSimulator/peersim/config/FastConfig.class
 PeersimSimulator/peersim/env/Nodes/Events/BatchOffloadInstructions.class
+PeersimSimulator/peersim/env/Transport/MaxCapacityTransport.class
 PeersimSimulator/peersim/util/RandPermutation.class
 PeersimSimulator/peersim/dynamics/WireGraph.class
 PeersimSimulator/peersim/env/Links/TableProtocol.class

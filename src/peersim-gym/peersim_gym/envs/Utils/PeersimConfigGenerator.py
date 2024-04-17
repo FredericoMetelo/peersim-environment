@@ -41,7 +41,7 @@ PEERSIM_DEFAULTS = {
     "protocol.clt.T": "150",
     "protocol.clt.I": "4e7",
     "protocol.clt.taskArrivalRate": "0.6",
-    "protocol.clt.layersThatGetTasks": "0",
+    "layersThatGetTasks": "0",
 
     "protocol.clt.numberOfDAG": "1",
     "protocol.clt.dagWeights": "1",
@@ -67,7 +67,9 @@ PEERSIM_DEFAULTS = {
     "MANUAL_CORES": "1",
     "MANUAL_FREQS": "1e7",
     "MANUAL_QMAX": "10",
-    "protocol.clt.clientIsSelf": "1",
+    "clientIsSelf": "1",
+    "protocol.urt.channelTypes": "PeersimSimulator.peersim.env.Transport.WirelessSNR",
+    "protocol.urt.channelTypesBetweenLayers": "0,0,0,0,-1,-1,0,-1,1,-1;0,0,0,0,0,0,0,0,1,1;0,0,0,0,-1,-1,0,-1,1,1;0,0,0,0,-1,-1,0,-1,1,1;-1,0,-1,-1,0,0,-1,0,-1,-1;-1,0,-1,-1,0,0,-1,0,-1,-1;0,0,0,0,-1,-1,0,-1,1,1;-1,0,-1,-1,0,0,-1,0,-1,-1;0,0,0,0,-1,-1,0,-1,1,-1;-1,0,0,0,-1,-1,0,-1,-1,1",
 
 }
 
@@ -148,7 +150,7 @@ def randomize_seed(file_path):
         # Create the updated line with the new seed
         updated_line = f"random.seed {new_seed}"
 
-        # Replace the first line in the file
+            # Replace the first line in the file
         with open(file_path, 'r') as file:
             content = file.read()
         with open(file_path, 'w') as file:
