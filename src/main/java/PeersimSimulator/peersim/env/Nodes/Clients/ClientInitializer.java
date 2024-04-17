@@ -56,9 +56,9 @@ public class ClientInitializer  implements Control {
     public ClientInitializer(String prefix) {
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
 
-        clientIsSelf = Configuration.getInt(prefix + "." + CLIENT_IS_SELF);
+        clientIsSelf = Configuration.getInt("protocol.clt" + "." + CLIENT_IS_SELF);
 
-        String[] _layersThatGetTasks = Configuration.getString(LAYERS_THAT_GET_TASKS).split(",");
+        String[] _layersThatGetTasks = Configuration.getString("protocol.clt" + "." + LAYERS_THAT_GET_TASKS).split(",");
         layersThatGetTasks = Arrays.stream(_layersThatGetTasks).mapToInt(Integer::parseInt).toArray();
 
         String[] _layers = Configuration.getString(WorkerInitializer.PAR_NO_NODES_PER_LAYERS).split(",");
