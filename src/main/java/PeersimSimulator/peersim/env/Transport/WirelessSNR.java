@@ -1,11 +1,7 @@
 package PeersimSimulator.peersim.env.Transport;
 
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
-import PeersimSimulator.peersim.env.Nodes.Events.Message;
 import PeersimSimulator.peersim.config.*;
-import PeersimSimulator.peersim.core.*;
-import PeersimSimulator.peersim.edsim.*;
-import PeersimSimulator.peersim.transport.Transport;
 
 
 /**
@@ -16,7 +12,7 @@ import PeersimSimulator.peersim.transport.Transport;
  * @author Alberto Montresor
  * @version $Revision: 1.14 $
  */
-public final class WirelessTransport{
+public final class WirelessSNR implements SNRCalculator{
 
 //---------------------------------------------------------------------
 //Parameters
@@ -54,7 +50,7 @@ public final class WirelessTransport{
     /**
      * Reads configuration parameter.
      */
-    public WirelessTransport(String prefix)
+    public WirelessSNR(String prefix)
     {
 
         PATH_LOSS_CONSTANT = Configuration.getDouble( prefix + "." + PAR_PATH_LOSS_CONSTANT, 0.001);
@@ -92,7 +88,7 @@ public final class WirelessTransport{
          * Inacurate because we assume no obstacles. We will use the Free Space Path Loss Equation.
          */
          // Convert from Mhz to Hz
-        double d = AbstractTransport.distance(srcProps, dstProps); // m
+        double d = MaxCapacityTransport.distance(srcProps, dstProps); // m
         double lambda = 3e8 / 2.4e9; // wavelength : c/f [m] ; c = 3e8 m/s ; f = 2.4e9 Hz;
         double P_t = srcProps.getTRANSMISSION_POWER(); // [dBm]
 

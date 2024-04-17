@@ -68,7 +68,7 @@ public class SDNInitializer implements Control {
     // ------------------------------------------------------------------------
     /**
      * Initialize the node coordinates. The first node in the {@link Network} is
-     * the root node by default and it is located in the middle (the center of
+     * the root node by default, and it is located in the middle (the center of
      * the square) of the surface area.
      */
     @Override

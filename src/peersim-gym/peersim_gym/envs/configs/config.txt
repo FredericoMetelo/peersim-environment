@@ -1,4 +1,4 @@
-random.seed 5812823975042235141
+random.seed 71233990313
 SIZE 12
 CYCLE 1
 CYCLES 1000
@@ -24,7 +24,7 @@ protocol.clt.weight 1
 protocol.clt.CPI 1
 protocol.clt.T 150
 protocol.clt.I 320000000
-protocol.clt.taskArrivalRate 0.1
+protocol.clt.taskArrivalRate 0.5
 protocol.clt.layersThatGetTasks 0,1,2,3,4,5,6,7
 protocol.clt.numberOfDAG 1
 protocol.clt.dagWeights 1
@@ -101,7 +101,7 @@ protocol.props.name props
 protocol.lnk PeersimSimulator.peersim.env.Links.TableProtocol
 
 #--------Define Transport Protocol
-protocol.urt PeersimSimulator.peersim.env.Transport.BaseDelayTransport
+protocol.urt PeersimSimulator.peersim.env.Transport.MaxCapacityTransport
 protocol.urt.mindelay (CYCLE*MINDELAY)/100
 protocol.urt.maxdelay (CYCLE*MAXDELAY)/100
 
