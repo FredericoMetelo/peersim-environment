@@ -6,6 +6,7 @@ import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
 import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
 import PeersimSimulator.peersim.env.Nodes.Events.OffloadInstructions;
 import PeersimSimulator.peersim.env.Nodes.Events.WorkerInfo;
+import PeersimSimulator.peersim.env.Records.FLUpdate;
 import PeersimSimulator.peersim.env.Tasks.ITask;
 
 import java.util.List;
@@ -118,4 +119,6 @@ public interface Worker extends CDProtocol, EDProtocol {
     int getQueueCapacity();
 
     int isWorking();
+
+    boolean sendFLUpdate(FLUpdate update);
 }

@@ -393,7 +393,7 @@ public class DAGWorker extends AbstractWorker {
             Node node = Network.get(this.getId());
             int linkableID = FastConfig.getLinkable(pid);
             Linkable linkable = (Linkable) node.getProtocol(linkableID);
-            if(!validOffloadingInstructions(oi.getNeighbourIndex(), linkable)) {
+            if(!validTargetNeighbour(oi.getNeighbourIndex(), linkable)) {
                 return false;
             }
 

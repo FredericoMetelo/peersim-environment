@@ -53,11 +53,14 @@ public abstract class AbstractController implements Controller {
     SDNNodeProperties props;
     List<WorkerInfo> workerInfo;
 
+    List<String> updatesAvailable;
+
     public AbstractController() {
         active = false;
         selectedNode = this.getId(); // Ignores the controller.
         workerInfo = new ArrayList<>();
         nodeUpdateEventList = new LinkedList<>();
+        updatesAvailable = new LinkedList<>();
         stop = true;
         up = false;
     }
@@ -76,6 +79,8 @@ public abstract class AbstractController implements Controller {
         try {
             svh = (AbstractController) super.clone();
             svh.workerInfo = new ArrayList<>();
+            svh.updatesAvailable = new LinkedList<>();
+            svh.nodeUpdateEventList = new LinkedList<>();
         } catch (CloneNotSupportedException e) {
         } // never happens
         return svh;
@@ -287,7 +292,7 @@ public abstract class AbstractController implements Controller {
         List<Integer> tasksRecievedSinceLastCycle = new LinkedList<Integer>();
         List<Integer> totalTasksProcessed = new LinkedList<Integer>();
         List<Integer> totalTasksOffloaded = new LinkedList<Integer>();
-        List<Boolean> workerInvariant = new LinkedList<>();
+        List<Boolean> workerInvariant = new LinkedList<Boolean>();
 
         for (int i = 0; i < Network.size(); ++i) {
             Worker w = ((Worker) Network.get(i).getProtocol(Worker.getPid()));
@@ -310,6 +315,22 @@ public abstract class AbstractController implements Controller {
                 totalTasksProcessed,
                 totalTasksOffloaded,
                 workerInvariant);
+    }
+
+    @Override
+    public boolean sendFLUpdate(FLUpdate update) {
+        // Request the worker to send the updates to their neighbours through their interface.
+        return this.correspondingWorker.sendFLUpdate(update);
+    }
+    @Override
+    public void setUpdateAvailable(String key) {
+        this.updatesAvailable.add(key);
+    }
+    @Override
+    public List<String> getUpdatesAvailable() {
+        List<String> availableUpdates = this.updatesAvailable;
+        this.updatesAvailable = new LinkedList<>();
+        return availableUpdates;
     }
 
     @Override

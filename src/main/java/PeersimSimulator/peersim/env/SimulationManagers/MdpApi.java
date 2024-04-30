@@ -1,5 +1,6 @@
 package PeersimSimulator.peersim.env.SimulationManagers;
 
+import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
 import PeersimSimulator.peersim.env.Records.*;
 import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Control;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
 
+import java.util.LinkedList;
 import java.util.List;
 
 @RestController
@@ -39,6 +41,7 @@ public class MdpApi implements Control {
     }
 
 
+    // MDP Endpoints ...................................................................................................
 
     @GetMapping("/state")
     public Information getState() {
@@ -68,6 +71,32 @@ public class MdpApi implements Control {
         return lsd;
 
     }
+    // FL Endpoints ....................................................................................................
+
+    @PostMapping("/fl/update")
+    public boolean postUpdates(@RequestBody List<FLUpdate> updates){
+        // Request the controller with the given id to send the updates through the network.
+        boolean worked = true;
+        for (int i = 0; i < updates.size(); i++) {
+            FLUpdate update = updates.get(i);
+            int src = update.src();
+            Controller c = (Controller) Network.get(src).getProtocol(Controller.getPid());
+            worked = worked && c.sendFLUpdate(update);
+        }
+        return worked;
+    }
+    @GetMapping("/fl/done")
+    public List<String> finishedFLUpdates(){
+        List<String> finished = new LinkedList<>();
+        for (int i = 0; i < Network.size(); i++) {
+            Controller c = (Controller) Network.get(i).getProtocol(Controller.getPid());
+            if(c.isActive())
+                finished.addAll(c.getUpdatesAvailable());
+        }
+        return finished;
+    }
+
+    // Support Endpoints ...............................................................................................
 
     @GetMapping("/up")
     public boolean isUp(){
@@ -84,6 +113,7 @@ public class MdpApi implements Control {
         DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
         return !(CommonState.getPhase() == CommonState.POST_SIMULATION) && !c.isStable();
     }
+
     @GetMapping("/NeighbourData")
     public NetworkData getNeighbourData(){
         if(Network.get(0) == null) return null;
@@ -91,6 +121,7 @@ public class MdpApi implements Control {
         DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
         return c.getNeighbourData();
     }
+
     @Override
     public boolean execute() {
 
