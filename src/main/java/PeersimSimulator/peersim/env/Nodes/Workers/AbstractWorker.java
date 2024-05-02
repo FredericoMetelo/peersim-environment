@@ -157,9 +157,18 @@ public abstract class AbstractWorker implements Worker {
             ITask finishedTask = ev.getTask();
             handleTaskConcludedEvent(node, pid, finishedTask);
         }else if(event instanceof FLUpdateEvent ev){
-            this.correspondingController.setUpdateAvailable(ev.getKey());
+            handleFLUpdateEvent(ev);
         }
         // Note: Updates internal state only sends data to user later
+    }
+
+    private void handleFLUpdateEvent(FLUpdateEvent ev) {
+        if(this.correspondingController == null || !this.correspondingController.isActive()){
+            wrkErrLog("NO-CONTROLLER", "Update sent to Worker  that does not have a controller.");
+            return;
+        }
+        wrkInfoLog("RECEIVED UPDT", "src=" + ev.getSrc() + " dst=" + ev.getDst() + " size=" + ev.getSize());
+        this.correspondingController.setUpdateAvailable(ev.getKey());
     }
 
     /**
@@ -482,24 +491,24 @@ public abstract class AbstractWorker implements Worker {
         Node node = Network.get(this.getId());
         int linkableID = FastConfig.getLinkable(pid);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        if(!validTargetNeighbour(flu.dst(), linkable)) {
+        if(!validTargetNeighbour(flu.getDst(), linkable)) {
             return false;
         }
 
-        Node target = linkable.getNeighbor(flu.dst());
+        Node target = linkable.getNeighbor(flu.getDst());
         if ( !target.isUp()) {
             wrkErrLog(EVENT_ERR_NODE_OUT_OF_BOUNDS, "The requested target node is outside the nodes known by the DAGWorker="
-                    + (flu.dst() < 0 || flu.dst() > linkable.degree())
+                    + (flu.getDst() < 0 || flu.getDst() > linkable.degree())
                     + ". Or is down=" + target.isUp());
             return false;
         }
-        wrkInfoLog("SENDING UPDT", "src=" + this.getId() + " dst=" + target.getID() + " size=" + flu.size());
+        wrkInfoLog("SENDING UPDT", "src=" + this.getId() + " dst=" + target.getID() + " size=" + flu.getSize());
         ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                 send(
                         node,
                         target,
-                        new FLUpdateEvent(this.id, flu.src(), flu.dst(), flu.size(), flu.uiid()),
-                        selectOffloadTargetPid(flu.dst(), target)
+                        new FLUpdateEvent(this.id, flu.getSrc(), flu.getDst(), flu.getSize(), flu.getUuid()),
+                        selectOffloadTargetPid(flu.getDst(), target)
                 );
         return true;
     }

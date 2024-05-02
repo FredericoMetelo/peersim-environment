@@ -79,8 +79,14 @@ public class MdpApi implements Control {
         boolean worked = true;
         for (int i = 0; i < updates.size(); i++) {
             FLUpdate update = updates.get(i);
-            int src = update.src();
+            int src = update.getSrc();
+            if(Network.get(src) == null) {
+                Log.err("Node with id " + src + " does not exist.");
+                return false;
+            }
             Controller c = (Controller) Network.get(src).getProtocol(Controller.getPid());
+            if(!c.isActive())
+                return false;
             worked = worked && c.sendFLUpdate(update);
         }
         return worked;
@@ -90,8 +96,10 @@ public class MdpApi implements Control {
         List<String> finished = new LinkedList<>();
         for (int i = 0; i < Network.size(); i++) {
             Controller c = (Controller) Network.get(i).getProtocol(Controller.getPid());
-            if(c.isActive())
+            if(c.isActive()) {
                 finished.addAll(c.getUpdatesAvailable());
+            }
+
         }
         return finished;
     }

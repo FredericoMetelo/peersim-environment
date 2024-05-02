@@ -286,7 +286,7 @@ class PeersimEnv(ParallelEnv):
 
     def __render_human(self):
         self.vis.update_state(self._global_obs, self.max_Q_size, self.neighbourMatrix, self.last_actions, self.controllers, self.agent_name_mapping, self._result)
-        self.vis.draw()  # TODO Project the coordinates to the render space...
+        self.vis.draw()
 
     def close(self):
         self.simulator.stop()
@@ -532,7 +532,7 @@ class PeersimEnv(ParallelEnv):
 
         if w_l == 0 and w_o == 0: # queue is empty, nothing to do, no penalty or reward given.
             print("Empty queue. No action taken.")
-            return self.UTILITY_REWARD, {"U": self.UTILITY_REWARD/2, "D": 0, "O": 0} # TODO make this maximum reward, as the action itself is not something bad.
+            return self.UTILITY_REWARD, {"U": self.UTILITY_REWARD/2, "D": 0, "O": 0}
 
         miu_l = source_processing_power
         miu_o = target_processing_power
