@@ -312,7 +312,13 @@ class PeersimEnv(ParallelEnv):
         update_list = []
         for agent in agents:
             update_entry = self.fl_update_store.store_update(agent, srcs[agent], dst[agent], updates[agent])
-            update_list.append(update_entry)
+            formatted_entry = {
+                "uuid": update_entry["uuid"],
+                "src": update_entry["src_id"],
+                "dst": update_entry["dst_idx"],
+                "size": update_entry["size"]
+            }
+            update_list.append(formatted_entry)
         # Send the list in the body to the server
         payload = json.dumps(update_list)
         headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
@@ -334,8 +340,9 @@ class PeersimEnv(ParallelEnv):
         :param agent:
         :return:
         """
-
-        return []
+        self.fetch_available_updates_from_sim()
+        updates = self.fl_update_store.get_update_per_agent(agent)
+        return updates
 
     def fetch_available_updates_from_sim(self):
         """
