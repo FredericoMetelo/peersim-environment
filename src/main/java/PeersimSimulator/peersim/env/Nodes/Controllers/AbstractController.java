@@ -330,6 +330,7 @@ public abstract class AbstractController implements Controller {
     public List<String> getUpdatesAvailable() {
         List<String> availableUpdates = this.updatesAvailable;
         this.updatesAvailable = new LinkedList<>();
+        ctrInfoLog("FL-COLLECT", "Collected " + availableUpdates.size() + " updates.");
         return availableUpdates;
     }
 

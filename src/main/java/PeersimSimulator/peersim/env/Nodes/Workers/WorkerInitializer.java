@@ -161,6 +161,7 @@ public class WorkerInitializer implements Control {
                 Worker w = ((Worker) Network.get(id).getProtocol(pid));
                 w.setId(id);
                 w.workerInit(cpuFreq, noCores, qMax, i);
+                w.setCorrespondingController((Controller) Network.get(id).getProtocol(Controller.getPid()));
             }
             offset += noNodes;
             // Set other Variables like CPU speed and others here.
