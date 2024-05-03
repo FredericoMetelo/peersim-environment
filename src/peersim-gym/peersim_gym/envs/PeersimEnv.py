@@ -2,7 +2,7 @@ import math
 import os
 import time
 from random import randint
-from typing import Callable
+from typing import Callable, Any
 
 import gymnasium
 import requests
@@ -12,6 +12,7 @@ from pettingzoo import ParallelEnv
 
 import json
 import peersim_gym.envs.Utils.PeersimConfigGenerator as cg
+from peersim_gym.envs.Utils.FLUpdateStoreManager import FLUpdateStoreManager
 from peersim_gym.envs.Utils.PeersimThread import PeersimThread
 from peersim_gym.envs.Utils.PeersimVis import PeersimVis
 
@@ -91,7 +92,7 @@ class PeersimEnv(ParallelEnv):
         self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed, phy_rs_term=phy_rs_term)
 
     def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False,
-                 phy_rs_term:Callable[[Space], float]=None):
+                 phy_rs_term:Callable[[Space], float]=None, fl_update_size:Callable[[Any], int]=None):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
@@ -108,12 +109,16 @@ class PeersimEnv(ParallelEnv):
         self.max_Q_size = [10, 50]  # TODO this is specified from outside.
         self.max_w = 1
 
+        self.fl_update_store = FLUpdateStoreManager(fl_update_size) # Todo: Add a way of passing a funciton to act as the
+
         self.url_api = "http://localhost:8080"
         self.url_action_path = "/action"
         self.url_state_path = "/state"
         self.url_isUp = "/up"
         self.url_isStopped = "/stopped"
         self.url_NetworkData = "/NeighbourData"
+        self.url_FL_get_updates = "/fl/done"
+        self.url_FL_send_update = "/fl/update"
 
         self.default_timeout = 3  # Second
 
@@ -279,6 +284,7 @@ class PeersimEnv(ParallelEnv):
         elif self.render_mode == "human":
             return self.__render_human()
 
+
     def __render_ansi(self):
         print(json.dumps(self.state))
         print(json.dumps(self._info))
@@ -290,6 +296,47 @@ class PeersimEnv(ParallelEnv):
 
     def close(self):
         self.simulator.stop()
+
+    def post_updates(self, agents, srcs, dst, updates):
+        """
+        (Outside of PettingZoo API)
+        This method works by passing a list of FL updates through the network. It adds the updates to the list of
+        updates awaiting return, and then requests the sending of the updates through the simulation.
+
+        :param agents list of agents sending the updates:
+        :param srcs dictionary with the id of the node sendign the update:
+        :param dst dictioary with the index in the neighbour list of the node being targeted by the update:
+        :param updates dictionary with the updates to be sent:
+        :return:
+        """
+        update_list = []
+        for agent in agents:
+            update_entry = self.fl_update_store.store_update(agent, srcs[agent], dst[agent], updates[agent])
+            update_list.append(update_entry)
+        # Send the list in the body to the server
+        payload = json.dumps(update_list)
+        headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
+        action_url = self.url_api + self.url_FL_send_update
+        try:
+            r = requests.post(action_url, payload, headers=headers_action, timeout=self.default_timeout)
+            if r.status_code == 200:
+                return True
+        except requests.exceptions.Timeout:
+            print("Failed  to send action, could not connect to the environment. Returning old result.")
+
+        pass
+    def get_updates(self, agent):
+        """
+        (Outside of PettingZoo API)
+        TODO I want to create this method in such a way that it will allow for async pooling of the updates.
+        Initial solution will check if the updates for that agent are in the list of updates awaiting return. If not
+        fetches a new list of updates.
+
+        I dealing with heterogeneous models should also be possible with this mechanism (IE sending gradients to srv, but fetching the whole model.
+        :param agent:
+        :return:
+        """
+        return []
 
     def __gen_config(self, configs, simtype, regen_seed=False):
         controller = []
