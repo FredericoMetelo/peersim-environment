@@ -8,11 +8,13 @@ class FLUpdateStoreManager:
     """
     def __init__(self, custom_update_size_function):
         self.update_dictionary = {}
+        self.updates_done_per_agent = {}
         self.custom_update_size_function = custom_update_size_function
 
     def store_update(self, agent, src_id, dst_idx, update):
         uuid = self.generate_uuid()
         self.update_dictionary[uuid] = self.create_update_entry(uuid, agent, src_id, dst_idx, update)
+
         return self.update_dictionary[uuid]
 
     def generate_uuid(self):
@@ -37,8 +39,6 @@ class FLUpdateStoreManager:
             return self.custom_update_size_function(update)
 
         # Default strategies:
-        # 1. Check if it's a pytorch weights:
-        #   They use .state_dict() to get the weights, this returns an ordered dict with a tensor per layer.
         if isinstance(update, OrderedDict):
             size = 0
             for key in update.keys():
@@ -53,9 +53,21 @@ class FLUpdateStoreManager:
         else:
             raise ValueError("The update type is not supported, please use pytorch's model.state_grad(), a list of "
                              "tensors. Or provide your own custom function.")
-        # 3. Check if it's a tensorflow weights
-        # 4. Check if it's a tensorflow gradients
-        # TODO: Implement the size calculation for the different types of updates
+
+
+    def set_completed(self, uuid):
+        """
+        Marks the update with the given uuid as completed
+        :param uuid:
+        :return:
+        """
+        update_done = self.get_update(uuid)
+        if update_done is not None:
+            agent = update_done["agent"]
+            if agent in self.updates_done_per_agent:
+                self.updates_done_per_agent[agent].append(uuid)
+            else:
+                self.updates_done_per_agent[agent] = [uuid]
 
     def get_update(self, uuid):
         """
@@ -64,3 +76,14 @@ class FLUpdateStoreManager:
         :return:
         """
         return self.update_dictionary.pop(uuid, None)
+
+    def get_update_per_agent(self, agent):
+        """
+        Returns the updates for a given agent
+        :param agent:
+        :return:
+        """
+        updates = self.updates_done_per_agent.pop(agent, [])
+        return updates
+
+

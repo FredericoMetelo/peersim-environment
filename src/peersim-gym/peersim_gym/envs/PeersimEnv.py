@@ -321,22 +321,34 @@ class PeersimEnv(ParallelEnv):
             r = requests.post(action_url, payload, headers=headers_action, timeout=self.default_timeout)
             if r.status_code == 200:
                 return True
+            else:
+                return False
         except requests.exceptions.Timeout:
             print("Failed  to send action, could not connect to the environment. Returning old result.")
 
-        pass
     def get_updates(self, agent):
         """
         (Outside of PettingZoo API)
-        TODO I want to create this method in such a way that it will allow for async pooling of the updates.
-        Initial solution will check if the updates for that agent are in the list of updates awaiting return. If not
-        fetches a new list of updates.
-
-        I dealing with heterogeneous models should also be possible with this mechanism (IE sending gradients to srv, but fetching the whole model.
+        This method returns the updates that have arrived at their destination in the simulation for a given agent.
+        If the agent has no currently available updates then an empty list is returned.
         :param agent:
         :return:
         """
+
         return []
+
+    def fetch_available_updates_from_sim(self):
+        """
+        This method is responsible for fetching the updates from the simulation. And passing them to the FL Update Store
+        """
+        payload = {}
+        headers_action = {"Accept": "application/json", "Connection": "keep-alive"}
+        action_url = self.url_api + self.url_FL_get_updates
+        r = requests.get(action_url, json=payload, headers=headers_action, timeout=self.default_timeout).json()
+        for update_uuid in r:
+            self.fl_update_store.set_completed(update_uuid)
+
+
 
     def __gen_config(self, configs, simtype, regen_seed=False):
         controller = []
