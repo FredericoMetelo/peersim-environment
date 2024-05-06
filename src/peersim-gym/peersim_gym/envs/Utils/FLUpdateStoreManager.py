@@ -21,7 +21,7 @@ class FLUpdateStoreManager:
         size = self.get_update_size(update)
         return {"uuid": uuid, "agent": agent, "src_id": src_id, "dst_idx": dst_idx, "update": update, "size": size}
 
-    def get_update_size(self, update):
+        def get_update_size(self, update):
         """
         This method checks what is the type of the update:
         :param update:
