@@ -1,4 +1,4 @@
-# Peersim-Env
+# [Peersim-Env](https://arxiv.org/abs/2403.17637v2)
 
 PeersimGym, an environment to train task-offloading MARL algorithms on Edge network simulations. The simulation behind the environment is built using the [Peersim Peer-to-Peer simulator tool](https://peersim.sourceforge.net/) that we adapted to simulate Edge Systems, and an API following the [PettingZoo Framework](https://pettingzoo.farama.org/) is provided in _Python_.
 
