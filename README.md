@@ -588,8 +588,9 @@ mvn clean -Dmaven.test.skip package
 
 This will package a jar with all the necessary dependencies to run the simulator. The jar can be found on the `target/peersim-srv-0.0.1-SNAPSHOT.jar`
 directory/folder.
+
 <a name="Bibtex"></a>
-Bibtex
+# Bibtex
 @article{metelo2024peersimgym,
       title={PeersimGym: An Environment for Solving the Task Offloading Problem with Reinforcement Learning}, 
       author={Frederico Metelo and Stevo Racković and Pedro Ákos Costa and Cláudia Soares},
