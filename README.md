@@ -27,7 +27,7 @@ a server that wraps the simultion of the peersim environment in a REST API allow
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.1.[Setup The Simulator](###SetupTheSimulator)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.2.[Maven Dependencies](###MavenDependencies)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.3.[Compiling The Simulator](###CompilingTheSimulator)<br>
-
+3. [Bibtex](###Bibtex)<br>
 <a name="HowTheSimulationWorks"></a>
 ## How the Simltion Works
 <a name="TheSimulationServer"></a>
