@@ -17,6 +17,9 @@ public interface Worker extends CDProtocol, EDProtocol {
     String PAR_NAME = "name";
     int RANK_EVENT_DELAY = 2;
     String PAR_MAX_TIME_AFTER_DEADLINE = "maxTimeAfterDeadline";
+    String PAR_ENERGY_COST_COMM = "energyCostComm";
+    String PAR_ENERGY_COST_COMP = "energyCostComp";
+
     int DEFAULT_TIME_AFTER_DEADLINE = 5;
     String EVENT_WORKER_INFO_SEND = "WRK-INFO BROADCAST";
     String EVENT_TASK_FINISH = "TASK FINISH";
@@ -107,6 +110,9 @@ public interface Worker extends CDProtocol, EDProtocol {
     int getCpuNoCores();
 
     double getAverageWaitingTime();
+
+    double getEnergyConsumed();
+    void setEnergyConsumed(double energyConsumed);
 
     double getCpuFreq();
     int getQueueCapacity();

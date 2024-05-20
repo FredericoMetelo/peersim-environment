@@ -31,7 +31,7 @@ STATE_G_Q = "true_Q"
 STATE_G_DROPPED_TASKS = "droppedTasks"
 STATE_G_FINISHED_TASKS = "finishedTasks"
 STATE_G_TOTAL_TASKS = "totalTasks"
-
+STATE_G_CONSUMED_ENERGY = "energyConsumed"
 
 AGENT_PREFIX = "worker_"
 
@@ -364,7 +364,8 @@ class PeersimEnv(ParallelEnv):
                 STATE_G_AVERAGE_COMPLETION_TIMES: extracted_data[2],
                 STATE_G_DROPPED_TASKS: extracted_data[3],
                 STATE_G_FINISHED_TASKS: extracted_data[4],
-                STATE_G_TOTAL_TASKS: extracted_data[5]
+                STATE_G_TOTAL_TASKS: extracted_data[5],
+                STATE_G_CONSUMED_ENERGY: extracted_data[6],
             }
 
             self._info = dbg_info
@@ -648,8 +649,9 @@ class PeersimEnv(ParallelEnv):
         dropped_tasks = global_obs[STATE_G_DROPPED_TASKS]
         finished_tasks = global_obs[STATE_G_FINISHED_TASKS]
         total_tasks = global_obs[STATE_G_TOTAL_TASKS]
+        energy_consumed = global_obs[STATE_G_CONSUMED_ENERGY]
 
-        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks
+        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed
 
     def set_random_seed(self):
         seed = cg.randomize_seed(self.config_path)

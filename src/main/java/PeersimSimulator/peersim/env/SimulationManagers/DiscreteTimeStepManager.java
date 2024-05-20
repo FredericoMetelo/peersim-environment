@@ -183,6 +183,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
         List<Integer> droppedTasks = new ArrayList<>(Network.size());
         List<Integer> totalTasks = new ArrayList<>(Network.size());
         List<Integer> isWorking = new ArrayList<>(Network.size());
+        List<Double> energyConsumed = new ArrayList<>(Network.size());
         for (int i = 0; i < Network.size() - hasCloud; i++) {
             Node n = Network.get(i);
             if (n.isUp()) {
@@ -193,6 +194,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
                 processingPowers.add(worker.getProcessingPower());
                 layers.add(worker.getLayer());
                 noCores.add(worker.getCpuNoCores());
+                energyConsumed.add(worker.getEnergyConsumed());
                 SDNNodeProperties props = worker.getProps();
                 positions.add(new Coordinates(props.getX(), props.getY()));
                 bandwidths.add(props.getBANDWIDTH());
@@ -210,7 +212,7 @@ public class DiscreteTimeStepManager implements CDProtocol {
             }
         }
         return new GlobalState(nodeIds, queues, processingPowers, noCores, layers, positions, bandwidths,
-                                transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking);
+                                transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking, energyConsumed);
     }
 
 

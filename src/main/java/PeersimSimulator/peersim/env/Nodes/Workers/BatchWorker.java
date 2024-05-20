@@ -48,6 +48,7 @@ public class BatchWorker extends AbstractWorker{
                 current = null;
             }
         }
+        this.addProcessingEnergyCost(processingPower - remainingProcessingPower);
         cleanExpiredApps();
         if (!this.hasController && ((CommonState.getTime() % RANK_EVENT_DELAY) == 0 || this.awaitingSerialization() )) { // && !this.recievedApplications.isEmpty() // if offloaded a task and does not run this then no cleanup.
             applicationSerialization();

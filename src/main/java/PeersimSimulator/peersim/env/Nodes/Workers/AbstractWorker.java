@@ -96,6 +96,10 @@ public abstract class AbstractWorker implements Worker {
     protected int toAddSize;
     protected SDNNodeProperties props;
 
+    protected double energyConsumed;
+    protected double costOfCommPerByte;
+    protected double costOfProcessPerByte;
+
 
     public AbstractWorker(String prefix) {
         pid = Configuration.getPid(prefix + "." + PAR_NAME);
@@ -111,9 +115,10 @@ public abstract class AbstractWorker implements Worker {
         dependentTaskComparator = new DependentTaskComparator();
         hasController = false;
         toAddSize = 0;
-
+        energyConsumed = 0;
         timeAfterDeadline = Configuration.getInt(prefix + "." + PAR_MAX_TIME_AFTER_DEADLINE, DEFAULT_TIME_AFTER_DEADLINE);
-
+        costOfCommPerByte = Configuration.getDouble(prefix + "." + PAR_ENERGY_COST_COMM);
+        costOfProcessPerByte = Configuration.getDouble(prefix + "." + PAR_ENERGY_COST_COMP);
     }
 
     @Override
@@ -169,6 +174,7 @@ public abstract class AbstractWorker implements Worker {
                 wrkInfoLog(EVENT_WORKER_INFO_SEND_FAILED, "target=" + controller.getID());
                 continue;
             }
+            addComunicationEnergyCost(wi);
             ((Transport) node.getProtocol(FastConfig.getTransport(Controller.getPid()))).
                     send(
                             node,
@@ -180,6 +186,8 @@ public abstract class AbstractWorker implements Worker {
 
         this.changedWorkerState = false;
     }
+
+
 
     /**
      * This method handles the conclusion of a task that was offloaded to this node. It sends the result of completion
@@ -200,11 +208,13 @@ public abstract class AbstractWorker implements Worker {
             wrkErrLog("NO CTR FOR REMOTE TSK", "Node does not know Node="+task.getOriginalHandlerID() +" that requested task=" +task.getId()+", dropping task" );
         }else {
             wrkInfoLog(EVENT_TASK_FINISH,  "taskId=" + task.getId());
+            TaskConcludedEvent taskconcluded = new TaskConcludedEvent(this.id, task.getAppID(), task.getClientID(), task.getOutputSizeBytes(), task);
+            addComunicationEnergyCost(taskconcluded);
             ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                     send(
                             node,
                             handler,
-                            new TaskConcludedEvent(this.id, task.getAppID(), task.getClientID(), task.getOutputSizeBytes(), task),
+                            taskconcluded,
                             Worker.getPid()
                     );
         }
@@ -260,11 +270,13 @@ public abstract class AbstractWorker implements Worker {
 
         if (!client.isUp()) return; // This happens task progress is lost.
         wrkInfoLog(EVENT_APP_FINISH, "appId=" + app.getAppID() + " deadlineWas="+app.getDeadline() + " finished=" + app.isFinished());
+        AppConcludedEvent appConcluded = new AppConcludedEvent(this.id, app.getAppID(), app.getOutputDataSize());
+        addComunicationEnergyCost(appConcluded);
         ((Transport) node.getProtocol(FastConfig.getTransport(Client.getPid()))).
                 send(
                         node,
                         client,
-                        new AppConcludedEvent(this.id, app.getAppID(), app.getOutputDataSize()),
+                        appConcluded,
                         Client.getPid()
                 );
     }
@@ -454,6 +466,13 @@ public abstract class AbstractWorker implements Worker {
         wrkDbgLog("Worker Params: NO_CORES<" + this.cpuNoCores + "> FREQ<" + this.cpuFreq + "> Q_MAX<" + this.qMAX + ">");
     }
 
+    protected void addComunicationEnergyCost(Message m) {
+        this.energyConsumed += m.getSize() * costOfCommPerByte;
+    }
+    protected void addProcessingEnergyCost(double bytesProcessed) {
+        this.energyConsumed += bytesProcessed * costOfCommPerByte;
+    }
+
     //======================================================================================================
     // Getter and Setter Methods
     //======================================================================================================
@@ -496,6 +515,14 @@ public abstract class AbstractWorker implements Worker {
     @Override
     public int getTotalNumberOfTasksInNode() {
         return this.queue.size() + toAddSize + ((current == null || current.done()) ? 0 : 1);
+    }
+
+    public double getEnergyConsumed() {
+        return energyConsumed;
+    }
+
+    public void setEnergyConsumed(double energyConsumed) {
+        this.energyConsumed = energyConsumed;
     }
 
     @Override
