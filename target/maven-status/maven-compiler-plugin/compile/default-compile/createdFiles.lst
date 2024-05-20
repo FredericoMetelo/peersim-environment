@@ -1,6 +1,7 @@
 PeersimSimulator/peersim/env/Nodes/Clients/ClientInitializer.class
 PeersimSimulator/peersim/core/CommonState.class
 PeersimSimulator/peersim/vector/Getter.class
+PeersimSimulator/peersim/env/SimulationManagers/AsyncTimeStepManager.class
 PeersimSimulator/peersim/config/ConfigContainer.class
 PeersimSimulator/peersim/rangesim/RangeSimulator.class
 PeersimSimulator/peersim/env/Nodes/Workers/Worker.class
@@ -111,6 +112,7 @@ PeersimSimulator/peersim/env/Nodes/Clients/BasicClient.class
 PeersimSimulator/peersim/vector/VectAngle.class
 PeersimSimulator/peersim/env/Tasks/TaskHistory$TaskEvenType.class
 PeersimSimulator/peersim/vector/LinearDistribution.class
+PeersimSimulator/peersim/env/SimulationManagers/AbstractTimeStepManager.class
 PeersimSimulator/peersim/graph/Graph.class
 PeersimSimulator/peersim/Simulator.class
 PeersimSimulator/peersim/env/Nodes/Events/AppConcludedEvent.class
