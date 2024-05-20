@@ -1,4 +1,4 @@
-# Peersim-Env
+# [Peersim-Env](https://arxiv.org/abs/2403.17637v2)
 
 PeersimGym, an environment to train task-offloading MARL algorithms on Edge network simulations. The simulation behind the environment is built using the [Peersim Peer-to-Peer simulator tool](https://peersim.sourceforge.net/) that we adapted to simulate Edge Systems, and an API following the [PettingZoo Framework](https://pettingzoo.farama.org/) is provided in _Python_.
 
@@ -27,7 +27,7 @@ a server that wraps the simultion of the peersim environment in a REST API allow
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.1.[Setup The Simulator](###SetupTheSimulator)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.2.[Maven Dependencies](###MavenDependencies)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.3.[Compiling The Simulator](###CompilingTheSimulator)<br>
-
+3. [Bibtex](###Bibtex)<br>
 <a name="HowTheSimulationWorks"></a>
 ## How the Simltion Works
 <a name="TheSimulationServer"></a>
@@ -589,4 +589,14 @@ mvn clean -Dmaven.test.skip package
 This will package a jar with all the necessary dependencies to run the simulator. The jar can be found on the `target/peersim-srv-0.0.1-SNAPSHOT.jar`
 directory/folder.
 
+<a name="Bibtex"></a>
+# Bibtex
+@article{metelo2024peersimgym,
+      title={PeersimGym: An Environment for Solving the Task Offloading Problem with Reinforcement Learning}, 
+      author={Frederico Metelo and Stevo Racković and Pedro Ákos Costa and Cláudia Soares},
+      year={2024},
+      eprint={2403.17637},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
 
