@@ -16,7 +16,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DiscreteTimeStepManager implements CDProtocol {
 
@@ -277,8 +279,10 @@ public class DiscreteTimeStepManager implements CDProtocol {
         int max = 0;
         int average = 0;
         List<List<Integer>> neighbourMatrix = new ArrayList<>(Network.size());
+        List<List<Integer>> knowsControllerMatrix = new ArrayList<>(Network.size());
         for (int i = 0; i < Network.size(); i++) {
             Node n = Network.get(i);
+            Linkable neighbourNodes = (Linkable) n.getProtocol(FastConfig.getLinkable(Worker.getPid()));
             int[] neighbours = getNeighbours(n);
             if (n.isUp()) {
                 Linkable linkable = (Linkable) n.getProtocol(FastConfig.getLinkable(Worker.getPid()));
@@ -289,8 +293,22 @@ public class DiscreteTimeStepManager implements CDProtocol {
                 average /= 2;
             }
             neighbourMatrix.add(Arrays.stream(neighbours).boxed().toList());
+
+            knowsControllerMatrix.add(getNeighborsWithControllerIndices(neighbours));
         }
-        return new NetworkData(min, max, average, neighbourMatrix);
+        return new NetworkData(min, max, average, neighbourMatrix, knowsControllerMatrix);
+    }
+
+    private static List<Integer> getNeighborsWithControllerIndices(int[] neighbours) {
+        List<Integer> indices = new LinkedList<>();
+         for(int i = 0 ; i< neighbours.length; i++) {
+             int id = neighbours[i];
+             Controller c = (Controller) Network.get(id).getProtocol(Controller.getPid());
+             if(c.isActive()) {
+                 indices.add(i);
+             }
+         }
+        return indices;
     }
 
     private static int[] getNeighbours(Node n) {

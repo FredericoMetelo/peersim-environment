@@ -24,7 +24,7 @@ class FLUpdateStoreManager:
         size = self.get_update_size(update)
         return {"uuid": uuid, "agent": agent, "src_id": src_id, "dst_idx": dst_idx, "update": update, "size": size}
 
-        def get_update_size(self, update):
+    def get_update_size(self, update):
         """
         This method checks what is the type of the update:
         Supports:
@@ -42,13 +42,13 @@ class FLUpdateStoreManager:
         if isinstance(update, OrderedDict):
             size = 0
             for key in update.keys():
-                size += update[key].size() * update[key].element_size()
+                size += update[key].numel() * update[key].element_size()
             return size
         # 2. Check if it's a pytorch gradients list, only can accept lists in this mode.
         elif isinstance(update, list):
             size = 0
             for i in range(len(update)):
-                size += update[i].size() * update[i].element_size()
+                size += update[i].numel() * update[i].element_size()
             return size
         else:
             raise ValueError("The update type is not supported, please use pytorch's model.state_grad(), a list of "
@@ -65,9 +65,9 @@ class FLUpdateStoreManager:
         if update_done is not None:
             agent = update_done["agent"]
             if agent in self.updates_done_per_agent:
-                self.updates_done_per_agent[agent].append(uuid)
+                self.updates_done_per_agent[agent].append(update_done)
             else:
-                self.updates_done_per_agent[agent] = [uuid]
+                self.updates_done_per_agent[agent] = [update_done]
 
     def get_update(self, uuid):
         """

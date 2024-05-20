@@ -186,6 +186,7 @@ PeersimSimulator/peersim/edsim/PriorityQ.class
 PeersimSimulator/peersim/graph/SubGraphEdges.class
 PeersimSimulator/peersim/reports/MemoryObserver.class
 PeersimSimulator/peersim/env/Records/SimulationData/FailledActionSimulationData.class
+PeersimSimulator/peersim/env/Records/FLUpdate.class
 PeersimSimulator/example/loadbalance/LinearDistributionInitializer.class
 PeersimSimulator/peersim/graph/FastUndirGraph.class
 PeersimSimulator/peersim/vector/SingleValue.class
@@ -193,6 +194,7 @@ PeersimSimulator/peersim/core/OracleIdleProtocol.class
 PeersimSimulator/example/hot/InetObserver.class
 PeersimSimulator/peersim/env/Nodes/Events/TaskConcludedEvent.class
 PeersimSimulator/peersim/config/MissingParameterException.class
+PeersimSimulator/peersim/env/Nodes/Events/FLUpdateEvent.class
 PeersimSimulator/peersim/dynamics/WireRingLattice.class
 PeersimSimulator/peersim/vector/ValueDumper.class
 PeersimSimulator/peersim/env/Nodes/Events/Message.class

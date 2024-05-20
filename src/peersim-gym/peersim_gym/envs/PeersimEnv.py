@@ -88,11 +88,12 @@ def can_launch_simulation():
 class PeersimEnv(ParallelEnv):
     metadata = {"render_modes": ["ansi", "human"], "render_fps": 4}
 
-    def init(self, render_mode=None, configs=None, log_dir=None, randomize_seed=False, phy_rs_term:Callable[[Space], float]=None):
+    def init(self, render_mode=None, configs=None, log_dir=None, randomize_seed=False,
+             phy_rs_term: Callable[[Space], float] = None):
         self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed, phy_rs_term=phy_rs_term)
 
     def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False,
-                 phy_rs_term:Callable[[Space], float]=None, fl_update_size:Callable[[Any], int]=None):
+                 phy_rs_term: Callable[[Space], float] = None, fl_update_size: Callable[[Any], int] = None):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
@@ -109,7 +110,8 @@ class PeersimEnv(ParallelEnv):
         self.max_Q_size = [10, 50]  # TODO this is specified from outside.
         self.max_w = 1
 
-        self.fl_update_store = FLUpdateStoreManager(fl_update_size) # Todo: Add a way of passing a funciton to act as the
+        self.fl_update_store = FLUpdateStoreManager(
+            fl_update_size)  # Todo: Add a way of passing a funciton to act as the
 
         self.url_api = "http://localhost:8080"
         self.url_action_path = "/action"
@@ -138,7 +140,8 @@ class PeersimEnv(ParallelEnv):
         self.no_nodes_per_layer = [int(no_nodes) for no_nodes in
                                    self.config_archive["NO_NODES_PER_LAYERS"].strip().split(",")]
 
-        self.layers_that_get_tasks = [int(layer) for layer in self.config_archive["layersThatGetTasks"].strip().split(",")]
+        self.layers_that_get_tasks = [int(layer) for layer in
+                                      self.config_archive["layersThatGetTasks"].strip().split(",")]
         if isinstance(self.max_Q_size, list):
             self.q_list = self._gen_node_Q_max()
 
@@ -185,7 +188,8 @@ class PeersimEnv(ParallelEnv):
         self.NORMALIZED_THERMAL_NOISE_POWER = -174
         self.AVERAGE_TASK_SIZE, self.AVERAGE_TASK_INSTR, self.TASK_ARRIVAL_RATE = self._compute_avg_task_data()
         self.AVERAGE_PROCESSING_POWER, self.AVERAGE_MAX_Q, self.PROCESSING_POWERS = self._compute_worker_data()
-        self.NODES_PER_LAYER = [int(no_nodes) for no_nodes in self.config_archive["NO_NODES_PER_LAYERS"].strip().split(",")]
+        self.NODES_PER_LAYER = [int(no_nodes) for no_nodes in
+                                self.config_archive["NO_NODES_PER_LAYERS"].strip().split(",")]
         self.avg_neighbours = -1
         self.min_neighbours = -1
         self.max_neighbours = -1
@@ -284,14 +288,14 @@ class PeersimEnv(ParallelEnv):
         elif self.render_mode == "human":
             return self.__render_human()
 
-
     def __render_ansi(self):
         print(json.dumps(self.state))
         print(json.dumps(self._info))
         print("Last Reward Components:" + json.dumps(self.last_reward_components))
 
     def __render_human(self):
-        self.vis.update_state(self._global_obs, self.max_Q_size, self.neighbourMatrix, self.last_actions, self.controllers, self.agent_name_mapping, self._result)
+        self.vis.update_state(self._global_obs, self.max_Q_size, self.neighbourMatrix, self.last_actions,
+                              self.controllers, self.agent_name_mapping, self._result)
         self.vis.draw()
 
     def close(self):
@@ -310,8 +314,8 @@ class PeersimEnv(ParallelEnv):
         :return:
         """
         update_list = []
-        for agent in agents:
-            update_entry = self.fl_update_store.store_update(agent, srcs[agent], dst[agent], updates[agent])
+        for idx, agent in enumerate(agents):
+            update_entry = self.fl_update_store.store_update(agent, srcs[idx], dst[idx], updates[idx])
             formatted_entry = {
                 "uuid": update_entry["uuid"],
                 "src": update_entry["src_id"],
@@ -342,7 +346,7 @@ class PeersimEnv(ParallelEnv):
         """
         self.fetch_available_updates_from_sim()
         updates = self.fl_update_store.get_update_per_agent(agent)
-        return updates
+ear        return updates
 
     def fetch_available_updates_from_sim(self):
         """
@@ -354,8 +358,6 @@ class PeersimEnv(ParallelEnv):
         r = requests.get(action_url, json=payload, headers=headers_action, timeout=self.default_timeout).json()
         for update_uuid in r:
             self.fl_update_store.set_completed(update_uuid)
-
-
 
     def __gen_config(self, configs, simtype, regen_seed=False):
         controller = []
@@ -404,7 +406,7 @@ class PeersimEnv(ParallelEnv):
         try:
             iter = 0
             r = requests.get(space_url, headers=headers_state, timeout=self.default_timeout)
-            while r.status_code < 200 or r.status_code >= 300: # Most likely only 200 will be returned, but I'm paranoid
+            while r.status_code < 200 or r.status_code >= 300:  # Most likely only 200 will be returned, but I'm paranoid
                 r = requests.get(space_url, headers=headers_state, timeout=self.default_timeout)
                 iter += 1
                 if iter > 100:
@@ -471,7 +473,8 @@ class PeersimEnv(ParallelEnv):
         max = r.get('max')
         avg = r.get('average')
         neighbourMatrix = r.get('neighbourMatrix')
-        return min, max, avg, neighbourMatrix
+        knownControllersMatrix = r.get('knowsControllerMatrix')
+        return min, max, avg, neighbourMatrix, knownControllersMatrix
 
     def __is_up(self):
         payload = {}
@@ -536,7 +539,7 @@ class PeersimEnv(ParallelEnv):
             lambda_wavelength = 3e8 / 2.4e9
             P_t = self.TRANSMISSION_POWER
             N_0 = self.NORMALIZED_THERMAL_NOISE_POWER + 10 * math.log10(W)
-            h = 10 * math.log10((lambda_wavelength**2) / (16 * math.pi**2)) - 20 * math.log10(d_i_j)
+            h = 10 * math.log10((lambda_wavelength ** 2) / (16 * math.pi ** 2)) - 20 * math.log10(d_i_j)
 
             SNR_db = P_t + h - N_0
             SNR_linear = 10 ** (SNR_db / 10)
@@ -561,7 +564,8 @@ class PeersimEnv(ParallelEnv):
         locally_processed = agent_obs[STATE_NODE_ID_FIELD] == target_node_worker_info["id"]
 
         # Check if the target node is within [0, #Neighbours]
-        if int(len(source_node_og_info["Q"])) < int(target_of_task_neighbourhood_index) or int(target_of_task_neighbourhood_index) < 0:
+        if int(len(source_node_og_info["Q"])) < int(target_of_task_neighbourhood_index) or int(
+                target_of_task_neighbourhood_index) < 0:
             return -self.UTILITY_REWARD, {"U": -self.UTILITY_REWARD, "D": 0, "O": 0}
 
         target_layer = self.get_layer(target_of_task_global_index)
@@ -573,8 +577,10 @@ class PeersimEnv(ParallelEnv):
             source_rank = 1
             target_rank = 1
         else:
-            source_rank = self.clients_per_node[source_of_task_global_index] if self.get_layer(source_of_task_global_index) in self.layers_that_get_tasks else 0
-            target_rank = self.clients_per_node[target_of_task_global_index] if self.get_layer(target_of_task_global_index)  in self.layers_that_get_tasks else 0
+            source_rank = self.clients_per_node[source_of_task_global_index] if self.get_layer(
+                source_of_task_global_index) in self.layers_that_get_tasks else 0
+            target_rank = self.clients_per_node[target_of_task_global_index] if self.get_layer(
+                target_of_task_global_index) in self.layers_that_get_tasks else 0
 
         source_layer = self.get_layer(source_of_task_global_index)
         source_processing_power = self.PROCESSING_POWERS[source_layer]
@@ -583,8 +589,8 @@ class PeersimEnv(ParallelEnv):
         q_l = source_node_og_info["queueSize"]
         q_o = target_node_worker_info["queueSize"]
 
-        source_var = self.TASK_ARRIVAL_RATE * source_rank - source_processing_power/self.AVERAGE_TASK_INSTR
-        target_var = self.TASK_ARRIVAL_RATE * target_rank - target_processing_power/self.AVERAGE_TASK_INSTR
+        source_var = self.TASK_ARRIVAL_RATE * source_rank - source_processing_power / self.AVERAGE_TASK_INSTR
+        target_var = self.TASK_ARRIVAL_RATE * target_rank - target_processing_power / self.AVERAGE_TASK_INSTR
         q_expected_l = q_l if locally_processed else max(q_l - 1, 0)
         q_expected_o = q_o if locally_processed else q_o + 1
 
@@ -596,26 +602,28 @@ class PeersimEnv(ParallelEnv):
         w_o = 1 if not locally_processed and 0 < q_l - 1 else 0
         w_l = 1 if locally_processed else 0
 
-        if w_l == 0 and w_o == 0: # queue is empty, nothing to do, no penalty or reward given.
+        if w_l == 0 and w_o == 0:  # queue is empty, nothing to do, no penalty or reward given.
             print("Empty queue. No action taken.")
-            return self.UTILITY_REWARD, {"U": self.UTILITY_REWARD/2, "D": 0, "O": 0}
+            return self.UTILITY_REWARD, {"U": self.UTILITY_REWARD / 2, "D": 0, "O": 0}
 
         miu_l = source_processing_power
         miu_o = target_processing_power
 
         # Compute Utility:
-        U = self.UTILITY_REWARD # * math.log(1 + w_l + w_o)
+        U = self.UTILITY_REWARD  # * math.log(1 + w_l + w_o)
 
         # Compute Delay
 
-        t_w = not_zero(w_l) * (q_l / miu_l) + not_zero(w_o) * ((q_l / miu_l) + (q_o / miu_o))  # q_l/miu_l on the second term represents the time spent waiting in queue before being selected for offloading
+        t_w = not_zero(w_l) * (q_l / miu_l) + not_zero(w_o) * ((q_l / miu_l) + (
+                    q_o / miu_o))  # q_l/miu_l on the second term represents the time spent waiting in queue before being selected for offloading
         t_c = self._compute_delay(d_i_j, w_o)
 
         # og: t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
         t_e = self.AVERAGE_TASK_INSTR / target_processing_power - self.AVERAGE_TASK_INSTR / source_processing_power
 
         t_w = min(t_w, self.UTILITY_REWARD * self.DELAY_WEIGHT["queue"])
-        t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]), -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
+        t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]),
+                  -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
         t_c = min(t_c, self.UTILITY_REWARD * self.DELAY_WEIGHT["comm"])
 
         D = t_w + t_c + t_e  # / (w_l + w_o)
@@ -629,13 +637,13 @@ class PeersimEnv(ParallelEnv):
         distance_to_Ovl_l = max((source_max_q - q_expected_l) / source_max_q, 0.001)  # Normalized manhattan distance
         distance_to_Ovl_o = max((target_max_q - q_expected_o) / target_max_q, 0.001)  # 0.0001 is to avoid log(0)
         O = -math.log10(w_l * distance_to_Ovl_l + w_o * distance_to_Ovl_o)  # we subtract O, therfore the minus
-                                                                                  # Was using the ln before, now using log
+        # Was using the ln before, now using log
 
         # Capping the percentages to be between 100 and -100
         # U = max(min(U, self.UTILITY_REWARD), self.UTILITY_REWARD) / self.UTILITY_REWARD
         # Some people call this cheating, I call it not despairing -, _ ,-.
 
-        O = O/3 * self.UTILITY_REWARD * self.OVERLOAD_WEIGHT # I cap the delay distance at 0.001 (0.1% to overload) therefore the log will only go down to 3
+        O = O / 3 * self.UTILITY_REWARD * self.OVERLOAD_WEIGHT  # I cap the delay distance at 0.001 (0.1% to overload) therefore the log will only go down to 3
 
         # computing reward and normalizing it
         reward = U - (D + O)
@@ -643,7 +651,8 @@ class PeersimEnv(ParallelEnv):
         if self.phy_rs_term is not None:
             F = self.phy_rs_term(agent_obs) - self.phy_rs_term(agent_og_obs)
         reward += F
-        print(f"Action:{source_of_task_global_index}->{target_of_task_global_index}         Reward: U:{U} | D:{D} [t_C {t_c} ; t_w {t_w} ; t_e {t_e}] | O:{O}) | F:{F}")
+        print(
+            f"Action:{source_of_task_global_index}->{target_of_task_global_index}         Reward: U:{U} | D:{D} [t_C {t_c} ; t_w {t_w} ; t_e {t_e}] | O:{O}) | F:{F}")
         return (reward, {"U": U, "D": D, "O": O, "F": F})
 
     def _compute_avg_task_data(self):
@@ -678,7 +687,7 @@ class PeersimEnv(ParallelEnv):
         iter = 0
         while self.neighbourMatrix is None or len(self.neighbourMatrix) == 0:
             print(f"Pooling for net stats {iter}")
-            self.min_neighbours, self.max_neighbours, self.avg_neighbours, self.neighbourMatrix = self.__get_net_data()
+            self.min_neighbours, self.max_neighbours, self.avg_neighbours, self.neighbourMatrix, self.whichControllersMatrix = self.__get_net_data()
             self.clients_per_node = self._compute_clients_per_node()
             iter += 1
             time.sleep(0.05)
@@ -686,6 +695,8 @@ class PeersimEnv(ParallelEnv):
     def _validateAction(self, original_obs, actions):
         failed = {}
         for agent in self.agents:
+            if agent not in actions:
+                continue
             obs = original_obs[agent]
             Q = obs[STATE_Q_FIELD]
             neighbour = int(actions[agent][ACTION_NEIGHBOUR_IDX_FIELD])
@@ -768,7 +779,8 @@ class PeersimEnv(ParallelEnv):
             n_max_Q = self.max_Q_size[neighbor_layer]
             normalized_Q.append(Q[i] / n_max_Q)
             normalized_free_spaces.append(FS[i] / n_max_Q)
-            assert ((n_max_Q - Q[i]) / n_max_Q == FS[i] / n_max_Q, f"Mismatch: Neighbor {neighbor_id} has Q: {Q[i]} and FS: {FS[i]}")
+            assert ((n_max_Q - Q[i]) / n_max_Q == FS[i] / n_max_Q,
+                    f"Mismatch: Neighbor {neighbor_id} has Q: {Q[i]} and FS: {FS[i]}")
         if padding:
             normalized_Q += [-1 for _ in range(len(Q), self.number_nodes)]
             normalized_free_spaces += [-1 for _ in range(len(Q), self.number_nodes)]
