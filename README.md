@@ -177,6 +177,7 @@ This section will focus on two things. How to set up and utilize the environment
 ### Setup the Anaconda environment
 I provide a yml file to automatically install the necessary dependencies, see `Setup/PeersimGym.yml`. To create an environment from this specification run:
 This environment is missing the PeersimGym module, which needs to be installed to use the environment in other projects. Furthermore, a different set of reuirements is used in windows due to unavaliable packages.
+
 **Linux based systems**
 ```
 conda env create -f Setup/environement.yml
