@@ -65,7 +65,7 @@ public class MdpApi implements Control {
     @PostMapping("/action")
     public List<SimulationData> postAction(@RequestBody List<Action> a) {
 
-        DiscreteTimeStepManager dtm = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
+        AbstractTimeStepManager dtm = (AbstractTimeStepManager) Network.get(0).getProtocol(AbstractTimeStepManager.getPid());
         List<SimulationData> lsd = dtm.sendAction(a);
 
         return lsd;
@@ -110,7 +110,7 @@ public class MdpApi implements Control {
     public boolean isUp(){
         if(Network.get(0) == null) return false;
         System.err.println("Checking up");
-        DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
+        AbstractTimeStepManager c = (AbstractTimeStepManager) Network.get(0).getProtocol(AbstractTimeStepManager.getPid());
         return !(CommonState.getPhase() == CommonState.POST_SIMULATION) && c.isUp();
     }
 
@@ -118,7 +118,7 @@ public class MdpApi implements Control {
     public boolean isStopped(){
         if(Network.get(0) == null) return false;
         System.err.println("Checking stopped");
-        DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
+        AbstractTimeStepManager c = (AbstractTimeStepManager) Network.get(0).getProtocol(AbstractTimeStepManager.getPid());
         return !(CommonState.getPhase() == CommonState.POST_SIMULATION) && !c.isStable();
     }
 
@@ -126,7 +126,7 @@ public class MdpApi implements Control {
     public NetworkData getNeighbourData(){
         if(Network.get(0) == null) return null;
         System.err.println("Checking neighbourData");
-        DiscreteTimeStepManager c = (DiscreteTimeStepManager) Network.get(0).getProtocol(DiscreteTimeStepManager.getPid());
+        AbstractTimeStepManager c = (AbstractTimeStepManager) Network.get(0).getProtocol(AbstractTimeStepManager.getPid());
         return c.getNeighbourData();
     }
 

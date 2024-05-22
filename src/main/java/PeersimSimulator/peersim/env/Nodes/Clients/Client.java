@@ -22,6 +22,7 @@ public interface Client extends CDProtocol, EDProtocol {
 
     String PAR_LAYERS_THAT_GET_TASKS = "layersThatGetTasks";
 
+    String PAR_SCALE = "SCALE";
 
     // DEFAULT VALUES ==========================================================
 

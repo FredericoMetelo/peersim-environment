@@ -346,7 +346,7 @@ class PeersimEnv(ParallelEnv):
         """
         self.fetch_available_updates_from_sim()
         updates = self.fl_update_store.get_update_per_agent(agent)
-ear        return updates
+        return updates
 
     def fetch_available_updates_from_sim(self):
         """
@@ -443,7 +443,6 @@ ear        return updates
             return self._observation, True, self._info
 
     def __send_action(self, action):
-
         payload = [
             {
                 ACTION_TYPE_FIELD: self.simtype.split("-")[0],

@@ -45,6 +45,7 @@ public abstract class AbstractClient implements Client {
 
     private final int[] layersThatGetTasks;
 
+    protected int scale;
 
     // 0.10 % chance of new task being sent to worker per time tick.
     // Assuming poisson process therefore no change!
@@ -70,6 +71,8 @@ public abstract class AbstractClient implements Client {
 
         String[] _layersThatGetTasks = Configuration.getString(PAR_LAYERS_THAT_GET_TASKS).split(",");
         layersThatGetTasks = Arrays.stream(_layersThatGetTasks).mapToInt(Integer::parseInt).toArray();
+
+        scale = Configuration.getInt(PAR_SCALE, 1);
 
         clientIsSelf = Configuration.getInt(PAR_CLIENT_IS_SELF, 0);
         tasksCompleted = 0;
@@ -205,7 +208,6 @@ public abstract class AbstractClient implements Client {
                 }
             }
             System.out.print("Error this should nto happen task ended without having id in awaiting tasks.");
-
         }
     }
 
@@ -218,7 +220,7 @@ public abstract class AbstractClient implements Client {
 
              Note: The task arrival rate of this poisson process is lambda.
          */
-        long time = (long) (-Math.log(CommonState.r.nextDouble()) / TASK_ARRIVAL_RATE);
+        long time = (long) (-Math.log(CommonState.r.nextDouble()) / TASK_ARRIVAL_RATE) * scale;
         return time;
     }
 

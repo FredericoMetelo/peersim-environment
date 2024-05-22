@@ -23,7 +23,7 @@ public class AsyncTimeStepManager extends AbstractTimeStepManager {
         up = true;
         if (CommonState.getTime() % CYCLE_SIZE == 0) {
             stop = true;
-            awaitAction();
+//            awaitAction();
         }
     }
     @Override
@@ -35,34 +35,26 @@ public class AsyncTimeStepManager extends AbstractTimeStepManager {
             return null;
         }
         for (Action a : actionList) {
-            // Never forget that the wildcard must extend action.
-            // Some problems may arise if jackson can't distinguih the type of the action.
-            // So I may need to configure an ObjectMapper to handle this.
-            //Action a = wa.getAction();
             int controllerId = a.controllerId();
             if(!controllerIDs.contains(controllerId)){
                 mngErrLog("An action was sent for id " + controllerId + "this id does not correspond to any controller. Ignoring action.");
             }
 
-
-
             Controller c = (Controller) Network.get(controllerId).getProtocol(Controller.getPid());
-            if(!c.isActive()) throw new RuntimeException("Inactive BasicController id=" + controllerId);
-            SimulationData result = c.sendAction(a);
-            results.add(result);
+            if (!c.isActive()) throw new RuntimeException("Inactive BasicController id=" + controllerId);
+            synchronized (this) {
+                // Note two things, the actionList should only have one action. The lock could be over the specific controller.
+                SimulationData result = c.sendAction(a);
+                results.add(result);
+            }
         }
         try{
             mngDbgLog(new ObjectMapper().writeValueAsString(results));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        stop = false;
+//        stop = false;
         return results;
     }
 
-
-    protected void awaitAction() {
-        mngDbgLog("Start Waiting Time<" + CommonState.getTime() + ">");
-        while (stop) Thread.onSpinWait();
-    }
 }

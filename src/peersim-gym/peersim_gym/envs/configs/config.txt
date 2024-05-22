@@ -1,9 +1,10 @@
-random.seed 699438616709
+random.seed 921502441577
+SCALE 10
 SIZE 10
 CYCLE 1
 CYCLES 1000
-MINDELAY 0
-MAXDELAY 0
+MINDELAY 0.0
+MAXDELAY 0.0
 DROP 0
 CONTROLLERS 0;1
 CLOUD_EXISTS 0
@@ -11,7 +12,7 @@ NO_LAYERS 3
 NO_NODES_PER_LAYERS 1,1,8
 CLOUD_ACCESS 0,0,0
 clientLayers 1
-FREQS 40000000,20000000,10000000
+FREQS 4000000,2000000,1000000
 NO_CORES 1,1,1
 Q_MAX 8,8,8
 VARIATIONS 0,0,0
@@ -56,7 +57,7 @@ protocol.wrk.energyCostComp 1
 #=============Define Simulation Globals
 
 network.size SIZE+CLOUD_EXISTS
-simulation.endtime CYCLE*CYCLES
+simulation.endtime CYCLES*SCALE
 simulation.logtime CYCLE
 
 
@@ -67,7 +68,7 @@ protocol.mng PeersimSimulator.peersim.env.SimulationManagers.DiscreteTimeStepMan
 protocol.mng.linkable lnk
 protocol.mng.name mng
 protocol.mng.step CYCLE
-protocol.mng.transport tr
+protocol.mng.transport trs
 
 
 # NEW + the initialization stuff
@@ -75,28 +76,28 @@ protocol.cld PeersimSimulator.peersim.env.Nodes.Cloud
 protocol.cld.linkable lnk
 protocol.cld.name cld
 protocol.cld.step CYCLE
-protocol.cld.transport tr
+protocol.cld.transport trs
 
 
 protocol.clt PeersimSimulator.peersim.env.Nodes.Clients.AlibabaTraceClient
 protocol.clt.linkable lnk
 protocol.clt.name clt
 protocol.clt.step CYCLE
-protocol.clt.transport tr
+protocol.clt.transport trs
 
 
 protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.BasicController
 protocol.ctrl.linkable lnk
 protocol.ctrl.name ctrl
 protocol.ctrl.step CYCLE
-protocol.ctrl.transport tr
+protocol.ctrl.transport trs
 
 
 protocol.wrk PeersimSimulator.peersim.env.Nodes.Workers.BasicWorker
 protocol.wrk.linkable lnk
 protocol.wrk.name wrk
 protocol.wrk.step CYCLE
-protocol.wrk.transport tr
+protocol.wrk.transport trs
 
 #--------Define Topology Protocols
 protocol.props PeersimSimulator.peersim.env.Links.SDNNodeProperties
@@ -106,14 +107,20 @@ protocol.props.name props
 protocol.lnk PeersimSimulator.peersim.env.Links.TableProtocol
 
 #--------Define Transport Protocol
+
+protocol.trs PeersimSimulator.peersim.env.Transport.ScaleTransportDelay
+protocol.trs.transport urt
+protocol.trs.scale.scale SCALE
+protocol.trs.name trs
+
 protocol.urt PeersimSimulator.peersim.env.Transport.MaxCapacityTransport
 protocol.urt.mindelay (CYCLE*MINDELAY)/100
 protocol.urt.maxdelay (CYCLE*MAXDELAY)/100
 protocol.urt.name urt
-protocol.tr PeersimSimulator.peersim.transport.UnreliableTransport
-protocol.tr.transport urt
-protocol.tr.drop DROP
 
+protocol.tr PeersimSimulator.peersim.transport.UnreliableTransport
+protocol.tr.transport trs
+protocol.tr.drop DROP
 
 #=============Define Initialization
 #--------Define Topology Initialization

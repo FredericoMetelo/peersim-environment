@@ -54,7 +54,7 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
     public AbstractTimeStepManager(String prefix) {
         pid = Configuration.getPid(prefix + "." + PAR_NAME);
 
-        CYCLE_SIZE = Configuration.getInt(PAR_CYCLE, 100);
+        CYCLE_SIZE = Configuration.getInt(PAR_CYCLE, 1);
         hasCloud = Configuration.getInt(PAR_HAS_CLOUD, 0);
 
 
@@ -69,9 +69,9 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
 
     @Override
     public Object clone() {
-        DiscreteTimeStepManager svh = null;
+        AbstractTimeStepManager svh = null;
         try {
-            svh = (DiscreteTimeStepManager) super.clone();
+            svh = (AbstractTimeStepManager) super.clone();
         } catch (CloneNotSupportedException e) {
         } // never happens
         return svh;

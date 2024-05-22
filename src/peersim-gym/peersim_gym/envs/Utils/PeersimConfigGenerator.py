@@ -6,6 +6,7 @@ print(this_dir + "    " + this_filename)
 
 PEERSIM_DEFAULTS = {
     "random.seed": "1234567890",
+    "SCALE": "1",
     "SIZE": "6",
     "CYCLE": "1",
     "CYCLES": "1000",
@@ -76,6 +77,19 @@ PEERSIM_DEFAULTS = {
     "protocol.wrk.energyCostComp": "1",
 }
 
+rescalable_parameters = ["MINDELAY", "MAXDELAY", "FREQS"]  # CYCLE, CYCLES, are rescaled in the file itself.
+
+
+def rescaled_value(key, value, scale):
+    if key == "MINDELAY" or key == "MAXDELAY":
+        return str(int(value) / scale)
+    elif key == "FREQS":
+        freqs = value.split(",")
+        rescaled_freqs = [str(int(float(freq) / scale)) for freq in freqs]
+        rescaled_f_string = ",".join(rescaled_freqs)
+        return rescaled_f_string
+
+
 def generate_config_file(config_dict, simtype, explicit_lines=False):
     BASE_FILE_PATH = os.path.join(this_dir, "../configs", f"config-{simtype}-BASE.txt")
     TARGET_FILE_PATH = os.path.join(this_dir, "../configs", "config.txt")
@@ -89,11 +103,16 @@ def generate_config_file(config_dict, simtype, explicit_lines=False):
 
     with open(BASE_FILE_PATH, "r") as baseFile:
         fileoutput = baseFile.readlines()
-
+    if "SCALE" in config_dict:
+        scale = int(config_dict["SCALE"])
+    else:
+        scale = int(PEERSIM_DEFAULTS["SCALE"])  # Which is 1...
     with open(TARGET_FILE_PATH, "w") as newFile:
         # Append the configs in the dict
         for key in PEERSIM_DEFAULTS.keys():
             value = config_dict.get(key) if key in config_dict else PEERSIM_DEFAULTS.get(key)
+            if key in rescalable_parameters:
+                value = rescaled_value(key, value, scale)
             line = key + " " + value + "\n"
             if explicit_lines:
                 print(line)

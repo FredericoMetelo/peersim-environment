@@ -146,6 +146,7 @@ public class WorkerInfo implements Message{
 
     @Override
     public double getSize() {
-        return 1;
+        // 52 bytes, obtained from adding the space used by the variables.
+        return 52;
     }
 }
