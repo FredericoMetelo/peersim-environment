@@ -201,7 +201,7 @@ class PeersimEnv(ParallelEnv):
         self.last_reward_components = {}
 
         if self.render_mode == "human":
-            self.vis = PeersimVis(self.has_cloud, int(self.config_archive["CYCLES"]))
+            self.vis = PeersimVis(self.has_cloud, int(self.config_archive["CYCLES"]), self.config_archive["SCALE"])
 
     def observation_space(self, agent):
         return Dict(
@@ -448,14 +448,15 @@ class PeersimEnv(ParallelEnv):
                 ACTION_TYPE_FIELD: self.simtype.split("-")[0],
                 ACTION_NEIGHBOUR_IDX_FIELD: int(action.get(name).get(ACTION_NEIGHBOUR_IDX_FIELD)),
                 ACTION_HANDLER_ID_FIELD: int(self.agent_name_mapping.get(name))
-            } for name in self.agent_name_mapping.keys()
+            }  for name in self.agent_name_mapping.keys() if name in action.keys()
         ]
         headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
         action_url = self.url_api + self.url_action_path
         try:
             payload_json = json.dumps(payload)
             # print(payload_json)
-            r = requests.post(action_url, payload_json, headers=headers_action, timeout=self.default_timeout).json()
+            r = requests.post(action_url, payload_json, headers=headers_action, timeout=self.default_timeout)
+            r = r.json()
             result = {AGENT_PREFIX + str(reward["srcId"]): reward for reward in r}
             self._result = result
             return result
@@ -513,7 +514,7 @@ class PeersimEnv(ParallelEnv):
 
     def _compute_rewards(self, original_obs, obs, actions, result, mask) -> dict[float]:
         rewards = {}
-        for agent in self.agents:
+        for agent in self.agents:  # Refer to r/Arkham for the correct thing to ask about whomever (Man) left this here...
             if agent in actions and not mask[agent]:
                 p = self._compute_agent_reward(
                     agent_og_obs=original_obs[agent],
@@ -523,7 +524,7 @@ class PeersimEnv(ParallelEnv):
                     agent_idx=self.agent_name_mapping[agent]
                 )
                 rewards[agent], self.last_reward_components[agent] = p
-            elif mask[agent]:
+            elif agent in actions and mask[agent]:
                 rewards[agent] = -self.UTILITY_REWARD
             else:
                 print(f"Action of agent {agent} was not found in the actions sent.")

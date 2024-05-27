@@ -54,8 +54,9 @@ public class DiscreteTimeStepManager extends AbstractTimeStepManager {
         mngDbgLog(actionList.toString());
         List<SimulationData> results = new ArrayList<>(actionList.size());
         if(actionList.size() != controllerIDs.size()) {
-            mngErrLog("Illegal number of Actions in joint-Action. Not progressing this iteration.");
-            return null;
+            mngDbgLog("Partial-action, only a sub-set of the agents will be able to take the action.");
+//            mngErrLog("Illegal number of Actions in joint-Action. Not progressing this iteration.");
+//            return null;
         }
         for (Action a : actionList) {
             // Never forget that the wildcard must extend action.

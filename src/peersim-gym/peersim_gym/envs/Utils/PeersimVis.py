@@ -41,7 +41,7 @@ windowclock = pygame.time.Clock()
 
 
 class PeersimVis(object):
-    def __init__(self, has_cloud, no_step_per_episode):
+    def __init__(self, has_cloud, no_step_per_episode, timne_scale):
         # Display dimensions
         self.displayw = displayw
         self.displayh = displayh
@@ -57,7 +57,8 @@ class PeersimVis(object):
         self.display.blit(self.display, (0, 0))
         self.step = 0
         self.last_state = None
-        self.no_step_per_episode = no_step_per_episode
+        self.time_scale = timne_scale if type(timne_scale) == int else int(timne_scale)
+        self.no_step_per_episode = no_step_per_episode * self.time_scale
 
     def draw(self):
         pygame.display.update()
@@ -77,7 +78,10 @@ class PeersimVis(object):
         global_isWorking = global_state['isWorking']
 
         # node x sent action to node y
-        actions = { node_id: (last_actions[agent_name]['neighbourIndex'], result[agent_name]['success']) for agent_name, node_id in agent_name_mapping.items() }
+        actions = {
+                    node_id: (last_actions[agent_name]['neighbourIndex'], result[agent_name]['success'])
+                    for agent_name, node_id in agent_name_mapping.items() if agent_name in last_actions and agent_name in result
+                }
 
         # Clear the display
         self.display.fill((255, 255, 255))

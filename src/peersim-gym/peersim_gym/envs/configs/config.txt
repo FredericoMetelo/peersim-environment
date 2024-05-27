@@ -1,4 +1,4 @@
-random.seed 921502441577
+random.seed 6093671346192
 SCALE 10
 SIZE 10
 CYCLE 1
@@ -55,7 +55,7 @@ protocol.wrk.energyCostComm 10
 protocol.wrk.energyCostComp 1
 
 #=============Define Simulation Globals
-
+STEP 1
 network.size SIZE+CLOUD_EXISTS
 simulation.endtime CYCLES*SCALE
 simulation.logtime CYCLE
@@ -67,7 +67,7 @@ simulation.logtime CYCLE
 protocol.mng PeersimSimulator.peersim.env.SimulationManagers.DiscreteTimeStepManager
 protocol.mng.linkable lnk
 protocol.mng.name mng
-protocol.mng.step CYCLE
+protocol.mng.step STEP
 protocol.mng.transport trs
 
 
@@ -75,28 +75,28 @@ protocol.mng.transport trs
 protocol.cld PeersimSimulator.peersim.env.Nodes.Cloud
 protocol.cld.linkable lnk
 protocol.cld.name cld
-protocol.cld.step CYCLE
+protocol.cld.step STEP
 protocol.cld.transport trs
 
 
 protocol.clt PeersimSimulator.peersim.env.Nodes.Clients.AlibabaTraceClient
 protocol.clt.linkable lnk
 protocol.clt.name clt
-protocol.clt.step CYCLE
+protocol.clt.step STEP
 protocol.clt.transport trs
 
 
 protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.BasicController
 protocol.ctrl.linkable lnk
 protocol.ctrl.name ctrl
-protocol.ctrl.step CYCLE
+protocol.ctrl.step STEP
 protocol.ctrl.transport trs
 
 
 protocol.wrk PeersimSimulator.peersim.env.Nodes.Workers.BasicWorker
 protocol.wrk.linkable lnk
 protocol.wrk.name wrk
-protocol.wrk.step CYCLE
+protocol.wrk.step STEP
 protocol.wrk.transport trs
 
 #--------Define Topology Protocols
@@ -114,8 +114,8 @@ protocol.trs.scale.scale SCALE
 protocol.trs.name trs
 
 protocol.urt PeersimSimulator.peersim.env.Transport.MaxCapacityTransport
-protocol.urt.mindelay (CYCLE*MINDELAY)/100
-protocol.urt.maxdelay (CYCLE*MAXDELAY)/100
+protocol.urt.mindelay (STEP*MINDELAY)/100
+protocol.urt.maxdelay (STEP*MAXDELAY)/100
 protocol.urt.name urt
 
 protocol.tr PeersimSimulator.peersim.transport.UnreliableTransport
