@@ -71,6 +71,13 @@ public class MdpApi implements Control {
         return lsd;
 
     }
+    @PostMapping("/forward")
+    public List<SimulationData> forwardPost(@RequestBody List<Action> a) {
+        AbstractTimeStepManager dtm = (AbstractTimeStepManager) Network.get(0).getProtocol(AbstractTimeStepManager.getPid());
+        List<SimulationData> lsd = dtm.forward(a);
+
+        return lsd;
+    }
     // FL Endpoints ....................................................................................................
 
     @PostMapping("/fl/update")

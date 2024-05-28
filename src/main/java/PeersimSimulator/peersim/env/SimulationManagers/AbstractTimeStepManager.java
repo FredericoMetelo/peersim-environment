@@ -227,6 +227,11 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
         return new NetworkData(min, max, average, neighbourMatrix, knowsControllerMatrix);
     }
 
+    /**
+     * This method returns the indices in the node's neighbourhood of the node's neighbours that are known to host a controller as well.
+     * @param neighbours
+     * @return
+     */
     public static List<Integer> getNeighborsWithControllerIndices(int[] neighbours) {
         List<Integer> indices = new LinkedList<>();
         for (int i = 0; i < neighbours.length; i++) {
@@ -251,4 +256,6 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
     static int getPid() {
         return AbstractTimeStepManager.pid;
     }
+
+    public abstract List<SimulationData> forward(List<Action> a);
 }

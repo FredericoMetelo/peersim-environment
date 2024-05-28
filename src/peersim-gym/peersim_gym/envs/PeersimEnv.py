@@ -37,6 +37,7 @@ STATE_G_CONSUMED_ENERGY = "energyConsumed"
 AGENT_PREFIX = "worker_"
 
 
+
 def not_zero(num):
     return 1 if num > 0 else 0
 
@@ -110,11 +111,10 @@ class PeersimEnv(ParallelEnv):
         self.max_Q_size = [10, 50]  # TODO this is specified from outside.
         self.max_w = 1
 
-        self.fl_update_store = FLUpdateStoreManager(
-            fl_update_size)  # Todo: Add a way of passing a funciton to act as the
-
+        self.fl_update_store = FLUpdateStoreManager(fl_update_size)
         self.url_api = "http://localhost:8080"
         self.url_action_path = "/action"
+        self.url_forward_path = "/forward"
         self.url_state_path = "/state"
         self.url_isUp = "/up"
         self.url_isStopped = "/stopped"
@@ -247,6 +247,7 @@ class PeersimEnv(ParallelEnv):
         self.has_cloud = int(self.config_archive["CLOUD_EXISTS"])
         observations, done, info = self.__get_obs()
         self.poolNetStats()
+        self.fl_update_store.passNeighbourMatrix(self.neighbourMatrix)
         observations = self.normalize_observations(observations)
 
         infos = {agent: {} for agent in self.agents}
@@ -254,12 +255,15 @@ class PeersimEnv(ParallelEnv):
         return observations, infos
 
     def step(self, actions):
-        if not self.__is_up() or not actions:
+        if not self.__is_up() or actions is None:
             self.agents = []
             return {}, {}, {}, {}, {}
         original_obs = self.state
         mask = self._validateAction(original_obs, actions)
-        result = self.__send_action(actions)
+        if len(actions) == 0:
+            result = self.__forward_environment()
+        else:
+            result = self.__send_action(actions)
 
         # Wait for the simulation to stabilize so the next state is actually the next state the agent would observe.
         while not self.__is_stopped():
@@ -443,6 +447,7 @@ class PeersimEnv(ParallelEnv):
             return self._observation, True, self._info
 
     def __send_action(self, action):
+
         payload = [
             {
                 ACTION_TYPE_FIELD: self.simtype.split("-")[0],
@@ -797,3 +802,20 @@ class PeersimEnv(ParallelEnv):
                     clients_count += 1
             clients_per_node.append(clients_count)
         return clients_per_node
+
+    def __forward_environment(self):
+        payload = [
+        ]
+        headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
+        action_url = self.url_api + self.url_forward_path
+        try:
+            payload_json = json.dumps(payload)
+            # print(payload_json)
+            r = requests.post(action_url, payload_json, headers=headers_action, timeout=self.default_timeout)
+            r = r.json()
+            result = {}  # Should always be empty.
+            self._result = result
+            return result
+        except requests.exceptions.Timeout:
+            print("Failed  to send action, could not connect to the environment. Returning old result.")
+            return self._result

@@ -174,8 +174,10 @@ class PeersimVis(object):
                 if source in actions:
                     # Check what ios in the position indexed by the action in the link_matrix. If it is equal to the
                     # target being checked, then the action was sent to the target and the edge is painted red.
-                    is_target = link_matrix[source][int(actions[source][0])] == target
-                    sucess = actions[source][1] if is_target else False
+                    trg_idx = int(actions[source][0])
+                    if 0 < trg_idx < len(link_matrix[source]):
+                        is_target = link_matrix[source][trg_idx] == target
+                        sucess = actions[source][1] if is_target else False
 
                 if key in do_not_overrride or rev_key in do_not_overrride:
                     continue

@@ -90,4 +90,9 @@ public class DiscreteTimeStepManager extends AbstractTimeStepManager {
         while (stop) Thread.onSpinWait();
     }
 
+    @Override
+    public List<SimulationData> forward(List<Action> a) {
+        stop = false;
+        return new ArrayList<>();
+    }
 }

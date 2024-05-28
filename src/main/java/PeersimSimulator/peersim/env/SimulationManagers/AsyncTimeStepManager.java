@@ -57,4 +57,10 @@ public class AsyncTimeStepManager extends AbstractTimeStepManager {
         return results;
     }
 
+    @Override
+    public List<SimulationData> forward(List<Action> a) {
+
+        return new ArrayList<>();
+    }
+
 }

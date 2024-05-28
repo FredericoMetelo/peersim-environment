@@ -1,6 +1,6 @@
 import uuid
 from collections import OrderedDict
-
+import math
 
 class FLUpdateStoreManager:
     """
@@ -21,7 +21,8 @@ class FLUpdateStoreManager:
         return str(uuid.uuid4())
 
     def create_update_entry(self, uuid, agent, src_id, dst_idx, update):
-        size = self.get_update_size(update)
+        size = self.get_update_size(update) # Get the size of the update in bytes
+        size = math.ceil(size / 1024 / 1024) # Convert to MB
         return {"uuid": uuid, "agent": agent, "src_id": src_id, "dst_idx": dst_idx, "update": update, "size": size}
 
     def get_update_size(self, update):
@@ -57,13 +58,19 @@ class FLUpdateStoreManager:
 
     def set_completed(self, uuid):
         """
-        Marks the update with the given uuid as completed
+        Marks the update with the given uuid as completed.
+        Note: I hacked it to use the same prefix everywhere, so it's only usefull if everyone has the same prefix.
+        IE if agents are named "agent_0", "agent_1", "agent_2", etc. it works. If they are named "agent_0",
+        "controller_1", "agent_2", etc. it doesn't work.
         :param uuid:
         :return:
         """
         update_done = self.get_update(uuid)
         if update_done is not None:
-            agent = update_done["agent"]
+            agent_prefix = update_done["agent"].split('_')[0]
+            agent_emissor = int(update_done["agent"].split('_')[1])
+            agent_reciever = self.neighbourMatrix[agent_emissor][update_done["dst_idx"]]
+            agent = agent_prefix + "_" + str(agent_reciever)
             if agent in self.updates_done_per_agent:
                 self.updates_done_per_agent[agent].append(update_done)
             else:
@@ -85,5 +92,8 @@ class FLUpdateStoreManager:
         """
         updates = self.updates_done_per_agent.pop(agent, [])
         return updates
+
+    def passNeighbourMatrix(self, neighbourMatrix):
+        self.neighbourMatrix = neighbourMatrix
 
 
