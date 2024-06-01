@@ -529,10 +529,13 @@ class PeersimEnv(ParallelEnv):
                     agent_idx=self.agent_name_mapping[agent]
                 )
                 rewards[agent], self.last_reward_components[agent] = p
+                print(f"Agent {agent} got reward {rewards[agent]}")
             elif agent in actions and mask[agent]:
                 rewards[agent] = -self.UTILITY_REWARD
-            else:
-                print(f"Action of agent {agent} was not found in the actions sent.")
+                print(f"Agent {agent} got reward {rewards[agent]} (F)")
+
+            # else:
+            #     print(f"Action of agent {agent} was not found in the actions sent.")
         return rewards
 
     def _compute_delay(self, d_i_j, w_o):
