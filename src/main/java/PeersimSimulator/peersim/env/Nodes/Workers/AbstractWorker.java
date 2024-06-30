@@ -4,6 +4,7 @@ import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
 import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Linkable;
+import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
 import PeersimSimulator.peersim.env.Nodes.Clients.Client;
@@ -11,6 +12,7 @@ import PeersimSimulator.peersim.env.Nodes.Cloud;
 import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
 import PeersimSimulator.peersim.env.Nodes.Events.*;
 import PeersimSimulator.peersim.env.Records.DependentTaskComparator;
+import PeersimSimulator.peersim.env.Records.FLUpdate;
 import PeersimSimulator.peersim.env.Records.LoseTaskInfo;
 import PeersimSimulator.peersim.env.Tasks.Application;
 import PeersimSimulator.peersim.env.Tasks.ITask;
@@ -154,8 +156,19 @@ public abstract class AbstractWorker implements Worker {
         } else if (event instanceof TaskConcludedEvent ev) {
             ITask finishedTask = ev.getTask();
             handleTaskConcludedEvent(node, pid, finishedTask);
+        }else if(event instanceof FLUpdateEvent ev){
+            handleFLUpdateEvent(ev);
         }
         // Note: Updates internal state only sends data to user later
+    }
+
+    private void handleFLUpdateEvent(FLUpdateEvent ev) {
+        if(this.correspondingController == null || !this.correspondingController.isActive()){
+            wrkErrLog("NO-CONTROLLER", "Update sent to Worker  that does not have a controller.");
+            return;
+        }
+        wrkInfoLog("RECEIVED UPDT", "src=" + ev.getSrc() + " dst=" + ev.getDst() + " size=" + ev.getSize());
+        this.correspondingController.setUpdateAvailable(ev.getKey());
     }
 
     /**
@@ -389,7 +402,7 @@ public abstract class AbstractWorker implements Worker {
         return pid;
     }
 
-    protected boolean validOffloadingInstructions(int offloadingTarget, Linkable linkable) {
+    protected boolean validTargetNeighbour(int offloadingTarget, Linkable linkable) {
 
         return offloadingTarget > 0 || offloadingTarget < linkable.degree();
     }
@@ -473,6 +486,32 @@ public abstract class AbstractWorker implements Worker {
         this.energyConsumed += bytesProcessed * costOfCommPerByte;
     }
 
+    public boolean sendFLUpdate(FLUpdate flu){
+        // Get the neighbour in question, send the update to said neighbour.
+        Node node = Network.get(this.getId());
+        int linkableID = FastConfig.getLinkable(pid);
+        Linkable linkable = (Linkable) node.getProtocol(linkableID);
+        if(!validTargetNeighbour(flu.getDst(), linkable)) {
+            return false;
+        }
+
+        Node target = linkable.getNeighbor(flu.getDst());
+        if ( !target.isUp()) {
+            wrkErrLog(EVENT_ERR_NODE_OUT_OF_BOUNDS, "The requested target node is outside the nodes known by the DAGWorker="
+                    + (flu.getDst() < 0 || flu.getDst() > linkable.degree())
+                    + ". Or is down=" + target.isUp());
+            return false;
+        }
+        wrkInfoLog("SENDING UPDT", "src=" + this.getId() + " dst=" + target.getID() + " size=" + flu.getSize());
+        ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+                send(
+                        node,
+                        target,
+                        new FLUpdateEvent(this.id, flu.getSrc(), flu.getDst(), flu.getSize(), flu.getUuid()),
+                        selectOffloadTargetPid(flu.getDst(), target)
+                );
+        return true;
+    }
     //======================================================================================================
     // Getter and Setter Methods
     //======================================================================================================

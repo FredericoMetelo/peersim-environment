@@ -2,7 +2,7 @@ import math
 import os
 import time
 from random import randint
-from typing import Callable
+from typing import Callable, Any
 
 import gymnasium
 import requests
@@ -12,6 +12,7 @@ from pettingzoo import ParallelEnv
 
 import json
 import peersim_gym.envs.Utils.PeersimConfigGenerator as cg
+from peersim_gym.envs.Utils.FLUpdateStoreManager import FLUpdateStoreManager
 from peersim_gym.envs.Utils.PeersimThread import PeersimThread
 from peersim_gym.envs.Utils.PeersimVis import PeersimVis
 
@@ -34,6 +35,7 @@ STATE_G_TOTAL_TASKS = "totalTasks"
 STATE_G_CONSUMED_ENERGY = "energyConsumed"
 
 AGENT_PREFIX = "worker_"
+
 
 
 def not_zero(num):
@@ -87,11 +89,12 @@ def can_launch_simulation():
 class PeersimEnv(ParallelEnv):
     metadata = {"render_modes": ["ansi", "human"], "render_fps": 4}
 
-    def init(self, render_mode=None, configs=None, log_dir=None, randomize_seed=False, phy_rs_term:Callable[[Space], float]=None):
+    def init(self, render_mode=None, configs=None, log_dir=None, randomize_seed=False,
+             phy_rs_term: Callable[[Space], float] = None):
         self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed, phy_rs_term=phy_rs_term)
 
     def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False,
-                 phy_rs_term:Callable[[Space], float]=None):
+                 phy_rs_term: Callable[[Space], float] = None, fl_update_size: Callable[[Any], int] = None):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
@@ -108,12 +111,16 @@ class PeersimEnv(ParallelEnv):
         self.max_Q_size = [10, 50]  # TODO this is specified from outside.
         self.max_w = 1
 
+        self.fl_update_store = FLUpdateStoreManager(fl_update_size)
         self.url_api = "http://localhost:8080"
         self.url_action_path = "/action"
+        self.url_forward_path = "/forward"
         self.url_state_path = "/state"
         self.url_isUp = "/up"
         self.url_isStopped = "/stopped"
         self.url_NetworkData = "/NeighbourData"
+        self.url_FL_get_updates = "/fl/done"
+        self.url_FL_send_update = "/fl/update"
 
         self.default_timeout = 3  # Second
 
@@ -133,7 +140,8 @@ class PeersimEnv(ParallelEnv):
         self.no_nodes_per_layer = [int(no_nodes) for no_nodes in
                                    self.config_archive["NO_NODES_PER_LAYERS"].strip().split(",")]
 
-        self.layers_that_get_tasks = [int(layer) for layer in self.config_archive["layersThatGetTasks"].strip().split(",")]
+        self.layers_that_get_tasks = [int(layer) for layer in
+                                      self.config_archive["layersThatGetTasks"].strip().split(",")]
         if isinstance(self.max_Q_size, list):
             self.q_list = self._gen_node_Q_max()
 
@@ -180,7 +188,8 @@ class PeersimEnv(ParallelEnv):
         self.NORMALIZED_THERMAL_NOISE_POWER = -174
         self.AVERAGE_TASK_SIZE, self.AVERAGE_TASK_INSTR, self.TASK_ARRIVAL_RATE = self._compute_avg_task_data()
         self.AVERAGE_PROCESSING_POWER, self.AVERAGE_MAX_Q, self.PROCESSING_POWERS = self._compute_worker_data()
-        self.NODES_PER_LAYER = [int(no_nodes) for no_nodes in self.config_archive["NO_NODES_PER_LAYERS"].strip().split(",")]
+        self.NODES_PER_LAYER = [int(no_nodes) for no_nodes in
+                                self.config_archive["NO_NODES_PER_LAYERS"].strip().split(",")]
         self.avg_neighbours = -1
         self.min_neighbours = -1
         self.max_neighbours = -1
@@ -192,7 +201,7 @@ class PeersimEnv(ParallelEnv):
         self.last_reward_components = {}
 
         if self.render_mode == "human":
-            self.vis = PeersimVis(self.has_cloud, int(self.config_archive["CYCLES"]))
+            self.vis = PeersimVis(self.has_cloud, int(self.config_archive["CYCLES"]), self.config_archive["SCALE"])
 
     def observation_space(self, agent):
         return Dict(
@@ -238,6 +247,7 @@ class PeersimEnv(ParallelEnv):
         self.has_cloud = int(self.config_archive["CLOUD_EXISTS"])
         observations, done, info = self.__get_obs()
         self.poolNetStats()
+        self.fl_update_store.passNeighbourMatrix(self.neighbourMatrix)
         observations = self.normalize_observations(observations)
 
         infos = {agent: {} for agent in self.agents}
@@ -245,12 +255,15 @@ class PeersimEnv(ParallelEnv):
         return observations, infos
 
     def step(self, actions):
-        if not self.__is_up() or not actions:
+        if not self.__is_up() or actions is None:
             self.agents = []
             return {}, {}, {}, {}, {}
         original_obs = self.state
         mask = self._validateAction(original_obs, actions)
-        result = self.__send_action(actions)
+        if len(actions) == 0:
+            result = self.__forward_environment()
+        else:
+            result = self.__send_action(actions)
 
         # Wait for the simulation to stabilize so the next state is actually the next state the agent would observe.
         while not self.__is_stopped():
@@ -285,11 +298,70 @@ class PeersimEnv(ParallelEnv):
         print("Last Reward Components:" + json.dumps(self.last_reward_components))
 
     def __render_human(self):
-        self.vis.update_state(self._global_obs, self.max_Q_size, self.neighbourMatrix, self.last_actions, self.controllers, self.agent_name_mapping, self._result)
-        self.vis.draw()  # TODO Project the coordinates to the render space...
+        self.vis.update_state(self._global_obs, self.max_Q_size, self.neighbourMatrix, self.last_actions,
+                              self.controllers, self.agent_name_mapping, self._result)
+        self.vis.draw()
 
     def close(self):
         self.simulator.stop()
+
+    def post_updates(self, agents, srcs, dst, updates):
+        """
+        (Outside of PettingZoo API)
+        This method works by passing a list of FL updates through the network. It adds the updates to the list of
+        updates awaiting return, and then requests the sending of the updates through the simulation.
+
+        :param agents list of agents sending the updates:
+        :param srcs dictionary with the id of the node sendign the update:
+        :param dst dictioary with the index in the neighbour list of the node being targeted by the update:
+        :param updates dictionary with the updates to be sent:
+        :return:
+        """
+        update_list = []
+        for idx, agent in enumerate(agents):
+            update_entry = self.fl_update_store.store_update(agent, srcs[idx], dst[idx], updates[idx])
+            formatted_entry = {
+                "uuid": update_entry["uuid"],
+                "src": update_entry["src_id"],
+                "dst": update_entry["dst_idx"],
+                "size": update_entry["size"]
+            }
+            update_list.append(formatted_entry)
+        # Send the list in the body to the server
+        payload = json.dumps(update_list)
+        headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
+        action_url = self.url_api + self.url_FL_send_update
+        try:
+            r = requests.post(action_url, payload, headers=headers_action, timeout=self.default_timeout)
+            if r.status_code == 200:
+                return True
+            else:
+                return False
+        except requests.exceptions.Timeout:
+            print("Failed  to send action, could not connect to the environment. Returning old result.")
+
+    def get_updates(self, agent):
+        """
+        (Outside of PettingZoo API)
+        This method returns the updates that have arrived at their destination (the given agent's counterpart in the simulation).
+        If the agent has no currently available updates then an empty list is returned.
+        :param agent:
+        :return:
+        """
+        self.fetch_available_updates_from_sim()
+        updates = self.fl_update_store.get_update_per_agent(agent)
+        return updates
+
+    def fetch_available_updates_from_sim(self):
+        """
+        This method is responsible for fetching the updates from the simulation. And passing them to the FL Update Store
+        """
+        payload = {}
+        headers_action = {"Accept": "application/json", "Connection": "keep-alive"}
+        action_url = self.url_api + self.url_FL_get_updates
+        r = requests.get(action_url, json=payload, headers=headers_action, timeout=self.default_timeout).json()
+        for update_uuid in r:
+            self.fl_update_store.set_completed(update_uuid)
 
     def __gen_config(self, configs, simtype, regen_seed=False):
         controller = []
@@ -338,7 +410,7 @@ class PeersimEnv(ParallelEnv):
         try:
             iter = 0
             r = requests.get(space_url, headers=headers_state, timeout=self.default_timeout)
-            while r.status_code < 200 or r.status_code >= 300: # Most likely only 200 will be returned, but I'm paranoid
+            while r.status_code < 200 or r.status_code >= 300:  # Most likely only 200 will be returned, but I'm paranoid
                 r = requests.get(space_url, headers=headers_state, timeout=self.default_timeout)
                 iter += 1
                 if iter > 100:
@@ -381,14 +453,15 @@ class PeersimEnv(ParallelEnv):
                 ACTION_TYPE_FIELD: self.simtype.split("-")[0],
                 ACTION_NEIGHBOUR_IDX_FIELD: int(action.get(name).get(ACTION_NEIGHBOUR_IDX_FIELD)),
                 ACTION_HANDLER_ID_FIELD: int(self.agent_name_mapping.get(name))
-            } for name in self.agent_name_mapping.keys()
+            }  for name in self.agent_name_mapping.keys() if name in action.keys()
         ]
         headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
         action_url = self.url_api + self.url_action_path
         try:
             payload_json = json.dumps(payload)
             # print(payload_json)
-            r = requests.post(action_url, payload_json, headers=headers_action, timeout=self.default_timeout).json()
+            r = requests.post(action_url, payload_json, headers=headers_action, timeout=self.default_timeout)
+            r = r.json()
             result = {AGENT_PREFIX + str(reward["srcId"]): reward for reward in r}
             self._result = result
             return result
@@ -405,7 +478,8 @@ class PeersimEnv(ParallelEnv):
         max = r.get('max')
         avg = r.get('average')
         neighbourMatrix = r.get('neighbourMatrix')
-        return min, max, avg, neighbourMatrix
+        knownControllersMatrix = r.get('knowsControllerMatrix')
+        return min, max, avg, neighbourMatrix, knownControllersMatrix
 
     def __is_up(self):
         payload = {}
@@ -445,7 +519,7 @@ class PeersimEnv(ParallelEnv):
 
     def _compute_rewards(self, original_obs, obs, actions, result, mask) -> dict[float]:
         rewards = {}
-        for agent in self.agents:
+        for agent in self.agents:  # Refer to r/Arkham for the correct thing to ask about whomever (Man) left this here...
             if agent in actions and not mask[agent]:
                 p = self._compute_agent_reward(
                     agent_og_obs=original_obs[agent],
@@ -455,10 +529,13 @@ class PeersimEnv(ParallelEnv):
                     agent_idx=self.agent_name_mapping[agent]
                 )
                 rewards[agent], self.last_reward_components[agent] = p
-            elif mask[agent]:
+                #print(f"Agent {agent} got reward {rewards[agent]}")
+            elif agent in actions and mask[agent]:
                 rewards[agent] = -self.UTILITY_REWARD
-            else:
-                print(f"Action of agent {agent} was not found in the actions sent.")
+                #print(f"Agent {agent} got reward {rewards[agent]} (F)")
+
+            # else:
+            #     print(f"Action of agent {agent} was not found in the actions sent.")
         return rewards
 
     def _compute_delay(self, d_i_j, w_o):
@@ -470,7 +547,7 @@ class PeersimEnv(ParallelEnv):
             lambda_wavelength = 3e8 / 2.4e9
             P_t = self.TRANSMISSION_POWER
             N_0 = self.NORMALIZED_THERMAL_NOISE_POWER + 10 * math.log10(W)
-            h = 10 * math.log10((lambda_wavelength**2) / (16 * math.pi**2)) - 20 * math.log10(d_i_j)
+            h = 10 * math.log10((lambda_wavelength ** 2) / (16 * math.pi ** 2)) - 20 * math.log10(d_i_j)
 
             SNR_db = P_t + h - N_0
             SNR_linear = 10 ** (SNR_db / 10)
@@ -495,7 +572,8 @@ class PeersimEnv(ParallelEnv):
         locally_processed = agent_obs[STATE_NODE_ID_FIELD] == target_node_worker_info["id"]
 
         # Check if the target node is within [0, #Neighbours]
-        if int(len(source_node_og_info["Q"])) < int(target_of_task_neighbourhood_index) or int(target_of_task_neighbourhood_index) < 0:
+        if int(len(source_node_og_info["Q"])) < int(target_of_task_neighbourhood_index) or int(
+                target_of_task_neighbourhood_index) < 0:
             return -self.UTILITY_REWARD, {"U": -self.UTILITY_REWARD, "D": 0, "O": 0}
 
         target_layer = self.get_layer(target_of_task_global_index)
@@ -507,8 +585,10 @@ class PeersimEnv(ParallelEnv):
             source_rank = 1
             target_rank = 1
         else:
-            source_rank = self.clients_per_node[source_of_task_global_index] if self.get_layer(source_of_task_global_index) in self.layers_that_get_tasks else 0
-            target_rank = self.clients_per_node[target_of_task_global_index] if self.get_layer(target_of_task_global_index)  in self.layers_that_get_tasks else 0
+            source_rank = self.clients_per_node[source_of_task_global_index] if self.get_layer(
+                source_of_task_global_index) in self.layers_that_get_tasks else 0
+            target_rank = self.clients_per_node[target_of_task_global_index] if self.get_layer(
+                target_of_task_global_index) in self.layers_that_get_tasks else 0
 
         source_layer = self.get_layer(source_of_task_global_index)
         source_processing_power = self.PROCESSING_POWERS[source_layer]
@@ -517,8 +597,8 @@ class PeersimEnv(ParallelEnv):
         q_l = source_node_og_info["queueSize"]
         q_o = target_node_worker_info["queueSize"]
 
-        source_var = self.TASK_ARRIVAL_RATE * source_rank - source_processing_power/self.AVERAGE_TASK_INSTR
-        target_var = self.TASK_ARRIVAL_RATE * target_rank - target_processing_power/self.AVERAGE_TASK_INSTR
+        source_var = self.TASK_ARRIVAL_RATE * source_rank - source_processing_power / self.AVERAGE_TASK_INSTR
+        target_var = self.TASK_ARRIVAL_RATE * target_rank - target_processing_power / self.AVERAGE_TASK_INSTR
         q_expected_l = q_l if locally_processed else max(q_l - 1, 0)
         q_expected_o = q_o if locally_processed else q_o + 1
 
@@ -530,26 +610,28 @@ class PeersimEnv(ParallelEnv):
         w_o = 1 if not locally_processed and 0 < q_l - 1 else 0
         w_l = 1 if locally_processed else 0
 
-        if w_l == 0 and w_o == 0: # queue is empty, nothing to do, no penalty or reward given.
+        if w_l == 0 and w_o == 0:  # queue is empty, nothing to do, no penalty or reward given.
             print("Empty queue. No action taken.")
-            return self.UTILITY_REWARD, {"U": self.UTILITY_REWARD/2, "D": 0, "O": 0} # TODO make this maximum reward, as the action itself is not something bad.
+            return self.UTILITY_REWARD, {"U": self.UTILITY_REWARD / 2, "D": 0, "O": 0}
 
         miu_l = source_processing_power
         miu_o = target_processing_power
 
         # Compute Utility:
-        U = self.UTILITY_REWARD # * math.log(1 + w_l + w_o)
+        U = self.UTILITY_REWARD  # * math.log(1 + w_l + w_o)
 
         # Compute Delay
 
-        t_w = not_zero(w_l) * (q_l / miu_l) + not_zero(w_o) * ((q_l / miu_l) + (q_o / miu_o))  # q_l/miu_l on the second term represents the time spent waiting in queue before being selected for offloading
+        t_w = not_zero(w_l) * (q_l / miu_l) + not_zero(w_o) * ((q_l / miu_l) + (
+                    q_o / miu_o))  # q_l/miu_l on the second term represents the time spent waiting in queue before being selected for offloading
         t_c = self._compute_delay(d_i_j, w_o)
 
         # og: t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
         t_e = self.AVERAGE_TASK_INSTR / target_processing_power - self.AVERAGE_TASK_INSTR / source_processing_power
 
         t_w = min(t_w, self.UTILITY_REWARD * self.DELAY_WEIGHT["queue"])
-        t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]), -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
+        t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]),
+                  -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
         t_c = min(t_c, self.UTILITY_REWARD * self.DELAY_WEIGHT["comm"])
 
         D = t_w + t_c + t_e  # / (w_l + w_o)
@@ -563,13 +645,13 @@ class PeersimEnv(ParallelEnv):
         distance_to_Ovl_l = max((source_max_q - q_expected_l) / source_max_q, 0.001)  # Normalized manhattan distance
         distance_to_Ovl_o = max((target_max_q - q_expected_o) / target_max_q, 0.001)  # 0.0001 is to avoid log(0)
         O = -math.log10(w_l * distance_to_Ovl_l + w_o * distance_to_Ovl_o)  # we subtract O, therfore the minus
-                                                                                  # Was using the ln before, now using log
+        # Was using the ln before, now using log
 
         # Capping the percentages to be between 100 and -100
         # U = max(min(U, self.UTILITY_REWARD), self.UTILITY_REWARD) / self.UTILITY_REWARD
         # Some people call this cheating, I call it not despairing -, _ ,-.
 
-        O = O/3 * self.UTILITY_REWARD * self.OVERLOAD_WEIGHT # I cap the delay distance at 0.001 (0.1% to overload) therefore the log will only go down to 3
+        O = O / 3 * self.UTILITY_REWARD * self.OVERLOAD_WEIGHT  # I cap the delay distance at 0.001 (0.1% to overload) therefore the log will only go down to 3
 
         # computing reward and normalizing it
         reward = U - (D + O)
@@ -577,7 +659,8 @@ class PeersimEnv(ParallelEnv):
         if self.phy_rs_term is not None:
             F = self.phy_rs_term(agent_obs) - self.phy_rs_term(agent_og_obs)
         reward += F
-        print(f"Action:{source_of_task_global_index}->{target_of_task_global_index}         Reward: U:{U} | D:{D} [t_C {t_c} ; t_w {t_w} ; t_e {t_e}] | O:{O}) | F:{F}")
+        print(
+            f"Action:{source_of_task_global_index}->{target_of_task_global_index}         Reward: U:{U} | D:{D} [t_C {t_c} ; t_w {t_w} ; t_e {t_e}] | O:{O}) | F:{F}")
         return (reward, {"U": U, "D": D, "O": O, "F": F})
 
     def _compute_avg_task_data(self):
@@ -612,7 +695,7 @@ class PeersimEnv(ParallelEnv):
         iter = 0
         while self.neighbourMatrix is None or len(self.neighbourMatrix) == 0:
             print(f"Pooling for net stats {iter}")
-            self.min_neighbours, self.max_neighbours, self.avg_neighbours, self.neighbourMatrix = self.__get_net_data()
+            self.min_neighbours, self.max_neighbours, self.avg_neighbours, self.neighbourMatrix, self.whichControllersMatrix = self.__get_net_data()
             self.clients_per_node = self._compute_clients_per_node()
             iter += 1
             time.sleep(0.05)
@@ -620,6 +703,8 @@ class PeersimEnv(ParallelEnv):
     def _validateAction(self, original_obs, actions):
         failed = {}
         for agent in self.agents:
+            if agent not in actions:
+                continue
             obs = original_obs[agent]
             Q = obs[STATE_Q_FIELD]
             neighbour = int(actions[agent][ACTION_NEIGHBOUR_IDX_FIELD])
@@ -702,7 +787,8 @@ class PeersimEnv(ParallelEnv):
             n_max_Q = self.max_Q_size[neighbor_layer]
             normalized_Q.append(Q[i] / n_max_Q)
             normalized_free_spaces.append(FS[i] / n_max_Q)
-            assert ((n_max_Q - Q[i]) / n_max_Q == FS[i] / n_max_Q, f"Mismatch: Neighbor {neighbor_id} has Q: {Q[i]} and FS: {FS[i]}")
+            assert ((n_max_Q - Q[i]) / n_max_Q == FS[i] / n_max_Q,
+                    f"Mismatch: Neighbor {neighbor_id} has Q: {Q[i]} and FS: {FS[i]}")
         if padding:
             normalized_Q += [-1 for _ in range(len(Q), self.number_nodes)]
             normalized_free_spaces += [-1 for _ in range(len(Q), self.number_nodes)]
@@ -719,3 +805,20 @@ class PeersimEnv(ParallelEnv):
                     clients_count += 1
             clients_per_node.append(clients_count)
         return clients_per_node
+
+    def __forward_environment(self):
+        payload = [
+        ]
+        headers_action = {"content-type": "application/json", "Accept": "application/json", "Connection": "keep-alive"}
+        action_url = self.url_api + self.url_forward_path
+        try:
+            payload_json = json.dumps(payload)
+            # print(payload_json)
+            r = requests.post(action_url, payload_json, headers=headers_action, timeout=self.default_timeout)
+            r = r.json()
+            result = {}  # Should always be empty.
+            self._result = result
+            return result
+        except requests.exceptions.Timeout:
+            print("Failed  to send action, could not connect to the environment. Returning old result.")
+            return self._result

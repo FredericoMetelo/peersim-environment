@@ -183,7 +183,7 @@ public class BatchWorker extends AbstractWorker{
             ITask task = app.expandToList().get(0); // Only works with dependencyless tasks.
 
             if (neighbourIndex != 0) {
-                if(!validOffloadingInstructions(neighbourIndex, linkable)) {
+                if(!validTargetNeighbour(neighbourIndex, linkable)) {
                     success = false;
                     indexInRemainingTasks++;
                     continue;

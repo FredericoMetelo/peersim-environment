@@ -32,7 +32,7 @@ public class DiscreteTimeStepManagerInitializer implements Control {
     }
     @Override
     public boolean execute() {
-        DiscreteTimeStepManager c = ((DiscreteTimeStepManager) Network.get(0).getProtocol(pid));
+        AbstractTimeStepManager c = ((AbstractTimeStepManager) Network.get(0).getProtocol(pid));
         c.setActive(true);
         return false;
     }

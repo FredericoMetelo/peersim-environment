@@ -152,7 +152,7 @@ public class MaxCapacityTransport implements Transport {
             msgSize = ((Message) msg).getSize();
         }
         if (distance(srcProps, dstProps) == 0) {
-            EDSimulator.add(1, msg, dest, pid);
+            EDSimulator.add(0, msg, dest, pid);
             return;
         }
 
@@ -180,7 +180,37 @@ public class MaxCapacityTransport implements Transport {
      * distribution.
      */
     public long getLatency(Node src, Node dest) {
+
         return 0L;
+    }
+    public long getMessageLatency(Node src, Node dest, Object msg, int pid) {
+
+        // Could this be implemented in a better manner? Absolutely, but right now getting the layer from the worker or
+        // adding it to the SDNNodeProperties is the same. ; _ ;
+        int srcLayer = ((Worker) src.getProtocol(Worker.getPid())).getLayer();
+        int dstLayer = ((Worker) dest.getProtocol(Worker.getPid())).getLayer();
+        SDNNodeProperties srcProps = (SDNNodeProperties) src.getProtocol(SDNNodeProperties.getPid());
+        SDNNodeProperties dstProps = (SDNNodeProperties) dest.getProtocol(SDNNodeProperties.getPid());
+        double msgSize = 1; // MBytes
+
+        if (msg instanceof Message) { // Better solution is wrapping the events in a message wrapper class
+            msgSize = ((Message) msg).getSize();
+        }
+        if (distance(srcProps, dstProps) == 0) {
+
+            return 1L;
+        }
+
+        SNRCalculator snrCalc = channelTypes.get(channelTypePerLayer.get(srcLayer).get(dstLayer));
+        double T = msgSize * 8e6; // Convert from MBytes to bits
+        double W = srcProps.getBANDWIDTH() * 1e6;
+        double SNR_dB = snrCalc.getSNR_dB(srcProps, dstProps, T);
+        double SNR_linear = Math.pow(10, SNR_dB / 10); // [linear]
+        double C_2 = W * log2(1 + SNR_linear); // Channel Capacity [bit/s]
+
+        long delay = Math.max(Math.round(T / C_2), 1);
+        delay += (range == 1 ? min : min + CommonState.r.nextLong(range));
+        return delay;
     }
 
     public static double distance(SDNNodeProperties src, SDNNodeProperties dst) {

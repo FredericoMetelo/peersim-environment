@@ -64,4 +64,10 @@ public interface Controller extends CDProtocol, EDProtocol {
     String toString();
 
     void setProps(SDNNodeProperties prot);
+
+    boolean sendFLUpdate(FLUpdate update);
+
+    void setUpdateAvailable(String key);
+
+    List<String> getUpdatesAvailable();
 }
