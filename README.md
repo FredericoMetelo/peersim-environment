@@ -7,6 +7,10 @@ a server that wraps the simultion of the peersim environment in a REST API allow
 
 We provide some agent implementations to act as examples of agents that work on our repository in a separate [repository](https://github.com/FredericoMetelo/TaskOffloadingAgentLibrary/).
 
+Note: This version of the code was the version of the simulation upon submission to ECML 24, and exists mainly for archiving purposes.
+We recommend using the version of the simulation in the main branch, as everything this verison is cappable can be done with the latest 
+stable.
+
 # Index
 1.[How The Simulation Works](##HowTheSimulationWorks)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.1.[The Simulation Server](###TheSimulationServer)<br>
