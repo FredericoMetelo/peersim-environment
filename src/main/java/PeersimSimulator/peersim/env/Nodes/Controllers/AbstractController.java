@@ -1,11 +1,13 @@
 package PeersimSimulator.peersim.env.Nodes.Controllers;
 
+import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
 import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
+import PeersimSimulator.peersim.env.Nodes.Cloud.Cloud;
 import PeersimSimulator.peersim.env.Nodes.Events.OffloadInstructions;
 import PeersimSimulator.peersim.env.Nodes.Events.WorkerInfo;
 import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
@@ -16,6 +18,7 @@ import PeersimSimulator.peersim.env.Tasks.ITask;
 import PeersimSimulator.peersim.env.Util.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -55,6 +58,8 @@ public abstract class AbstractController implements Controller {
 
     List<String> updatesAvailable;
 
+
+
     public AbstractController() {
         active = false;
         selectedNode = this.getId(); // Ignores the controller.
@@ -63,6 +68,8 @@ public abstract class AbstractController implements Controller {
         updatesAvailable = new LinkedList<>();
         stop = true;
         up = false;
+
+
     }
 
     public static int getPid() {
@@ -204,7 +211,25 @@ public abstract class AbstractController implements Controller {
     @Override
     public List<WorkerInfo> getWorkerInfo() {
         updateNode(this.correspondingWorker.compileWorkerInfo());
+        updateCloudIfExists();
         return workerInfo;
+    }
+
+    private void updateCloudIfExists() {
+        if (correspondingWorker.getCloudAccess() == 1) {
+            WorkerInfo cloudInfo = new WorkerInfo(
+                    Network.size() - 1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    correspondingWorker.getQueueCapacity(),
+                    -1,
+                    ((Cloud) Network.get(Network.size() - 1).getProtocol(Cloud.getPid())).getProps().getCoordinates()
+            );
+            // cloud is always the last node in the workerInfo list. because it is always the last node in the network.
+            workerInfo.set(workerInfo.size() - 1, cloudInfo);
+        }
     }
 
     @Override
@@ -231,11 +256,15 @@ public abstract class AbstractController implements Controller {
     public List<Integer> getQ() {
         //int start = 1; // By definition can't have less than 3 nodes. For convenience
         updateThisNodeInfo();
-        return this.workerInfo.stream().map(WorkerInfo::getTotalTasks).toList();
+        updateCloudIfExists();
+        List<Integer> q = new ArrayList<>(this.workerInfo.stream().map(WorkerInfo::getTotalTasks).toList());
+        return q;
     }
     private List<Integer> getKnownFreeSpaceNeighbours() {
         updateThisNodeInfo();
-        return this.workerInfo.stream().map(WorkerInfo::getFreeTaskSlots).toList();
+        updateCloudIfExists();
+        List<Integer> q = new ArrayList<>(this.workerInfo.stream().map(WorkerInfo::getFreeTaskSlots).toList());
+        return q;
     }
     /**
      * This method moves the current node to the first position of the list. This is allows the agent to always find the node in the correct position and avoids mistakes

@@ -111,7 +111,6 @@ public class WireSDNTopology extends WireGraph {
                 }
                 j++;
             }
-
         }
     }
 

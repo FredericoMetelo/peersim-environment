@@ -19,6 +19,7 @@ PEERSIM_DEFAULTS = {
     "NO_LAYERS": "2",
     "NO_NODES_PER_LAYERS": "5,1",
     "CLOUD_ACCESS": "0,1",
+    "CLOUD_POS": "300,300",
     "clientLayers": "0",
 
     "FREQS": "1e7,3e7",
@@ -77,7 +78,7 @@ PEERSIM_DEFAULTS = {
     "protocol.wrk.energyCostComp": "1",
 }
 
-rescalable_parameters = ["MINDELAY", "MAXDELAY", "FREQS"]  # CYCLE, CYCLES, are rescaled in the file itself.
+rescalable_parameters = ["MINDELAY", "MAXDELAY", "FREQS", "protocol.cld.VMProcessingPower"]  # CYCLE, CYCLES, are rescaled in the file itself.
 
 
 def rescaled_value(key, value, scale):

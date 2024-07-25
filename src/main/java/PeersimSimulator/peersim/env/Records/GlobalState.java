@@ -1,5 +1,7 @@
 package PeersimSimulator.peersim.env.Records;
 
+import PeersimSimulator.peersim.env.Nodes.Events.CloudInfo;
+
 import java.util.List;
 
 public record GlobalState(
@@ -16,6 +18,8 @@ public record GlobalState(
         List<Integer> finishedTasks,
         List<Integer> totalTasks,
         List<Integer> isWorking,
-        List<Double> energyConsumed
+        List<Double> energyConsumed,
+
+        CloudInfo cloudInfo
 ) {
 }

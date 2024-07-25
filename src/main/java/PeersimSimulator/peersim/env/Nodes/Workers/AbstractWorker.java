@@ -8,7 +8,7 @@ import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
 import PeersimSimulator.peersim.env.Nodes.Clients.Client;
-import PeersimSimulator.peersim.env.Nodes.Cloud;
+import PeersimSimulator.peersim.env.Nodes.Cloud.Cloud;
 import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
 import PeersimSimulator.peersim.env.Nodes.Events.*;
 import PeersimSimulator.peersim.env.Records.DependentTaskComparator;
@@ -35,6 +35,9 @@ public abstract class AbstractWorker implements Worker {
     public int cpuNoCores;
     public int qMAX;
     public int layer;
+
+    public int cloudAccess;
+
     /**
      * The node internal id
      */
@@ -620,6 +623,11 @@ public abstract class AbstractWorker implements Worker {
     }
 
     @Override
+    public void setCloudAccess(int cloudAccess) {
+        this.cloudAccess = cloudAccess;
+    }
+
+    @Override
     public boolean isHasController() {
         return hasController;
     }
@@ -658,6 +666,11 @@ public abstract class AbstractWorker implements Worker {
 
     public int getQueueCapacity() {
         return qMAX;
+    }
+
+    @Override
+    public int getCloudAccess() {
+        return cloudAccess;
     }
 
     /**
