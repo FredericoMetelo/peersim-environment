@@ -136,15 +136,17 @@ class PeersimVis(object):
             pygame.draw.rect(self.display, PROCESSING_BOX_COLOR, (info_rect.right - box_size/2, info_rect.bottom - box_size/2, box_size, box_size))
 
     def draw_cloud(self, cloud_info):
+        if cloud_info is None:
+            return
         # get queue size, no free vms and total vms from cloud_info
         queue_size = cloud_info['queueSize']
         no_free_vms = cloud_info['freeVMs']
         total_vms = cloud_info['totalVMs']
         # Set the Cloud coordinates so that the rectangle with the cloud info shows on the top right corner
-        x = self.displayw - INFO_W
+        x = self.displayw - 2*INFO_W
         y = 0
-        cloud_rect = pygame.draw.rect(self.display, NODE_COLOR, (x, y, INFO_W, INFO_H))
-        cloud_text_surface = self.font.render(f"Cloud|  Q:{queue_size}  VMs: {no_free_vms}/{total_vms}", True, NODE_TEXT_COLOR)
+        cloud_rect = pygame.draw.rect(self.display, NODE_COLOR, (x, y, 2*INFO_W, INFO_H))
+        cloud_text_surface = self.font.render(f"Cloud|  Q:{queue_size}  VMs: {total_vms - no_free_vms}/{total_vms}", True, NODE_TEXT_COLOR)
         cloud_text_rect = cloud_text_surface.get_rect(center=cloud_rect.center)
         self.display.blit(cloud_text_surface, cloud_text_rect)
 

@@ -93,11 +93,14 @@ public class SDNInitializer implements Control {
             setPositions();
         }
         if(hasCloud == 1){
+            if(cloudPos.length != 2){
+                throw new RuntimeException("The cloud position is not specified correctly. Please specify the position of the cloud.");
+            }
             Node cloud = Network.get(Network.size() - 1);
             SDNNodeProperties cloudProt = (SDNNodeProperties) cloud
                     .getProtocol(pid);
             cloudProt.setX(cloudPos[0]);
-            cloudProt.setY(cloudPos[0]);
+            cloudProt.setY(cloudPos[1]);
             ((Cloud) cloud.getProtocol(Cloud.getPid())).setProps(cloudProt);
         }
         return false;

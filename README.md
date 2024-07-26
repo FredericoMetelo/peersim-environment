@@ -28,6 +28,14 @@ a server that wraps the simultion of the peersim environment in a REST API allow
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.2.[Maven Dependencies](###MavenDependencies)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.3.3.[Compiling The Simulator](###CompilingTheSimulator)<br>
 3. [Bibtex](###Bibtex)<br>
+
+## Changelog
+- Revamped the Cloud to be more logical to use.
+- Fixed a bug regarding the usage of the cloud, when some nodes knew all the other nodes in the network, and others didn't.
+- Added a simple visualization of the Cloud whenever the cloud is active.
+- Added a new configuration to the simulation that allows for the setting of the Cloud Position.
+- Tweaked the definition of the cloud properties so that the number of VMs and the default power of the VMs have separate parameters (For now all VMs will have the same processing power).
+
 <a name="HowTheSimulationWorks"></a>
 ## How the Simltion Works
 <a name="TheSimulationServer"></a>
@@ -439,7 +447,13 @@ Nodes can only communicate with nodes on its layer, the layer immediately below 
     ```
     NO_LAYERS 2
     ```
-        
+- **Specify which layers can get tasks directly from the clients** This parameter specifies the layers that can receive tasks directly from the clients. The layers are separated by a ','. 
+  Regarding the interaction with clientIsSelf, if clientIsSelf is 1 and a given client's layer is in layersThatGetTasks, then that client would be generating tasks for itself, all the clients in layers not in layersThatGetTasks would not receive any tasks. Layers that get tasks is a coma separated list of the layers id. IE if layers 0 and 1 get tasks then, in the configs, you would have:
+
+
+    ```
+    layersThatGetTasks 1
+    ```   
 - **Number of nodes in each layer,** this flag defines the number of nodes in each of the layers of the simulation. The sum of the nodes in all the layers must total the value in SIZE. Each entry is separated by a ',' and indicates the number of nodes to be put on the layer of index equal to its position, for example, if we have the configuration '5,0' then we would have 5 nodes in the layer of index 0 and 1 node in the layer of index 1.
     ```
     NO_NODES_PER_LAYERS 5,1
@@ -513,7 +527,18 @@ There are three ways of configuring the topology of the network. The first is th
     ``` 
     protocol.props.P_ti 20
     ```
- 
+- **Define the types of channels**. This parameter specifies classes to be used for the types of the channels that will be available in the simulation, for example a wireless channel and a wired channel. The channel types are represented by the class name that is to be used, and are defined as a list of "," separated values.
+    ``` 
+    protocol.urt.channelTypes PeersimSimulator.peersim.env.Transport.OpticalFiberSNR;PeersimSimulator.peersim.env.Transport.WirelessSNR
+    ```
+  Note:Currently all channel types available are in the example above. WirelessSNR being hte original wireless channel with the Shannon-Hartley theorem and considering physical factors like the antenna gain, and the OpticalFiberSNR being a channel that uses the same theorem but with specifiable SNR.
+  
+- **Define the channel type used to communicate between different layers**. This parameter specifies the channel type used to communicate between different layers. The values are the indexes of the channel type to be used in the `protocol.urt.channelTypes`, I.E. in the example above 0 would represent the wirelessSNR.
+  The ChannelTypesPerLayers is defined as a matrix of layers x layers (IE with dimensions NO_LAYERS x NO_LAYERS). You have the index of the channel type, in ChannelTypes, between layer i and j in `ChannelTypesPerLayers[i][j]`. The channel types per layer is defined in the configs as with a string where values in a row are "," separated, and different rows are ";" separated. 
+    ``` 
+    protocol.urt.channelTypesBetweenLayers 0,0,1;0,0,1;1,1,1
+    ```
+  
 - **Specify which flags have a link to the cloud**. This parameter indicates for each layer if the nodes in that layer can access the cloud or not. If the value at the index of the layer is 1, then that layer can communicate with the cloud. Otherwise, if it is 0, then the nodes in the layer are barred from communicating directly with the cloud. For example, for the configuration '0,1', the nodes in the layer of index 1 would be able to communicate with the cloud, but the nodes in the layer of index 0 would not.  
     ```
     CLOUD_ACCESS 0,1
@@ -521,6 +546,8 @@ There are three ways of configuring the topology of the network. The first is th
 
 ### Configuration of the Cloud
 We consider the cloud as a collection of virtual machines that allow for processing multiple tasks concurrently, one per VM. Each of these virtual machines is similar to a Worker in the sense that every time-step they will be able to process a given number of instructions. Each one will need to have processing power specified.
+Notably, the parameters here are only relevant if the cloud is enabled in the simulation.
+
 - **Number of VMs available to the Cloud** - This specifies the number of  VMs that can process concurrent tasks in the Cloud at the same time.
     ```
     protocol.cld.no_vms 3
@@ -529,6 +556,11 @@ We consider the cloud as a collection of virtual machines that allow for process
     ```
     protocol.cld.VMProcessingPower 1e8
     ```
+- **Selecting the position of the Cloud** - This parameter specifies the position of the cloud in the network. The coordinates of the cloud are specified in the format "X,Y".
+    ```
+    CLOUD_POS 50,50
+    ```
+  
 ### Configuration specific to the Ether Topology integration
 - **Ether Configuration Flag** Indicates to the simulation that the ether topology is to be used.
     ```
