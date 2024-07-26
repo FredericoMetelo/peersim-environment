@@ -1,4 +1,4 @@
-random.seed 56432525403
+random.seed 220280604071
 SCALE 10
 SIZE 10
 CYCLE 1
@@ -8,17 +8,17 @@ MAXDELAY 0.0
 DROP 0
 CONTROLLERS 0;1
 CLOUD_EXISTS 1
-CLOUD_POS 300,300
 NO_LAYERS 3
 NO_NODES_PER_LAYERS 1,1,8
 CLOUD_ACCESS 1,1,1
+CLOUD_POS 300,300
 clientLayers 1
 FREQS 4000000,2000000,1000000
 NO_CORES 1,1,1
 Q_MAX 8,8,8
 VARIATIONS 0,0,0
 protocol.cld.no_vms 1
-protocol.cld.VMProcessingPower 100000000
+protocol.cld.VMProcessingPower 10000000.0
 init.Net1.r 50
 protocol.mng.cycle 5
 protocol.clt.numberOfTasks 1

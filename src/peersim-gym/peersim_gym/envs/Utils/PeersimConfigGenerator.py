@@ -82,7 +82,7 @@ rescalable_parameters = ["MINDELAY", "MAXDELAY", "FREQS", "protocol.cld.VMProces
 
 
 def rescaled_value(key, value, scale):
-    if key == "MINDELAY" or key == "MAXDELAY":
+    if key == "MINDELAY" or key == "MAXDELAY" or key == "protocol.cld.VMProcessingPower": # Just check if value has ";", if not then check if has ",", if not then it is a scalar...
         return str(int(value) / scale)
     elif key == "FREQS":
         freqs = value.split(",")
