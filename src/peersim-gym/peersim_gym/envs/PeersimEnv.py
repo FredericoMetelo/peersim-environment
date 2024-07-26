@@ -128,7 +128,7 @@ class PeersimEnv(ParallelEnv):
         self.simtype = simtype
 
         self.controllers = self.__gen_config(configs, simtype=simtype)
-        self.number_nodes = int(self.config_archive["SIZE"])
+        self.number_nodes = int(self.config_archive["SIZE"] ) + int(self.config_archive["CLOUD_EXISTS"] if "CLOUD_EXISTS" in self.config_archive else 0)
         self.possible_agents = [AGENT_PREFIX + str(r) for r in self.controllers]
         self.agent_name_mapping = dict(
             zip(self.possible_agents, self.controllers)
@@ -367,9 +367,8 @@ class PeersimEnv(ParallelEnv):
         controller = []
         # Checking the configurations
         if configs is None:
-
             configs = {"Q_MAX": str(self.max_Q_size), "SIZE": str(self.number_nodes),
-                       "random.seed": self.__gen_seed()}
+                       "random.seed": self.__gen_seed(), "HAS_CLOUD": str(self.has_cloud)}
 
             controller, self.config_path = cg.generate_config_file(configs, simtype)
         elif type(configs) is dict:
@@ -378,7 +377,11 @@ class PeersimEnv(ParallelEnv):
                 self.max_Q_size = [int(q) for q in configs["Q_MAX"].strip().split(",")]
 
             if "SIZE" in configs:
-                self.number_nodes = int(configs["SIZE"])  # - 1 Not anymore
+                self.number_nodes = int(configs["SIZE"])
+                if "CLOUD_EXISTS" in configs:
+                    self.has_cloud = int(configs["CLOUD_EXISTS"])
+                    self.number_nodes += self.has_cloud
+            # - 1 Not anymore
 
             if not ("random.seed" in configs) or regen_seed:
                 configs["random.seed"] = self.__gen_seed()
@@ -719,6 +722,9 @@ class PeersimEnv(ParallelEnv):
         for idx, no_nodes in enumerate(self.no_nodes_per_layer):
             for i in range(no_nodes):
                 q_list.append(self.max_Q_size[idx])
+
+        if self.has_cloud:
+            q_list.append(1e6) # Add cloud to basically have infinite Q size.
         return q_list
 
     def extract_global_data(self, global_obs):

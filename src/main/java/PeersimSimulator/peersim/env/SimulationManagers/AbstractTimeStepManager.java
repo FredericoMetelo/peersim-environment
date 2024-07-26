@@ -9,7 +9,9 @@ import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
 import PeersimSimulator.peersim.env.Nodes.Clients.Client;
+import PeersimSimulator.peersim.env.Nodes.Cloud.Cloud;
 import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
+import PeersimSimulator.peersim.env.Nodes.Events.CloudInfo;
 import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 import PeersimSimulator.peersim.env.Records.*;
 import PeersimSimulator.peersim.env.Records.Actions.Action;
@@ -109,6 +111,14 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
         List<Integer> totalTasks = new ArrayList<>(Network.size());
         List<Integer> isWorking = new ArrayList<>(Network.size());
         List<Double> energyConsumed = new ArrayList<>(Network.size());
+
+        CloudInfo cinfo = null;
+        if(hasCloud == 1) {
+            Node cloud = Network.get(Network.size() - 1);
+            Cloud cloudWorker = (Cloud) cloud.getProtocol(Cloud.getPid());
+            cinfo = cloudWorker.cloudInfo();
+        }
+
         for (int i = 0; i < Network.size() - hasCloud; i++) {
             Node n = Network.get(i);
             if (n.isUp()) {
@@ -126,6 +136,8 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
                 transmissionPowers.add(props.getTRANSMISSION_POWER());
                 isWorking.add(worker.isWorking());
 
+
+
                 Client client = (Client) n.getProtocol(Client.getPid());
                 if (client == null || !client.isActive()) {
                     continue;
@@ -137,7 +149,7 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
             }
         }
         return new GlobalState(nodeIds, queues, processingPowers, noCores, layers, positions, bandwidths,
-                transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking, energyConsumed);
+                transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking, energyConsumed, cinfo);
     }
 
 

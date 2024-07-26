@@ -47,7 +47,8 @@ public class WorkerInitializer implements Control {
     private static final String PAR_MANUAL_FREQS = "MANUAL_FREQS";
     private static final String PAR_MANUAL_QMAX = "MANUAL_QMAX";
 
-
+    private final int[] cloudAccessPerLayer;
+    private static final String PAR_ACCESS_CLOUD = "CLOUD_ACCESS";
 
 
 
@@ -74,11 +75,14 @@ public class WorkerInitializer implements Control {
     public WorkerInitializer(String prefix) {
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
         manualConfig = Configuration.getBoolean(PAR_MANUAL_CONFIG);
+        hasCloud = Configuration.getInt(PAR_HAS_CLOUD, 0);
+        String[] _ACCESS_CLOUD = Configuration.getString(PAR_ACCESS_CLOUD, "0").split(",");
+        cloudAccessPerLayer = Arrays.stream(_ACCESS_CLOUD).mapToInt(Integer::parseInt).toArray();
+
         int size;
         if(!manualConfig) {
             size = Configuration.getInt(PAR_NETWORK_SIZE);
             noLayers = Configuration.getInt(PAR_NO_LAYERS, 1);
-            hasCloud = Configuration.getInt(PAR_HAS_CLOUD, 0);
             String[] _NO_NODES_PER_LAYERS = Configuration.getString(PAR_NO_NODES_PER_LAYERS, Integer.toString(size)).split(",");
 
             String[] _CPU_FREQ = Configuration.getString(PAR_CPU_FREQ, "1e7").split(",");
@@ -94,7 +98,6 @@ public class WorkerInitializer implements Control {
 
 
         }else {
-            hasCloud = 0; // No cloud supported in this mode yet.
             String[] _MANUAL_CORES = Configuration.getString(PAR_MANUAL_CORES).split(";");
             String[] _MANUAL_FREQS = Configuration.getString(PAR_MANUAL_FREQS).split(";");
             String[] _MANUAL_QMAX = Configuration.getString(PAR_MANUAL_QMAX).split(";");
@@ -162,6 +165,7 @@ public class WorkerInitializer implements Control {
                 w.setId(id);
                 w.workerInit(cpuFreq, noCores, qMax, i);
                 w.setCorrespondingController((Controller) Network.get(id).getProtocol(Controller.getPid()));
+                w.setCloudAccess(this.layerCloudAccess(i) ? 1 : 0);
             }
             offset += noNodes;
             // Set other Variables like CPU speed and others here.
@@ -212,5 +216,9 @@ public class WorkerInitializer implements Control {
         result.append("]");
         return result.toString();
     }
+    private boolean layerCloudAccess(int layer){
+        return hasCloud == 1 && cloudAccessPerLayer[layer] == 1;
+    }
+
 }
 

@@ -5,6 +5,7 @@ import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Control;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
+import PeersimSimulator.peersim.env.Nodes.Cloud.Cloud;
 import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
 import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 import PeersimSimulator.peersim.env.Records.Coordinates;
@@ -19,6 +20,9 @@ public class SDNInitializer implements Control {
     private static final String PAR_PROT = "protocol";
     private static final String PAR_HAS_CLOUD = "CLOUD_EXISTS";
     private final int hasCloud;
+
+    private static final String PAR_CLOUD_POS = "CLOUD_POS";
+    private final int[] cloudPos;
 
     private static final String PAR_NETWORK_SIZE = "SIZE";
 
@@ -48,6 +52,10 @@ public class SDNInitializer implements Control {
         pid = Configuration.getPid(prefix + "." + PAR_PROT);
         hasCloud = Configuration.getInt(PAR_HAS_CLOUD, 0);
         noLayers = Configuration.getInt(PAR_NO_LAYERS, 1);
+
+
+        cloudPos = Arrays.stream(Configuration.getString(PAR_CLOUD_POS).split(",")).mapToInt(Integer::parseInt).toArray();
+
 
         int size = Configuration.getInt(PAR_NETWORK_SIZE);
 
@@ -85,11 +93,15 @@ public class SDNInitializer implements Control {
             setPositions();
         }
         if(hasCloud == 1){
+            if(cloudPos.length != 2){
+                throw new RuntimeException("The cloud position is not specified correctly. Please specify the position of the cloud.");
+            }
             Node cloud = Network.get(Network.size() - 1);
             SDNNodeProperties cloudProt = (SDNNodeProperties) cloud
                     .getProtocol(pid);
-            cloudProt.setX(0);
-            cloudProt.setY(0);
+            cloudProt.setX(cloudPos[0]);
+            cloudProt.setY(cloudPos[1]);
+            ((Cloud) cloud.getProtocol(Cloud.getPid())).setProps(cloudProt);
         }
         return false;
     }

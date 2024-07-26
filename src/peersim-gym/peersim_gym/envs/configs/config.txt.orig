@@ -75,7 +75,7 @@ protocol.mng.transport tr
 
 
 # NEW + the initialization stuff
-protocol.cld PeersimSimulator.peersim.env.Nodes.Cloud
+protocol.cld PeersimSimulator.peersim.env.Nodes.Cloud.Cloud
 protocol.cld.linkable lnk
 protocol.cld.name cld
 protocol.cld.step CYCLE
@@ -136,7 +136,7 @@ init.InitWrk.protocol wrk
 init.InitClt PeersimSimulator.peersim.env.Nodes.Clients.ClientInitializer
 init.InitClt.protocol clt
 
-init.InitCld PeersimSimulator.peersim.env.Nodes.CloudInitializer
+init.InitCld PeersimSimulator.peersim.env.Nodes.Cloud.CloudInitializer
 init.InitCld.protocol cld
 
 init.InitCtrl PeersimSimulator.peersim.env.Nodes.Controllers.ControllerInitializer

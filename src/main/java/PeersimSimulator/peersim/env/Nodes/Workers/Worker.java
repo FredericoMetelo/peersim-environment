@@ -84,6 +84,8 @@ public interface Worker extends CDProtocol, EDProtocol {
 
     void setHasController(boolean hasController);
 
+    void setCloudAccess(int cloudAccess);
+
     boolean isHasController();
 
     int getDroppedLastCycle();
@@ -93,6 +95,8 @@ public interface Worker extends CDProtocol, EDProtocol {
     int getTotalTasksRecieved();
 
     int getLayer();
+
+    int getCloudAccess();
 
     int getTasksRecievedSinceLastCycle();
 
