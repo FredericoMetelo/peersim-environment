@@ -305,7 +305,7 @@ class PeersimEnv(ParallelEnv):
     def close(self):
         self.simulator.stop()
 
-    def post_updates(self, agents, srcs, dst, updates):
+    def post_updates(self, agents, srcs, dst, updates, extra_info=None, sent_to_global=False):
         """
         (Outside of PettingZoo API)
         This method works by passing a list of FL updates through the network. It adds the updates to the list of
@@ -319,12 +319,13 @@ class PeersimEnv(ParallelEnv):
         """
         update_list = []
         for idx, agent in enumerate(agents):
-            update_entry = self.fl_update_store.store_update(agent, srcs[idx], dst[idx], updates[idx])
+            update_entry = self.fl_update_store.store_update(agent, srcs[idx], dst[idx], updates[idx], sent_to_global,  {key: extra_info[key][idx] for key in extra_info} if extra_info is not None else None)
             formatted_entry = {
                 "uuid": update_entry["uuid"],
                 "src": update_entry["src_id"],
                 "dst": update_entry["dst_idx"],
                 "size": update_entry["size"]
+
             }
             update_list.append(formatted_entry)
         # Send the list in the body to the server

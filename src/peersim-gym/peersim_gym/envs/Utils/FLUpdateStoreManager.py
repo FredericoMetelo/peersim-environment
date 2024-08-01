@@ -11,19 +11,19 @@ class FLUpdateStoreManager:
         self.updates_done_per_agent = {}
         self.custom_update_size_function = custom_update_size_function
 
-    def store_update(self, agent, src_id, dst_idx, update):
+    def store_update(self, agent, src_id, dst_idx, update, sent_to_global, extra_info):
         uuid = self.generate_uuid()
-        self.update_dictionary[uuid] = self.create_update_entry(uuid, agent, src_id, dst_idx, update)
+        self.update_dictionary[uuid] = self.create_update_entry(uuid, agent, src_id, dst_idx, update, sent_to_global, extra_info)
 
         return self.update_dictionary[uuid]
 
     def generate_uuid(self):
         return str(uuid.uuid4())
 
-    def create_update_entry(self, uuid, agent, src_id, dst_idx, update):
+    def create_update_entry(self, uuid, agent, src_id, dst_idx, update, sent_to_global, extra_info):
         size = self.get_update_size(update) # Get the size of the update in bytes
         size = math.ceil(size / 1024 / 1024) # Convert to MB
-        return {"uuid": uuid, "agent": agent, "src_id": src_id, "dst_idx": dst_idx, "update": update, "size": size}
+        return {"uuid": uuid, "agent": agent, "src_id": src_id, "dst_idx": dst_idx, "update": update, "size": size, "sent_to_global": sent_to_global,  "extra_info": extra_info}
 
     def get_update_size(self, update):
         """
@@ -67,10 +67,13 @@ class FLUpdateStoreManager:
         """
         update_done = self.get_update(uuid)
         if update_done is not None:
-            agent_prefix = update_done["agent"].split('_')[0]
-            agent_emissor = int(update_done["agent"].split('_')[1])
-            agent_reciever = self.neighbourMatrix[agent_emissor][update_done["dst_idx"]]
-            agent = agent_prefix + "_" + str(agent_reciever)
+            if update_done["sent_to_global"]:
+                agent = "global"
+            else:
+                agent_prefix = update_done["agent"].split('_')[0]
+                agent_emissor = int(update_done["agent"].split('_')[1])
+                agent_reciever = self.neighbourMatrix[agent_emissor][update_done["dst_idx"]]
+                agent = agent_prefix + "_" + str(agent_reciever)
             if agent in self.updates_done_per_agent:
                 self.updates_done_per_agent[agent].append(update_done)
             else:
