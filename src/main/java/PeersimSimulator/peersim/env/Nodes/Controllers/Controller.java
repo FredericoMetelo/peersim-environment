@@ -12,6 +12,7 @@ import PeersimSimulator.peersim.env.Records.SimulationData.SimulationData;
 import PeersimSimulator.peersim.env.Tasks.ITask;
 
 import java.util.List;
+import java.util.Map;
 
 public interface Controller extends CDProtocol, EDProtocol {
     String EVENT_WORKER_INFO_UPDATE = "WORKER-INFO UPDATE";
@@ -70,4 +71,10 @@ public interface Controller extends CDProtocol, EDProtocol {
     void setUpdateAvailable(String key);
 
     List<String> getUpdatesAvailable();
+
+    void setPathsToOtherControllers(Map<String, List<Integer>> paths);
+
+    Map<String, List<Integer>> getPathsToOtherControllers();
+
+
 }

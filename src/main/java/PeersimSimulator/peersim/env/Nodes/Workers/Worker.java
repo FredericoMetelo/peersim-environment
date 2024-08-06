@@ -34,6 +34,8 @@ public interface Worker extends CDProtocol, EDProtocol {
     String EVENT_NO_TASK_PROCESS = "NO TASK FOR PROCESS";
     String EVENT_NO_TASK_OFFLOAD = "NO TASK FOR OFFLOAD";
     String EVENT_ERR_NO_TARGET_PID_AVAILABLE = "NO TARGET PID ACTIVE";
+    String EVENT_ERR_NO_PATH = "FL-NPTH";
+    String EVENT_ERR_NO_DST = "NO-DST";
 
     static int getPid() {
         return AbstractWorker.pid;

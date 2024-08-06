@@ -15,6 +15,7 @@ import PeersimSimulator.peersim.env.Records.SimulationData.FailledActionSimulati
 import PeersimSimulator.peersim.env.Records.SimulationData.SimulationData;
 
 import java.util.List;
+import java.util.Map;
 
 public class BatchController extends AbstractController {
 
@@ -90,6 +91,8 @@ public class BatchController extends AbstractController {
 
         return new BatchSimulationData(sourceID, distance, this.extractCompletedTasks(), success);
     }
+
+
 
     //=== Logging and Debugging
     /*private void printParams() {

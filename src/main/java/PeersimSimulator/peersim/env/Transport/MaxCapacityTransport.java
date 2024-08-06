@@ -11,6 +11,7 @@ import PeersimSimulator.peersim.edsim.EDSimulator;
 import PeersimSimulator.peersim.env.Links.SDNNodeProperties;
 import PeersimSimulator.peersim.env.Nodes.Events.Message;
 import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
+import PeersimSimulator.peersim.env.Records.DummyMessage;
 import PeersimSimulator.peersim.transport.Transport;
 
 import java.lang.reflect.Constructor;
@@ -175,13 +176,11 @@ public class MaxCapacityTransport implements Transport {
     }
 
     /**
-     * Returns a random
-     * delay, that is drawn from the configured interval according to the uniform
-     * distribution.
+     * Returns the delay of sending 100Mb message from src to dest.
      */
     public long getLatency(Node src, Node dest) {
 
-        return 0L;
+        return getMessageLatency(src, dest, new DummyMessage(100), pid);
     }
     public long getMessageLatency(Node src, Node dest, Object msg, int pid) {
 

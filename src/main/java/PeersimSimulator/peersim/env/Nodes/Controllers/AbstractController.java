@@ -1,6 +1,5 @@
 package PeersimSimulator.peersim.env.Nodes.Controllers;
 
-import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
 import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Linkable;
@@ -17,10 +16,7 @@ import PeersimSimulator.peersim.env.Records.SimulationData.SimulationData;
 import PeersimSimulator.peersim.env.Tasks.ITask;
 import PeersimSimulator.peersim.env.Util.Log;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public abstract class AbstractController implements Controller {
     protected static final String EVENT_SEND_ACTION_RECIEVED = "SEND ACTION RECIEVED";
@@ -57,6 +53,7 @@ public abstract class AbstractController implements Controller {
     List<WorkerInfo> workerInfo;
 
     List<String> updatesAvailable;
+    Map<String, List<Integer>> pathsToOtherControllers;
 
 
 
@@ -351,6 +348,17 @@ public abstract class AbstractController implements Controller {
         // Request the worker to send the updates to their neighbours through their interface.
         return this.correspondingWorker.sendFLUpdate(update);
     }
+
+    @Override
+    public void setPathsToOtherControllers(Map<String, List<Integer>> pathsToOtherControllers) {
+        this.pathsToOtherControllers = pathsToOtherControllers;
+    }
+
+    @Override
+    public Map<String, List<Integer>> getPathsToOtherControllers() {
+        return pathsToOtherControllers;
+    }
+
     @Override
     public void setUpdateAvailable(String key) {
         this.updatesAvailable.add(key);
@@ -385,6 +393,7 @@ public abstract class AbstractController implements Controller {
         Log.logInfo("CTR", this.id, event, info);
 
     }
+
 
     public void ctrDbgLog(String msg) {
         Log.logDbg("CTR", this.id, "DEBUG", msg);

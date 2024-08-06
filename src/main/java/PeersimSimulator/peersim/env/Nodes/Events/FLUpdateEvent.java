@@ -1,13 +1,15 @@
 package PeersimSimulator.peersim.env.Nodes.Events;
 
+import java.util.List;
+
 public class FLUpdateEvent implements Message {
     int id;
     int src;
-    int dst;
+    List<Integer> dst;
     double size;
     String key;
 
-    public FLUpdateEvent(int id, int src, int dst, double size, String key) {
+    public FLUpdateEvent(int id, int src, List<Integer> dst, double size, String key) {
         this.id = id;
         this.src = src;
         this.dst = dst;
@@ -23,7 +25,7 @@ public class FLUpdateEvent implements Message {
         return src;
     }
 
-    public int getDst() {
+    public List<Integer> getDst() {
         return dst;
     }
 

@@ -170,8 +170,38 @@ public abstract class AbstractWorker implements Worker {
             wrkErrLog("NO-CONTROLLER", "Update sent to Worker  that does not have a controller.");
             return;
         }
-        wrkInfoLog("RECEIVED UPDT", "src=" + ev.getSrc() + " dst=" + ev.getDst() + " size=" + ev.getSize());
-        this.correspondingController.setUpdateAvailable(ev.getKey());
+        Node node = Network.get(this.getId());
+        int linkableID = FastConfig.getLinkable(pid);
+        Linkable linkable = (Linkable) node.getProtocol(linkableID);
+        if((ev.getDst() == null) || ev.getDst().isEmpty()) {
+            wrkErrLog("NO-DST", "No destination for the FL update... Something went wrong, one redirect too many?");
+            return;
+        }
+        int hopDstId = ev.getDst().remove(0);
+        if(hopDstId == this.getId() && this.correspondingController!= null && this.correspondingController.isActive()){
+            wrkInfoLog("RECEIVED UPDT", "src=" + ev.getSrc() + " dst=" + ev.getDst() + " size=" + ev.getSize());
+            this.correspondingController.setUpdateAvailable(ev.getKey());
+            return;
+        } else if (hopDstId == this.getId() && this.correspondingController == null || !this.correspondingController.isActive()) {
+            wrkErrLog("NO-CONTROLLER", "FL Update sent to Worker  that does not have a controller.");
+        }
+        // Resend to the next:
+        int hopDst = this.getIndexInLinkableFromId(hopDstId, linkable);
+        if((hopDst < 0 || hopDst > linkable.degree())){
+            wrkErrLog(EVENT_ERR_NO_DST, "Could not find the requested target node in the known nodes by the DAGWorker");
+            return;
+        }
+        Node target = linkable.getNeighbor(hopDst);
+        wrkInfoLog("SENDING UPDT", "src=" + this.getId() + " dst=" + target.getID() + " size=" + ev.getSize());
+        ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+                send(
+                        node,
+                        target,
+                        new FLUpdateEvent(this.id, this.id, ev.getDst(), ev.getSize(), ev.getKey()),
+                        selectOffloadTargetPid(hopDst, target)
+                );
+
+
     }
 
     /**
@@ -494,15 +524,28 @@ public abstract class AbstractWorker implements Worker {
         Node node = Network.get(this.getId());
         int linkableID = FastConfig.getLinkable(pid);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        if(!validTargetNeighbour(flu.getDst(), linkable)) {
+        if( !validTargetNeighbour(flu.getDst(), linkable)) {
+            return false;
+        }
+        int hopDst = flu.getDst();
+        long hopDstId = linkable.getNeighbor(hopDst).getID();
+        if((hopDst < 0 || hopDst > linkable.degree())){
+            wrkErrLog(EVENT_ERR_NODE_OUT_OF_BOUNDS, "Could not find the requested target node in the known nodes by the DAGWorker");
             return false;
         }
 
-        Node target = linkable.getNeighbor(flu.getDst());
+        Node target = linkable.getNeighbor(hopDst);
         if ( !target.isUp()) {
             wrkErrLog(EVENT_ERR_NODE_OUT_OF_BOUNDS, "The requested target node is outside the nodes known by the DAGWorker="
-                    + (flu.getDst() < 0 || flu.getDst() > linkable.degree())
+                    + (hopDst < 0 || hopDst > linkable.degree())
                     + ". Or is down=" + target.isUp());
+            return false;
+        }
+
+        List<Integer> remainingHops = new LinkedList<>(correspondingController.getPathsToOtherControllers().get(flu.getSrc() + "-" + hopDstId));
+        remainingHops.remove(0);
+        if(remainingHops == null || remainingHops.isEmpty()){
+            wrkErrLog(EVENT_ERR_NO_PATH, "No path to the destination node. src=" + flu.getSrc() + " dst=" + flu.getDst());
             return false;
         }
         wrkInfoLog("SENDING UPDT", "src=" + this.getId() + " dst=" + target.getID() + " size=" + flu.getSize());
@@ -510,8 +553,8 @@ public abstract class AbstractWorker implements Worker {
                 send(
                         node,
                         target,
-                        new FLUpdateEvent(this.id, flu.getSrc(), flu.getDst(), flu.getSize(), flu.getUuid()),
-                        selectOffloadTargetPid(flu.getDst(), target)
+                        new FLUpdateEvent(this.id, flu.getSrc(), remainingHops, flu.getSize(), flu.getUuid()),
+                        selectOffloadTargetPid(hopDst, target)
                 );
         return true;
     }
@@ -539,6 +582,13 @@ public abstract class AbstractWorker implements Worker {
             if (n.getID() == id) return n;
         }
         return null;
+    }
+    protected int getIndexInLinkableFromId(int id, Linkable linkable) {
+        for (int i = 0; i < linkable.degree(); i++) {
+            Node n = linkable.getNeighbor(i);
+            if (n.getID() == id) return i;
+        }
+        return -1;
     }
 
     protected boolean idle() {
