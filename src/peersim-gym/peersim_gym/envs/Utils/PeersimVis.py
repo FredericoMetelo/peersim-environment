@@ -173,7 +173,7 @@ class PeersimVis(object):
             print("Link matrix is None, cannot draw links skipping iteration")
             return
         for i in range(len(link_matrix) - self.has_cloud):
-            for j in range(len(link_matrix[i])):
+            for j in range(len(link_matrix[i]) - self.has_cloud):
                 source = i
                 target = link_matrix[i][j]
                 key = f"{source}-{target}"
@@ -192,7 +192,7 @@ class PeersimVis(object):
                     # Check what ios in the position indexed by the action in the link_matrix. If it is equal to the
                     # target being checked, then the action was sent to the target and the edge is painted red.
                     trg_idx = int(actions[source][0])
-                    if 0 < trg_idx < len(link_matrix[source]):
+                    if 0 <= trg_idx < len(link_matrix[source]):
                         is_target = link_matrix[source][trg_idx] == target
                         sucess = actions[source][1] if is_target else False
 
