@@ -5,14 +5,16 @@ import java.util.List;
 public class FLUpdateEvent implements Message {
     int id;
     int src;
-    List<Integer> dst;
+    List<Integer> path;
     double size;
     String key;
+    int dst;
 
-    public FLUpdateEvent(int id, int src, List<Integer> dst, double size, String key) {
+    public FLUpdateEvent(int id, int src, int dst, List<Integer> path, double size, String key) {
         this.id = id;
         this.src = src;
         this.dst = dst;
+        this.path = path;
         this.size = size;
         this.key = key;
     }
@@ -25,12 +27,20 @@ public class FLUpdateEvent implements Message {
         return src;
     }
 
-    public List<Integer> getDst() {
-        return dst;
+    public List<Integer> getPath() {
+        return path;
     }
 
     public String getKey() {
         return key;
+    }
+
+    public int getDst() {
+        return dst;
+    }
+
+    public void setDst(int dst) {
+        this.dst = dst;
     }
 
     @Override

@@ -166,25 +166,30 @@ public abstract class AbstractWorker implements Worker {
     }
 
     private void handleFLUpdateEvent(FLUpdateEvent ev) {
-        if(this.correspondingController == null || !this.correspondingController.isActive()){
-            wrkErrLog("NO-CONTROLLER", "Update sent to Worker  that does not have a controller.");
-            return;
-        }
+
         Node node = Network.get(this.getId());
         int linkableID = FastConfig.getLinkable(pid);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        if((ev.getDst() == null) || ev.getDst().isEmpty()) {
+        if((ev.getPath() == null) || ev.getPath().isEmpty()) {
             wrkErrLog("NO-DST", "No destination for the FL update... Something went wrong, one redirect too many?");
             return;
         }
-        int hopDstId = ev.getDst().remove(0);
-        if(hopDstId == this.getId() && this.correspondingController!= null && this.correspondingController.isActive()){
-            wrkInfoLog("RECEIVED UPDT", "src=" + ev.getSrc() + " dst=" + ev.getDst() + " size=" + ev.getSize());
+        ev.getPath().remove(0); // Discard this entry.
+        if(ev.getDst() == this.getId() && this.correspondingController!= null && this.correspondingController.isActive()){
+            wrkInfoLog("RECEIVED UPDT", "src=" + ev.getSrc() + " dst=" + ev.getPath() + " size=" + ev.getSize());
             this.correspondingController.setUpdateAvailable(ev.getKey());
             return;
-        } else if (hopDstId == this.getId() && this.correspondingController == null || !this.correspondingController.isActive()) {
-            wrkErrLog("NO-CONTROLLER", "FL Update sent to Worker  that does not have a controller.");
+        } else if (ev.getPath().isEmpty() && (this.correspondingController == null || !this.correspondingController.isActive())) {
+            wrkErrLog("FAIL-REDIRECT", "FL Update sent to Worker  that does not have a controller.");
+            return;
         }
+        if (ev.getPath().isEmpty()) {
+            wrkErrLog("NO-DST", "No destination for the FL update... Something went wrong, one redirect too many?");
+            return;
+        }
+
+        int hopDstId = ev.getPath().get(0);
+
         // Resend to the next:
         int hopDst = this.getIndexInLinkableFromId(hopDstId, linkable);
         if((hopDst < 0 || hopDst > linkable.degree())){
@@ -192,12 +197,12 @@ public abstract class AbstractWorker implements Worker {
             return;
         }
         Node target = linkable.getNeighbor(hopDst);
-        wrkInfoLog("SENDING UPDT", "src=" + this.getId() + " dst=" + target.getID() + " size=" + ev.getSize());
+        wrkInfoLog("REDIRECTING UPDT", "uuid="+ ev.getKey() +" src=" + this.getId() + " dst=" + target.getID() + " size=" + ev.getSize());
         ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                 send(
                         node,
                         target,
-                        new FLUpdateEvent(this.id, this.id, ev.getDst(), ev.getSize(), ev.getKey()),
+                        new FLUpdateEvent(this.id, this.id, ev.getDst(), ev.getPath(), ev.getSize(), ev.getKey()),
                         selectOffloadTargetPid(hopDst, target)
                 );
 
@@ -524,11 +529,28 @@ public abstract class AbstractWorker implements Worker {
         Node node = Network.get(this.getId());
         int linkableID = FastConfig.getLinkable(pid);
         Linkable linkable = (Linkable) node.getProtocol(linkableID);
-        if( !validTargetNeighbour(flu.getDst(), linkable)) {
+        if(flu.getDst() == this.getId()){
+            // Update is to self! Storing update automatically as arrived.
+            wrkInfoLog("RECEIVED UPDT", "src=" + flu.getSrc() + " dst=" + flu.getDst() + " size=" + flu.getSize());
+            this.correspondingController.setUpdateAvailable(flu.getUuid());
+            return true;
+        }
+        long hopDstId = flu.getDst();
+        List<Integer> remainingHops = new LinkedList<>(correspondingController.getPathsToOtherControllers().get(flu.getSrc() + "-" + hopDstId));
+        if(remainingHops == null || remainingHops.isEmpty()){
+            wrkErrLog(EVENT_ERR_NO_PATH, "No path to the destination node. src=" + flu.getSrc() + " dst=" + flu.getDst());
             return false;
         }
-        int hopDst = flu.getDst();
-        long hopDstId = linkable.getNeighbor(hopDst).getID();
+
+        remainingHops.remove(0); // Remove self from the path.
+        if(remainingHops.isEmpty()){
+            // Should only happen when the update is to self. Somehting is wrong if this happens here.
+            wrkErrLog(EVENT_ERR_NO_PATH, "No path to the destination node. One node in path, should only happen when src==dst. src=" + flu.getSrc() + " dst=" + flu.getDst());
+            return false;
+        }
+
+        int targetInneighbourhood = remainingHops.get(0);
+        int hopDst = this.getIndexInLinkableFromId(targetInneighbourhood, linkable);
         if((hopDst < 0 || hopDst > linkable.degree())){
             wrkErrLog(EVENT_ERR_NODE_OUT_OF_BOUNDS, "Could not find the requested target node in the known nodes by the DAGWorker");
             return false;
@@ -542,8 +564,6 @@ public abstract class AbstractWorker implements Worker {
             return false;
         }
 
-        List<Integer> remainingHops = new LinkedList<>(correspondingController.getPathsToOtherControllers().get(flu.getSrc() + "-" + hopDstId));
-        remainingHops.remove(0);
         if(remainingHops == null || remainingHops.isEmpty()){
             wrkErrLog(EVENT_ERR_NO_PATH, "No path to the destination node. src=" + flu.getSrc() + " dst=" + flu.getDst());
             return false;
@@ -553,7 +573,7 @@ public abstract class AbstractWorker implements Worker {
                 send(
                         node,
                         target,
-                        new FLUpdateEvent(this.id, flu.getSrc(), remainingHops, flu.getSize(), flu.getUuid()),
+                        new FLUpdateEvent(this.id, flu.getSrc(), flu.getDst(), remainingHops, flu.getSize(), flu.getUuid()),
                         selectOffloadTargetPid(hopDst, target)
                 );
         return true;
