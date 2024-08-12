@@ -1,4 +1,4 @@
-random.seed 250570918236
+random.seed 798657673093
 SCALE 10
 SIZE 19
 CYCLE 1
@@ -24,9 +24,9 @@ protocol.mng.cycle 1
 protocol.clt.numberOfTasks 1
 protocol.clt.weight 1
 protocol.clt.CPI 1
-protocol.clt.T 150
+protocol.clt.T 38
 protocol.clt.I 320000000
-protocol.clt.taskArrivalRate 10
+protocol.clt.taskArrivalRate 5
 layersThatGetTasks 0,1,2,3,4,5,9,10,11,12,13,14
 protocol.clt.numberOfDAG 1
 protocol.clt.dagWeights 1

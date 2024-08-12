@@ -40,7 +40,7 @@ PEERSIM_DEFAULTS = {
     "protocol.clt.numberOfTasks": "1",
     "protocol.clt.weight": "1",
     "protocol.clt.CPI": "1",
-    "protocol.clt.T": "150",
+    "protocol.clt.T": "38",
     "protocol.clt.I": "4e7",
     "protocol.clt.taskArrivalRate": "0.6",
     "layersThatGetTasks": "0",

@@ -173,7 +173,7 @@ public abstract class AbstractClient implements Client {
             this.amountToGenerate.set(i, this.amountToGenerate.get(i) - 1);
         }
         double time = selectNextTime();
-        amountToGenerate.set(i, (int) Math.max(1/time, 1));
+        amountToGenerate.set(i, 1); // (int) Math.max(1/time, 1)); -- Reverting to one task only, getting ridiculous for tASK_ARRIVAL_RATE > 1
         nextArrival.set(i, Math.round(CommonState.getTime() + time));
     }
 
@@ -227,6 +227,7 @@ public abstract class AbstractClient implements Client {
 
              Note: The task arrival rate of this poisson process is lambda.
          */
+        // If Im expecting more tasks then time between them must be smaller! Capped at 1 task per time-step though.
         double time = (-Math.log(CommonState.r.nextDouble()) / (TASK_ARRIVAL_RATE/scale)) ;
         return time;
     }
@@ -236,7 +237,7 @@ public abstract class AbstractClient implements Client {
         amountToGenerate = new ArrayList<>(degree);
         for (int i = 0; i < degree; i++) {
             double time = selectNextTime();
-            this.amountToGenerate.add((int) Math.max(1/time, 1));
+            this.amountToGenerate.add(1); // .add((int) Math.max(1/time, 1));
             nextArrival.add(Math.round(time));
         }
     }

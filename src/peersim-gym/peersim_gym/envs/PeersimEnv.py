@@ -181,6 +181,8 @@ class PeersimEnv(ParallelEnv):
         self.UTILITY_REWARD = self.config_archive["utility_reward"]
         self.DELAY_WEIGHT = self.config_archive["delay_weight"]
         self.OVERLOAD_WEIGHT = self.config_archive["overload_weight"]
+        self.NO_OP_REWARD = self.config_archive["no_op_reward"]
+        self.scale = int(self.config_archive["SCALE"])
         self.TRANSMISSION_POWER = float(self.config_archive["protocol.props.P_ti"])
         self.PATH_LOSS_CONSTANT = float(self.config_archive["protocol.props.Beta1"])
         self.PATH_LOSS_EXPONENT = float(self.config_archive["protocol.props.Beta2"])
@@ -601,8 +603,9 @@ class PeersimEnv(ParallelEnv):
         q_l = source_node_og_info["queueSize"]
         q_o = target_node_worker_info["queueSize"]
 
-        source_var = self.TASK_ARRIVAL_RATE * source_rank - source_processing_power / self.AVERAGE_TASK_INSTR
-        target_var = self.TASK_ARRIVAL_RATE * target_rank - target_processing_power / self.AVERAGE_TASK_INSTR
+        lambda_tar = self.TASK_ARRIVAL_RATE/self.scale
+        source_var = lambda_tar * source_rank - source_processing_power / self.AVERAGE_TASK_INSTR
+        target_var = lambda_tar * target_rank - target_processing_power / self.AVERAGE_TASK_INSTR
         q_expected_l = q_l if locally_processed else max(q_l - 1, 0)
         q_expected_o = q_o if locally_processed else q_o + 1
 
@@ -611,12 +614,12 @@ class PeersimEnv(ParallelEnv):
 
         d_i_j = agent_result[RESULT_DISTANCE_FIELD]
 
-        w_o = 1 if not locally_processed and 0 < q_l - 1 else 0
-        w_l = 1 if locally_processed else 0
+        w_o = 1 if not locally_processed and 1 <= q_l else 0
+        w_l = 1 if locally_processed and 1 <= q_l else 0
 
         if w_l == 0 and w_o == 0:  # queue is empty, nothing to do, no penalty or reward given.
-            print("Empty queue. No action taken.")
-            return self.UTILITY_REWARD, {"U": self.UTILITY_REWARD / 2, "D": 0, "O": 0}
+            print(f"NO OP - ID={agent_idx}: Empty queue. No action taken.")
+            return self.NO_OP_REWARD, {"U": self.NO_OP_REWARD, "D": 0, "O": 0}
 
         miu_l = source_processing_power
         miu_o = target_processing_power
@@ -649,13 +652,13 @@ class PeersimEnv(ParallelEnv):
         distance_to_Ovl_l = max((source_max_q - q_expected_l) / source_max_q, 0.001)  # Normalized manhattan distance
         distance_to_Ovl_o = max((target_max_q - q_expected_o) / target_max_q, 0.001)  # 0.0001 is to avoid log(0)
         O = -math.log10(w_l * distance_to_Ovl_l + w_o * distance_to_Ovl_o)  # we subtract O, therfore the minus
-        # Was using the ln before, now using log
+        # Was using the ln before, now using log. Plus I project the distance to be between
 
         # Capping the percentages to be between 100 and -100
         # U = max(min(U, self.UTILITY_REWARD), self.UTILITY_REWARD) / self.UTILITY_REWARD
         # Some people call this cheating, I call it not despairing -, _ ,-.
 
-        O = O / 3 * self.UTILITY_REWARD * self.OVERLOAD_WEIGHT  # I cap the delay distance at 0.001 (0.1% to overload) therefore the log will only go down to 3
+        O = O * self.OVERLOAD_WEIGHT  # I cap the delay distance at 0.001 (0.1% to overload) therefore the log will only go down to 3
 
         # computing reward and normalizing it
         reward = U - (D + O)

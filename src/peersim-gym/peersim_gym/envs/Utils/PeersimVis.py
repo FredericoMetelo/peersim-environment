@@ -233,7 +233,8 @@ class PeersimVis(object):
         return positions[node_idx][COORD_X] * 10
 
     def draw_line(self, x1, y1, x2, y2, is_target, can_offload, sucess):
-        color = LINK_PASSED_TASK_COLOR if is_target and can_offload and sucess else LINK_NO_ACTION_COLOR
+        color, width = (LINK_PASSED_TASK_COLOR, 3) if is_target and can_offload and sucess else (LINK_NO_ACTION_COLOR, 1)
+
         pygame.draw.line(self.display, color, (x1, y1), (x2, y2), 1)
 
     def draw_step_info(self, step):
