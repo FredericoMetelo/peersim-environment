@@ -72,7 +72,7 @@ class FLUpdateStoreManager:
             else:
                 agent_prefix = update_done["agent"].split('_')[0]
                 agent_emissor = int(update_done["agent"].split('_')[1])
-                agent_reciever = self.neighbourMatrix[agent_emissor][update_done["dst_idx"]]
+                agent_reciever = update_done["dst_idx"] # self.neighbourMatrix[agent_emissor][update_done["dst_idx"]]  # Changed to deal in absolute ids instead of indexes.
                 agent = agent_prefix + "_" + str(agent_reciever)
             if agent in self.updates_done_per_agent:
                 self.updates_done_per_agent[agent].append(update_done)

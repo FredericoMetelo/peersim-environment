@@ -185,14 +185,14 @@ class PeersimVis(object):
                     continue
                 # Another potential problem for later is that there isn't really any distinction between the direction
                 # of the task being offloaded.
-
+                # Pick Edge Color: If the action was sent to the target, paint the edge red. Otherwise, paint it black.
                 is_target = False
                 sucess = False
                 if source in actions:
-                    # Check what ios in the position indexed by the action in the link_matrix. If it is equal to the
+                    # Check what is in the position indexed by the action in the link_matrix. If it is equal to the
                     # target being checked, then the action was sent to the target and the edge is painted red.
                     trg_idx = int(actions[source][0])
-                    if 0 <= trg_idx < len(link_matrix[source]):
+                    if 0 <= trg_idx < len(link_matrix[source]): # Upgrade to deal with batch offload!!
                         is_target = link_matrix[source][trg_idx] == target
                         sucess = actions[source][1] if is_target else False
 

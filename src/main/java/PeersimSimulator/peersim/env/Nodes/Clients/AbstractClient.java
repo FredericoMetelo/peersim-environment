@@ -37,6 +37,9 @@ public abstract class AbstractClient implements Client {
     protected float averageLatency;
     protected int noResults;
     protected List<Long> nextArrival;
+    protected List<Integer> amountToGenerate;
+
+
     protected double averageTaskSize;
 
     protected final int[] layers;
@@ -155,19 +158,23 @@ public abstract class AbstractClient implements Client {
         Node target = linkable.getNeighbor(i);
         if (!target.isUp()) return;
         Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
-        Application app = generateApplication((int) target.getID());
-        tasksAwaiting.add(new AppInfo(app.getAppID(), CommonState.getTime(), app.getDeadline()));
-        totalTasks++;
-        cltInfoLog(EVENT_TASK_SENT, "target=" + wi.getId());
-        ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
-                send(
-                        node,
-                        target,
-                        new NewApplicationEvent(app.getAppID(), this.id, app.getInitialDataSize(), app),
-                        Worker.getPid()
-                );
-
-        nextArrival.set(i, CommonState.getTime() + selectNextTime());
+        while(this.amountToGenerate.get(i) > 0){
+            Application app = generateApplication((int) target.getID());
+            tasksAwaiting.add(new AppInfo(app.getAppID(), CommonState.getTime(), app.getDeadline()));
+            totalTasks++;
+            cltInfoLog(EVENT_TASK_SENT, "target=" + wi.getId());
+            ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
+                    send(
+                            node,
+                            target,
+                            new NewApplicationEvent(app.getAppID(), this.id, app.getInitialDataSize(), app),
+                            Worker.getPid()
+                    );
+            this.amountToGenerate.set(i, this.amountToGenerate.get(i) - 1);
+        }
+        double time = selectNextTime();
+        amountToGenerate.set(i, (int) Math.max(1/time, 1));
+        nextArrival.set(i, Math.round(CommonState.getTime() + time));
     }
 
     private int cleanUpTasks() {
@@ -211,7 +218,7 @@ public abstract class AbstractClient implements Client {
         }
     }
 
-    public long selectNextTime() {
+    public double selectNextTime() {
         /*
             Based on the formula from: https://preshing.com/20111007/how-to-generate-random-timings-for-a-poisson-process/
             From CDF of exponential function we have: 1 - e^{-lambda * x}. This is the probability no events occur on the
@@ -220,14 +227,17 @@ public abstract class AbstractClient implements Client {
 
              Note: The task arrival rate of this poisson process is lambda.
          */
-        long time = (long) (-Math.log(CommonState.r.nextDouble()) / TASK_ARRIVAL_RATE) * scale;
+        double time = (-Math.log(CommonState.r.nextDouble()) / (TASK_ARRIVAL_RATE/scale)) ;
         return time;
     }
 
     private void initTaskManagement(int degree) {
         nextArrival = new ArrayList<Long>(degree);
+        amountToGenerate = new ArrayList<>(degree);
         for (int i = 0; i < degree; i++) {
-            nextArrival.add(selectNextTime());
+            double time = selectNextTime();
+            this.amountToGenerate.add((int) Math.max(1/time, 1));
+            nextArrival.add(Math.round(time));
         }
     }
 
