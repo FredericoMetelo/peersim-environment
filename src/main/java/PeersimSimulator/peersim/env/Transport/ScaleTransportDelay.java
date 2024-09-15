@@ -42,6 +42,11 @@ public class ScaleTransportDelay implements Transport {
         // avoid calling nextLong if possible
         MaxCapacityTransport t = (MaxCapacityTransport) src.getProtocol(transport);
         long delay = t.getMessageLatency(src, dest, msg, pid);
+        delay = Math.round(delay * scale);
+        if(delay < 1) {
+            EDSimulator.add(1, msg, dest, pid);
+            return;
+        }
         delay = delay * scale; // removed (delay == 1) ? 1 : ...
         EDSimulator.add(delay, msg, dest, pid);
     }

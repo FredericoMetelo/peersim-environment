@@ -537,7 +537,7 @@ class PeersimEnv(ParallelEnv):
                 rewards[agent], self.last_reward_components[agent] = p
                 #print(f"Agent {agent} got reward {rewards[agent]}")
             elif agent in actions and mask[agent]:
-                rewards[agent] = -self.UTILITY_REWARD
+                rewards[agent] = -10*self.UTILITY_REWARD
                 #print(f"Agent {agent} got reward {rewards[agent]} (F)")
 
             # else:
@@ -580,7 +580,7 @@ class PeersimEnv(ParallelEnv):
         # Check if the target node is within [0, #Neighbours]
         if int(len(source_node_og_info["Q"])) < int(target_of_task_neighbourhood_index) or int(
                 target_of_task_neighbourhood_index) < 0:
-            return -self.UTILITY_REWARD, {"U": -self.UTILITY_REWARD, "D": 0, "O": 0}
+            return -10*self.UTILITY_REWARD, {"U": -10*self.UTILITY_REWARD, "D": 0, "O": 0} # I think the little shits are exploiting this...
 
         target_layer = self.get_layer(target_of_task_global_index)
         target_processing_power = self.PROCESSING_POWERS[target_layer]
@@ -637,8 +637,7 @@ class PeersimEnv(ParallelEnv):
         t_e = self.AVERAGE_TASK_INSTR / target_processing_power - self.AVERAGE_TASK_INSTR / source_processing_power
 
         t_w = min(t_w, self.UTILITY_REWARD * self.DELAY_WEIGHT["queue"])
-        t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]),
-                  -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
+        t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]), -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
         t_c = min(t_c, self.UTILITY_REWARD * self.DELAY_WEIGHT["comm"])
 
         D = t_w + t_c + t_e  # / (w_l + w_o)
@@ -666,8 +665,7 @@ class PeersimEnv(ParallelEnv):
         if self.phy_rs_term is not None:
             F = self.phy_rs_term(agent_obs) - self.phy_rs_term(agent_og_obs)
         reward += F
-        print(
-            f"Action:{source_of_task_global_index}->{target_of_task_global_index}         Reward: U:{U} | D:{D} [t_C {t_c} ; t_w {t_w} ; t_e {t_e}] | O:{O}) | F:{F}")
+        print(f"Action:{source_of_task_global_index}->{target_of_task_global_index}      Reward:{reward}  Composed of - U:{U} | D:{D} [t_C {t_c} ; t_w {t_w} ; t_e {t_e}] | O:{O}) | F:{F}")
         return (reward, {"U": U, "D": D, "O": O, "F": F})
 
     def _compute_avg_task_data(self):

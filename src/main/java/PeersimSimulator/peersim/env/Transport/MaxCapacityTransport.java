@@ -197,7 +197,7 @@ public class MaxCapacityTransport implements Transport {
         }
         if (distance(srcProps, dstProps) == 0) {
 
-            return 1L;
+            return 0L;
         }
 
         SNRCalculator snrCalc = channelTypes.get(channelTypePerLayer.get(srcLayer).get(dstLayer));
@@ -207,7 +207,7 @@ public class MaxCapacityTransport implements Transport {
         double SNR_linear = Math.pow(10, SNR_dB / 10); // [linear]
         double C_2 = W * log2(1 + SNR_linear); // Channel Capacity [bit/s]
 
-        long delay = Math.max(Math.round(T / C_2), 1);
+        long delay = Math.round(T / C_2);
         delay += (range == 1 ? min : min + CommonState.r.nextLong(range));
         return delay;
     }
