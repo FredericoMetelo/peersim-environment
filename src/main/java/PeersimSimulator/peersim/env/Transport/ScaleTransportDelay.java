@@ -47,7 +47,7 @@ public class ScaleTransportDelay implements Transport {
             EDSimulator.add(1, msg, dest, pid);
             return;
         }
-        delay = delay * scale; // removed (delay == 1) ? 1 : ...
+//        delay = delay * scale; // removed (delay == 1) ? 1 : ...
         EDSimulator.add(delay, msg, dest, pid);
     }
 
