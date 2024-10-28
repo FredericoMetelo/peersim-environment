@@ -4,6 +4,9 @@ PeersimGym, an environment to train task-offloading MARL algorithms on Edge netw
 
 This repository contains the implementation of Peersim-env. This is composed of two parts. A Gym environment python class, and
 a server that wraps the simultion of the peersim environment in a REST API allowing the passing of information to the python Gym environment.
+
+We provide some agent implementations to act as examples of agents that work on our repository in a separate [repository](https://github.com/FredericoMetelo/TaskOffloadingAgentLibrary/).
+
 # Index
 1.[How The Simulation Works](##HowTheSimulationWorks)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.1.[The Simulation Server](###TheSimulationServer)<br>
@@ -184,9 +187,16 @@ This section will focus on two things. How to set up and utilize the environment
   <a name="SetupAnaconda"></a>
 ### Setup the Anaconda environment
 I provide a yml file to automatically install the necessary dependencies, see `Setup/PeersimGym.yml`. To create an environment from this specification run:
-This environment is missing the PeersimGym module, which needs to be installed to use the environment in other projects. 
+This environment is missing the PeersimGym module, which needs to be installed to use the environment in other projects. Furthermore, a different set of reuirements is used in windows due to unavaliable packages.
+
+**Linux based systems**
 ```
 conda env create -f Setup/environement.yml
+```
+
+**Windows**
+```
+conda env create -f Setup\requirements_win.yaml
 ```
 
 After creating the environment you need to activate it. This step may need to be repeated every time you open the project
@@ -623,12 +633,15 @@ directory/folder.
 
 <a name="Bibtex"></a>
 # Bibtex
-@article{metelo2024peersimgym,
+This work is based on our paper accepted at European Conference on Machine Learning and Principles and Practice of Knowledge Discovery in Databases (ECMLPKDD 2024): https://arxiv.org/abs/2403.17637
+
+If you find this useful, consider citing:
+```
+@inproceedings{metelo2024peersimgym,
       title={PeersimGym: An Environment for Solving the Task Offloading Problem with Reinforcement Learning}, 
       author={Frederico Metelo and Stevo Racković and Pedro Ákos Costa and Cláudia Soares},
-      year={2024},
-      eprint={2403.17637},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
+      booktitle={ECML/PKDD},
+      year={2024}
 }
+```
 
