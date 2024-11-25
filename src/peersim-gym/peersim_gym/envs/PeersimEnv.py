@@ -629,10 +629,10 @@ class PeersimEnv(ParallelEnv):
 
         # Compute Delay
 
-        t_w = not_zero(w_l) * (q_l / miu_l) + not_zero(w_o) * ((q_l / miu_l) + (
+        t_w = not_zero(w_l) * (q_l * self.AVERAGE_TASK_INSTR / miu_l) + not_zero(w_o) * ((q_l * self.AVERAGE_TASK_INSTR/ miu_l) + (
                     q_o / miu_o))  # q_l/miu_l on the second term represents the time spent waiting in queue before being selected for offloading
         t_c = self._compute_delay(d_i_j, w_o)
-
+    
         # og: t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
         t_e = self.AVERAGE_TASK_INSTR / target_processing_power - self.AVERAGE_TASK_INSTR / source_processing_power
 
@@ -669,6 +669,10 @@ class PeersimEnv(ParallelEnv):
         return (reward, {"U": U, "D": D, "O": O, "F": F})
 
     def _compute_avg_task_data(self):
+        """
+        This will be updated to include to mecanisms. If MANUAL_CONFIG is true. Use the MANUAL_CORES and MANUAL_FREQS instead.
+        :return:
+        """
         task_sizes = self.config_archive["protocol.clt.T"].strip().split(",")
         acc_task_size = 0
         task_instr = self.config_archive["protocol.clt.I"].strip().split(",")
@@ -681,7 +685,7 @@ class PeersimEnv(ParallelEnv):
 
         for i in range(len(task_weights)):
             acc_weights = float(task_weights[i])
-            acc_task_instr = (float(task_instr[i]) + float(task_instr_size[i])) * int(task_weights[i])
+            acc_task_instr = (float(task_instr[i]) * float(task_instr_size[i])) * int(task_weights[i])
             acc_task_size = float(task_sizes[i]) * float(task_weights[i])
 
         return acc_task_size / acc_weights, acc_task_instr / acc_weights, task_arrival_rate
