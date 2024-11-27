@@ -9,17 +9,17 @@ import subprocess
 import os
 
 
-def run_peersim(config_path, jar_path="Environment/peersim-srv-0.0.1-SNAPSHOT.jar", output_redirect=None):
+def run_peersim(config_path, port, jar_path="Environment/peersim-srv-0.0.1-SNAPSHOT.jar", output_redirect=None):
     # subprocess.call("pwd", cwd="/home/fm/Documents/Thesis/peersim-srv")
     # os.system("java --version")
     if output_redirect is None:
-        return subprocess.Popen(['java', '-jar', f'{jar_path}', f'{config_path}'], cwd="/", stderr=subprocess.DEVNULL,
+        return subprocess.Popen(['java', '-jar', f'{jar_path}', f'{config_path}', f'--server.port={port}'], cwd="/", stderr=subprocess.DEVNULL,
                                 stdout=subprocess.DEVNULL)
     if output_redirect == "stdout":
-        return subprocess.Popen(['java', '-jar', f'{jar_path}', f'{config_path}'], cwd="/")
+        return subprocess.Popen(['java', '-jar', f'{jar_path}', f'{config_path}' f'--server.port={port}'], cwd="/")
     else:
         # log = open(output_redirect, 'w')
-        return subprocess.Popen(['java', '-jar', f'{jar_path}', f'{config_path}'], cwd="/", stderr=output_redirect,
+        return subprocess.Popen(['java', '-jar', f'{jar_path}', f'{config_path}', f'--server.port={port}'], cwd="/", stderr=output_redirect,
                                 stdout=output_redirect)
 
 
@@ -37,11 +37,11 @@ class PeersimThread(threading.Thread):
         self.current_outputfile = None
         # self.setDaemon(True)
 
-    def run(self, output_file=None):
+    def run(self, port, output_file=None):
         self.current_outputfile = None
         if not (output_file == None):
             self.current_outputfile = open(output_file, 'a+')
-        self.peersim = run_peersim(self.config_path, jar_path=self.jar_path, output_redirect=self.current_outputfile)
+        self.peersim = run_peersim(self.config_path, port, jar_path=self.jar_path, output_redirect=self.current_outputfile)
 
     def get_id(self):
         # returns id of the respective thread

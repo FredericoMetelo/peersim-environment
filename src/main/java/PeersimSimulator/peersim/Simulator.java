@@ -19,6 +19,10 @@
 package PeersimSimulator.peersim;
 
 import java.io.*;
+import java.net.ServerSocket;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import PeersimSimulator.peersim.cdsim.*;
 import PeersimSimulator.peersim.config.*;
@@ -100,17 +104,50 @@ private static int simID = UNKNOWN;
 * be {@link #CDSIM}, {@link #EDSIM} or {@link #UNKNOWN}.
 */
 public static int getSimID() {
-	
+
 	if (simID == UNKNOWN) {
 		if( CDSimulator.isConfigurationCycleDriven()){
 			simID = CDSIM;
 		}
-		else if( EDSimulator.isConfigurationEventDriven() ) {	
+		else if( EDSimulator.isConfigurationEventDriven() ) {
 			simID = EDSIM;
 		}
 	}
 	return simID;
 }
+
+
+// ----------- SpringBoot code added by me ------------------------------
+	/**
+	 * Finds the first available port from the list of ports.
+	 *
+	 * @param ports List of ports to check
+	 * @return The first available port, or -1 if no port is available
+	 */
+	private static int findAvailablePort(int[] ports) {
+		for (int port : ports) {
+			if (isPortAvailable(port)) {
+				return port;
+			}
+		}
+		return -1; // No available ports
+	}
+
+	/**
+	 * Checks if a specific port is available.
+	 *
+	 * @param port The port to check
+	 * @return True if the port is available, false otherwise
+	 */
+	private static boolean isPortAvailable(int port) {
+		try (ServerSocket serverSocket = new ServerSocket(port)) {
+			serverSocket.setReuseAddress(true);
+			return true;
+		} catch (IOException e) {
+			return false; // Port is in use or unavailable
+		}
+	}
+
 
 // ----------------------------------------------------------------------
 
@@ -153,8 +190,27 @@ public static int getSimID() {
 public static void main(String[] args)
 {
 	// Spring Boot part added by me ====================================================================================
+//	try {
+//		org.springframework.context.ConfigurableApplicationContext ctx = SpringApplication.run(Simulator.class, args);
+//	}catch(org.springframework.boot.web.server.PortInUseException e) {
+//		System.err.println("Port already in use, the launching of the simulation failed.");
+//		return;
+//	}
+	if (args.length == 0) {
+		System.err.println("No arguments provided. The application will not start.");
+		return;
+	}
+	int availablePort = 8080;
+	if (args.length >= 2 && args[1].contains("--server.port")) {
+		availablePort = Integer.parseInt(args[1].split("=")[1]);
+	}
 	try {
-		org.springframework.context.ConfigurableApplicationContext ctx = SpringApplication.run(Simulator.class, args);
+		SpringApplication app = new SpringApplication(Simulator.class);
+		Map<String, Object> defaultProperties = new HashMap<>();
+		defaultProperties.put("server.port", availablePort);
+		app.setDefaultProperties(defaultProperties);
+		app.run(args);
+		System.out.println("Application started successfully on port " + availablePort);
 	}catch(org.springframework.boot.web.server.PortInUseException e) {
 		System.err.println("Port already in use, the launching of the simulation failed.");
 		return;

@@ -81,10 +81,20 @@ STATE_PROCESSING_POWER_FIELD = "processingPower"
 STATE_FREE_SPACES_FIELD = "freeSpaces"
 
 
-def can_launch_simulation():
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-        return sock.connect_ex(('localhost', 8080)) != 0
+# def can_launch_simulation():
+#     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+#         return sock.connect_ex(('localhost', 8080)) != 0
 
+def can_launch_simulation():
+    for port in range(8080, 8090):
+            with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+                if sock.connect_ex(('localhost', port)) == 0:
+                    print(f"Port {port} is available")
+                    return port
+    return None
+def test_port_availability(port):
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+        return sock.connect_ex(('localhost', port)) == 0
 
 class PeersimEnv(ParallelEnv):
     metadata = {"render_modes": ["ansi", "human"], "render_fps": 4}
@@ -93,7 +103,7 @@ class PeersimEnv(ParallelEnv):
              phy_rs_term: Callable[[Space], float] = None):
         self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed, phy_rs_term=phy_rs_term)
 
-    def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False,
+    def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False, preferred_port=8080,
                  phy_rs_term: Callable[[Space], float] = None, fl_update_size: Callable[[Any], int] = None):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
@@ -104,15 +114,19 @@ class PeersimEnv(ParallelEnv):
         validate_simulation_type(simtype)
         self.render_mode = render_mode
         self.randomize_seed = randomize_seed
-        if not can_launch_simulation():
-            print("Simulation Failed to launch. Port 8080 is taken, please free port 8080 first.")
+        self.port = preferred_port
+        if test_port_availability(self.port):
+            print(f"Port {self.port} is not available. Trying to find a new port.")
+            self.port = can_launch_simulation()
+        if self.port is None:
+            print("Simulation Failed to launch. No ports available, please free a port in range  8080-8089 first.")
             exit(1)
         self.number_nodes = -1
         self.max_Q_size = [10, 50]  # TODO this is specified from outside.
         self.max_w = 1
 
         self.fl_update_store = FLUpdateStoreManager(fl_update_size)
-        self.url_api = "http://localhost:8080"
+        self.url_api = f"http://localhost:{self.port}"
         self.url_action_path = "/action"
         self.url_forward_path = "/forward"
         self.url_state_path = "/state"
@@ -407,7 +421,7 @@ class PeersimEnv(ParallelEnv):
             log_file = self.__log_dir + f'log_run_{self.__run_counter}.txt'
             if os.path.exists(log_file):
                 os.remove(log_file)
-        self.simulator.run(output_file=log_file)
+        self.simulator.run(port=self.port, output_file=log_file)
 
     def __get_obs(self):
         # Retrieve Observation
