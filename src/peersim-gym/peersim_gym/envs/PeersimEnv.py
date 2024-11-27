@@ -642,7 +642,7 @@ class PeersimEnv(ParallelEnv):
         U = self.UTILITY_REWARD  # * math.log(1 + w_l + w_o)
 
         # Compute Delay
-
+        q_l = (q_l - 1)  if (q_l - 1) >= 0 else 0 # Patches the considering of the task processing time twice. In t_w and in t_e
         t_w = not_zero(w_l) * (q_l * self.AVERAGE_TASK_INSTR / miu_l) + not_zero(w_o) * ((q_l * self.AVERAGE_TASK_INSTR/ miu_l) + (
                     q_o / miu_o))  # q_l/miu_l on the second term represents the time spent waiting in queue before being selected for offloading
         t_c = self._compute_delay(d_i_j, w_o)
@@ -650,9 +650,12 @@ class PeersimEnv(ParallelEnv):
         # og: t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
         t_e = self.AVERAGE_TASK_INSTR / target_processing_power - self.AVERAGE_TASK_INSTR / source_processing_power
 
-        t_w = min(t_w, self.UTILITY_REWARD * self.DELAY_WEIGHT["queue"])
-        t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]), -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
-        t_c = min(t_c, self.UTILITY_REWARD * self.DELAY_WEIGHT["comm"])
+        # t_w = min(t_w, self.UTILITY_REWARD * self.DELAY_WEIGHT["queue"])
+        # t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]), -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
+        # t_c = min(t_c, self.UTILITY_REWARD * self.DELAY_WEIGHT["comm"])
+        t_w = t_w * self.DELAY_WEIGHT["queue"]
+        t_e = t_e * self.DELAY_WEIGHT["exec"]
+        t_c = t_c * self.DELAY_WEIGHT["comm"]
 
         D = t_w + t_c + t_e  # / (w_l + w_o)
 
