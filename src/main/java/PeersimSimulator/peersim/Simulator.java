@@ -204,6 +204,7 @@ public static void main(String[] args)
 	if (args.length >= 2 && args[1].contains("--server.port")) {
 		availablePort = Integer.parseInt(args[1].split("=")[1]);
 	}
+
 	try {
 		SpringApplication app = new SpringApplication(Simulator.class);
 		Map<String, Object> defaultProperties = new HashMap<>();

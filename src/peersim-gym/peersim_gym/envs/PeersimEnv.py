@@ -85,12 +85,18 @@ STATE_FREE_SPACES_FIELD = "freeSpaces"
 #     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
 #         return sock.connect_ex(('localhost', 8080)) != 0
 
-def can_launch_simulation():
-    for port in range(8080, 8090):
-            with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-                if sock.connect_ex(('localhost', port)) == 0:
-                    print(f"Port {port} is available")
-                    return port
+def can_launch_simulation(port):
+    # for port in range(8080, 8090):
+    #         with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+    #             if sock.connect_ex(('localhost', port)) == 0:
+    #                 print(f"Port {port} is available")
+    #                 return port
+    max_attempts = 10
+    for i in range(max_attempts):
+        print(f"Trying to launch sim on port {port}. Attempt {i}")
+        if test_port_availability(port):
+            print(f"Port {port} is available")
+            return port
     return None
 def test_port_availability(port):
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
@@ -117,10 +123,11 @@ class PeersimEnv(ParallelEnv):
         self.port = preferred_port
         if test_port_availability(self.port):
             print(f"Port {self.port} is not available. Trying to find a new port.")
-            self.port = can_launch_simulation()
+            self.port = can_launch_simulation(self.port)
         if self.port is None:
             print("Simulation Failed to launch. No ports available, please free a port in range  8080-8089 first.")
             exit(1)
+
         self.number_nodes = -1
         self.max_Q_size = [10, 50]  # TODO this is specified from outside.
         self.max_w = 1
@@ -321,6 +328,7 @@ class PeersimEnv(ParallelEnv):
     def close(self):
         self.simulator.stop()
 
+
     def post_updates(self, agents, srcs, dst, updates, extra_info=None, sent_to_global=False):
         """
         (Outside of PettingZoo API)
@@ -380,14 +388,14 @@ class PeersimEnv(ParallelEnv):
         for update_uuid in r:
             self.fl_update_store.set_completed(update_uuid)
 
-    def __gen_config(self, configs, simtype, regen_seed=False):
+    def __gen_config(self, configs, simtype, regen_seed=False, config_port=8080):
         controller = []
         # Checking the configurations
         if configs is None:
             configs = {"Q_MAX": str(self.max_Q_size), "SIZE": str(self.number_nodes),
                        "random.seed": self.__gen_seed(), "HAS_CLOUD": str(self.has_cloud)}
 
-            controller, self.config_path = cg.generate_config_file(configs, simtype)
+            controller, self.config_path = cg.generate_config_file(configs, simtype, sim_port=config_port)
         elif type(configs) is dict:
             # Consistency of QMax in configs and the arguments.
             if "Q_MAX" in configs:
@@ -404,7 +412,7 @@ class PeersimEnv(ParallelEnv):
                 configs["random.seed"] = self.__gen_seed()
                 print(f'seed:{configs["random.seed"]}')
 
-            controller, self.config_path = cg.generate_config_file(configs, simtype)
+            controller, self.config_path = cg.generate_config_file(configs, simtype, sim_port=config_port)
         elif type(configs) is str:
             self.config_path = configs
             controller, self.config_archive = cg.compile_dict(configs)
