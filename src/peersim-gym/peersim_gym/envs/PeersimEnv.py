@@ -658,12 +658,12 @@ class PeersimEnv(ParallelEnv):
         # og: t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
         t_e = self.AVERAGE_TASK_INSTR / target_processing_power - self.AVERAGE_TASK_INSTR / source_processing_power
 
-        # t_w = min(t_w, self.UTILITY_REWARD * self.DELAY_WEIGHT["queue"])
-        # t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]), -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
-        # t_c = min(t_c, self.UTILITY_REWARD * self.DELAY_WEIGHT["comm"])
-        t_w = t_w * self.DELAY_WEIGHT["queue"]
-        t_e = t_e * self.DELAY_WEIGHT["exec"]
-        t_c = t_c * self.DELAY_WEIGHT["comm"]
+        t_w = min(t_w, self.UTILITY_REWARD * self.DELAY_WEIGHT["queue"])
+        t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]), -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
+        t_c = min(t_c, self.UTILITY_REWARD * self.DELAY_WEIGHT["comm"])
+        # t_w = t_w * self.DELAY_WEIGHT["queue"]
+        # t_e = t_e * self.DELAY_WEIGHT["exec"]
+        # t_c = t_c * self.DELAY_WEIGHT["comm"]
 
         D = t_w + t_c + t_e  # / (w_l + w_o)
 
