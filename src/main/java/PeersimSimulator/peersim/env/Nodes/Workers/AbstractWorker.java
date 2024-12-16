@@ -104,6 +104,9 @@ public abstract class AbstractWorker implements Worker {
     protected double energyConsumed;
     protected double costOfCommPerByte;
     protected double costOfProcessPerByte;
+    protected int failedOnArrivalToNode;
+    protected int expiredTasksInNode;
+    protected int timesOverloaded;
 
 
     public AbstractWorker(String prefix) {
@@ -114,6 +117,11 @@ public abstract class AbstractWorker implements Worker {
         tasksRecievedSinceLastCycle = 0;
         totalTasksProcessed = 0;
         totalTasksOffloaded = 0;
+
+        failedOnArrivalToNode = 0;
+        expiredTasksInNode = 0;
+        timesOverloaded = 0;
+
         current = null;
         correspondingController = null;
         active = false;
@@ -145,24 +153,32 @@ public abstract class AbstractWorker implements Worker {
         this.qMAX = qMax;
         this.layer = layer;
         this.active = true;
-        // TODO Was currently testing the behaviour of the worker activation. Need to gurarantee that
-        //  the cloud does not initialize as a DAGWorker.
     }
 
     @Override
     public void processEvent(PeersimSimulator.peersim.core.Node node, int pid, Object event) {
         if (!active) return;
+        if(this.getTotalNumberOfTasksInNode() >= this.qMAX){
+            this.wrkErrLog("OVERLOADED FROM EVENT RCV", "Overloaded before event processing");
+        }
         if (event instanceof TaskOffloadEvent ev) {
+            this.wrkDbgLog("TASK OFFLOAD RCV EVENT: taskId=" + ev.getTask().getId());
             handleTaskOffloadEvent(ev);
         } else if (event instanceof NewApplicationEvent ev) {
+            this.wrkDbgLog("APP RCV EVENT: appId=" + ev.getAppID());
              handleNewApplicationEvent(ev); // TODO this is considered overloaded when it shouldn't be overloaded.
         } else if (event instanceof TaskConcludedEvent ev) {
+            this.wrkDbgLog("TASK CONC EVENT: taskId=" + ev.getTask().getId());
             ITask finishedTask = ev.getTask();
             handleTaskConcludedEvent(node, pid, finishedTask);
         }else if(event instanceof FLUpdateEvent ev){
             handleFLUpdateEvent(ev);
         }
         // Note: Updates internal state only sends data to user later
+        if(this.getTotalNumberOfTasksInNode() >= this.qMAX){
+            this.wrkErrLog("OVERLOADED AT END OF EVENT", "Overloaded after event processing");
+        }
+
     }
 
     private void handleFLUpdateEvent(FLUpdateEvent ev) {
@@ -347,6 +363,7 @@ public abstract class AbstractWorker implements Worker {
         if (this.getTotalNumberOfTasksInNode() + app.applicationSize() > qMAX) {
             droppedLastCycle++;
             totalDropped++;
+            this.failedOnArrivalToNode++;
             wrkInfoLog(EVENT_OVERLOADED_NODE, " DroppedApp=" + app.getAppID());
             return;
         }
@@ -385,6 +402,11 @@ public abstract class AbstractWorker implements Worker {
             if (a != null && a.getDeadline() + timeAfterDeadline <= CommonState.getTime()) {
                 t.addEvent(TaskHistory.TaskEvenType.DROPPED, this.id, CommonState.getTime());
                 tasksCompletedSinceLastCycle.add(t);
+
+                droppedLastCycle++;
+                totalDropped++;
+                expiredTasksInNode++;
+
                 qiterator.remove();
                 removeApps.add(a);
                 continue;
@@ -393,6 +415,9 @@ public abstract class AbstractWorker implements Worker {
             if (l != null && l.getDeadline() + timeAfterDeadline <= CommonState.getTime()) {
                 loseTaskInformation.remove(t.getId());
                 qiterator.remove();
+                droppedLastCycle++;
+                totalDropped++;
+                expiredTasksInNode++;
                 if (current != null && Objects.equals(current.getId(), t.getId())) this.current = null;
                 continue;
             }
@@ -410,6 +435,7 @@ public abstract class AbstractWorker implements Worker {
         while (iterator.hasNext()) {
             Application app = iterator.next();
             String id = app.getAppID();
+            int appSize = app.applicationSize();
             if (managedApplications.containsKey(id)) {
                 managedApplications.remove(id);
                 Log.info("Cleaning Application(" + id + "), Node " + this.getId() + "deadline(" + app.getDeadline() + ") expired. Curr Time:" + CommonState.getTime());
@@ -732,6 +758,19 @@ public abstract class AbstractWorker implements Worker {
 
     public double getCpuFreq() {
         return cpuFreq;
+    }
+
+
+    public int getTimesOverloaded(){
+        return this.timesOverloaded;
+    }
+
+    public int failedOnArrivalToNode(){
+        return this.failedOnArrivalToNode;
+    }
+
+    public int getNoExpiredTasks(){
+        return this.expiredTasksInNode;
     }
 
     public int getQueueCapacity() {

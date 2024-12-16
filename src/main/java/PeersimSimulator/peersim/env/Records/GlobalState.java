@@ -19,6 +19,9 @@ public record GlobalState(
         List<Integer> totalTasks,
         List<Integer> isWorking,
         List<Double> energyConsumed,
+        List<Integer> timesOverloaded,
+        List<Integer> noFailedOnArrival,
+        List<Integer> noExpired,
 
         CloudInfo cloudInfo
 ) {

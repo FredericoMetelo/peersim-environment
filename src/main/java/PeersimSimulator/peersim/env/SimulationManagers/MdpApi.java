@@ -69,7 +69,6 @@ public class MdpApi implements Control {
         List<SimulationData> lsd = dtm.sendAction(a);
 
         return lsd;
-
     }
     @PostMapping("/forward")
     public List<SimulationData> forwardPost(@RequestBody List<Action> a) {

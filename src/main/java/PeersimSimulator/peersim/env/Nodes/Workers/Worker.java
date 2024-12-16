@@ -122,6 +122,13 @@ public interface Worker extends CDProtocol, EDProtocol {
     void setEnergyConsumed(double energyConsumed);
 
     double getCpuFreq();
+
+    int getTimesOverloaded();
+
+    int failedOnArrivalToNode();
+
+    int getNoExpiredTasks();
+
     int getQueueCapacity();
 
     int isWorking();

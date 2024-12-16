@@ -105,6 +105,9 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
         List<Coordinates> positions = new ArrayList<>(Network.size());
         List<Double> bandwidths = new ArrayList<>(Network.size());
         List<Double> transmissionPowers = new ArrayList<>(Network.size());
+        List<Integer> overloadedTimes = new ArrayList<>(Network.size());
+        List<Integer> droppedByExpirationOnNode = new ArrayList<>(Network.size());
+        List<Integer> droppedOnArrivalOnNode = new ArrayList<>(Network.size());
         List<Double> taskCompletionTimes = new ArrayList<>(Network.size());
         List<Integer> finishedTasks = new ArrayList<>(Network.size());
         List<Integer> droppedTasks = new ArrayList<>(Network.size());
@@ -130,13 +133,15 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
                 layers.add(worker.getLayer());
                 noCores.add(worker.getCpuNoCores());
                 energyConsumed.add(worker.getEnergyConsumed());
+                overloadedTimes.add(worker.getTimesOverloaded());
+                droppedByExpirationOnNode.add(worker.getNoExpiredTasks());
+                droppedOnArrivalOnNode.add(worker.failedOnArrivalToNode());
+
                 SDNNodeProperties props = worker.getProps();
                 positions.add(new Coordinates(props.getX(), props.getY()));
                 bandwidths.add(props.getBANDWIDTH());
                 transmissionPowers.add(props.getTRANSMISSION_POWER());
                 isWorking.add(worker.isWorking());
-
-
 
                 Client client = (Client) n.getProtocol(Client.getPid());
                 if (client == null || !client.isActive()) {
@@ -149,7 +154,7 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
             }
         }
         return new GlobalState(nodeIds, queues, processingPowers, noCores, layers, positions, bandwidths,
-                transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking, energyConsumed, cinfo);
+                transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking, energyConsumed,overloadedTimes, droppedOnArrivalOnNode, droppedByExpirationOnNode, cinfo);
     }
 
 

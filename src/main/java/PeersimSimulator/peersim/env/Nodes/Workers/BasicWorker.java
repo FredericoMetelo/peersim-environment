@@ -17,6 +17,7 @@ import PeersimSimulator.peersim.transport.Transport;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class BasicWorker extends AbstractWorker{
     public BasicWorker(String prefix) {
@@ -26,6 +27,16 @@ public class BasicWorker extends AbstractWorker{
     @Override
     public void nextCycle(Node node, int protocolID) {
         if (!active) return;
+
+        if(this.id == 1){
+            this.wrkErrLog("RAN THE CYCLE FOR 1", "RAN THE CYCLE FOR 1");
+        }
+
+        if(this.getTotalNumberOfTasksInNode() >= this.qMAX){
+            this.wrkErrLog("PROCESSING OVERLOADED", "Began processing task overloaded");
+            this.timesOverloaded++;
+        }
+
         // Advance Task processing and update status.
         double remainingProcessingPower = processingPower;
 
@@ -53,6 +64,8 @@ public class BasicWorker extends AbstractWorker{
         if (this.changedWorkerState) { // TODO Guarantee we inform neighbours. Guarantee no double offloading.
             broadcastStateChanges(node, protocolID);
         }
+        // Tally overload statistics.
+
     }
 
 // TODO Was figuring out discrepancy between the number of unprocessed tasks and the toAdd value. This should be the key
@@ -67,10 +80,11 @@ public class BasicWorker extends AbstractWorker{
         ITask offloadedTask = ev.getTask();
         offloadedTask.addEvent(TaskHistory.TaskEvenType.OFFLOADED, this.id, CommonState.getTime());
         wrkInfoLog(EVENT_TASK_OFFLOAD_RECIEVE, " taskId=" + ev.getTask().getId() + " appId="+ev.getTask().getAppID()+" originalHandler=" + ev.getTask().getOriginalHandlerID());
-        if (this.getTotalNumberOfTasksInNode() > qMAX) {
+        if (this.getTotalNumberOfTasksInNode() >= qMAX) {
             this.droppedLastCycle++;
             this.totalDropped++;
-            Log.err("Dropping Tasks(" + this.droppedLastCycle + ") Node " + this.getId() + " is Overloaded!"); // TODO
+            this.failedOnArrivalToNode++;
+            Log.err("Dropping TasksHandle(" + this.droppedLastCycle + ") Node " + this.getId() + " is Overloaded!"); // TODO
         } else {
             LoseTaskInfo lti = ev.asLoseTaskInfo();
             double rank = 0;
@@ -96,7 +110,6 @@ public class BasicWorker extends AbstractWorker{
         }
         this.resetReceived();
     }
-
 
 
 
@@ -133,22 +146,45 @@ public class BasicWorker extends AbstractWorker{
         return null;
     }
 
+    private ITask selectNextAvailableTaskNoRemove(boolean offloading) {
+        if (this.current != null && !offloading) {
+                return this.current;
+        }
+        if (!this.queue.isEmpty()) {
+        try{
+            return this.queue.first();
+        }catch (NoSuchElementException E){
+            return null;
+        }
+        }
+        if(!this.recievedApplications.isEmpty()){
+            applicationSerialization();
+            try {
+                return this.queue.pollFirst();
+            }catch(NoSuchElementException E){
+                return null;
+            }
+        }
+        return null;
+    }
+
     @Override
     public boolean offloadInstructions(int pid, OffloadInstructions offloadInstructions) {
         if(this.awaitingSerialization()) applicationSerialization();
         BasicOffloadInstructions oi = (BasicOffloadInstructions) offloadInstructions;
 
-        ITask task = this.selectNextAvailableTask(true);
-        // ngl, it's late... There is for sure a better way of implementing this. This boolean overloading the method
-        // does not look very good.
-        if(task == null) {
-            wrkInfoLog(EVENT_NO_TASK_OFFLOAD, "id="+this.getId());
-            return false;
-        }
-        // TODO this is a problem, it works because I try to leave the self in position 0 in the linkable.
-        //  It would not work with multiple SimulationManagers.
+        if (oi.getNeighbourIndex() != 0) {
+            ITask task = this.selectNextAvailableTask(true);
+            // ngl, it's late... There is for sure a better way of implementing this. This boolean overloading the method
+            // does not look very good.
+            if(task == null) {
+                wrkInfoLog(EVENT_NO_TASK_OFFLOAD, "id="+this.getId());
+                return false;
+            }
+            // TODO this is a problem, it works because I try to leave the self in position 0 in the linkable.
+            //  It would not work with multiple SimulationManagers.
 
-        if (oi.getNeighbourIndex() != 0) { // Self is always the first to be added to the linkable. And should not be changed.
+            // Self is always the first to be added to the linkable. And should not be changed.
 /*
             if(this.queue.isEmpty() ){
                 return false;
@@ -186,7 +222,10 @@ public class BasicWorker extends AbstractWorker{
             //this.current = null;
         }else{
             // oi.getNeighbourIndex() == this.getId()
-            this.tasksToBeLocallyProcessed.add(task.getId());
+            ITask task = this.selectNextAvailableTaskNoRemove(true);
+            if (task != null) {
+                this.tasksToBeLocallyProcessed.add(task.getId());
+            }
         }
         return true;
     }
