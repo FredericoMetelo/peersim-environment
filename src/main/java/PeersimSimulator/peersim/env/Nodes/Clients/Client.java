@@ -79,4 +79,7 @@ public interface Client extends CDProtocol, EDProtocol {
     int getTasksCompleted();
 
     int getDroppedTasks();
+
+//    void setAppNotTravelling();
+//    void setAppTravelling();
 }

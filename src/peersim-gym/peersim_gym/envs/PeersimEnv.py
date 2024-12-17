@@ -24,6 +24,7 @@ STATE_NO_NEIGHBOURS = "numberOfNeighbours"
 STATE_G_LAYERS = "layers"
 
 STATE_G_OVERLOADED_NODES = "overloadedNodes"
+STATE_G_OVERLOADED_NODES_SIM = "timesOverloaded"
 
 STATE_G_OCCUPANCY = "occupancy"
 
@@ -33,7 +34,8 @@ STATE_G_DROPPED_TASKS = "droppedTasks"
 STATE_G_FINISHED_TASKS = "finishedTasks"
 STATE_G_TOTAL_TASKS = "totalTasks"
 STATE_G_CONSUMED_ENERGY = "energyConsumed"
-
+STATE_G_DROPPED_BY_EXPIRED = "noExpired"
+STATE_G_DROPPED_ON_ARRIVAL = "noFailedOnArrival"
 AGENT_PREFIX = "worker_"
 
 
@@ -466,6 +468,10 @@ class PeersimEnv(ParallelEnv):
                 STATE_G_FINISHED_TASKS: extracted_data[4],
                 STATE_G_TOTAL_TASKS: extracted_data[5],
                 STATE_G_CONSUMED_ENERGY: extracted_data[6],
+                STATE_G_OVERLOADED_NODES_SIM: extracted_data[7],
+                STATE_G_DROPPED_BY_EXPIRED: extracted_data[8],
+                STATE_G_DROPPED_ON_ARRIVAL: extracted_data[9],
+
             }
 
             self._info = dbg_info
@@ -769,11 +775,16 @@ class PeersimEnv(ParallelEnv):
         response_time = global_obs[STATE_G_AVERAGE_COMPLETION_TIMES]
 
         dropped_tasks = global_obs[STATE_G_DROPPED_TASKS]
+
         finished_tasks = global_obs[STATE_G_FINISHED_TASKS]
         total_tasks = global_obs[STATE_G_TOTAL_TASKS]
         energy_consumed = global_obs[STATE_G_CONSUMED_ENERGY]
 
-        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed
+        overloaded_nodes_sim = global_obs[STATE_G_OVERLOADED_NODES_SIM]
+        dropped_by_expired = global_obs[STATE_G_DROPPED_BY_EXPIRED]
+        dropped_on_arrival = global_obs[STATE_G_DROPPED_ON_ARRIVAL]
+
+        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival
 
     def set_random_seed(self):
         seed = cg.randomize_seed(self.config_path)

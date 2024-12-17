@@ -67,7 +67,6 @@ public class MdpApi implements Control {
 
         AbstractTimeStepManager dtm = (AbstractTimeStepManager) Network.get(0).getProtocol(AbstractTimeStepManager.getPid());
         List<SimulationData> lsd = dtm.sendAction(a);
-
         return lsd;
     }
     @PostMapping("/forward")

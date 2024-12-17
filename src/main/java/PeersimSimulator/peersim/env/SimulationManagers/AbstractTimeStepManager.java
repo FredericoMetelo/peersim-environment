@@ -83,7 +83,8 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
     public State getState() {
         List<PartialState> partialStates = getPartialStates();
         GlobalState globalState = getGlobalState();
-        return new State(partialStates, globalState);
+
+        return new State(globalState, partialStates);
     }
 
 
@@ -108,12 +109,16 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
         List<Integer> overloadedTimes = new ArrayList<>(Network.size());
         List<Integer> droppedByExpirationOnNode = new ArrayList<>(Network.size());
         List<Integer> droppedOnArrivalOnNode = new ArrayList<>(Network.size());
+        List<Integer> totalReceivedByNode = new ArrayList<>(Network.size());
+        List<Integer> completedOnNode = new ArrayList<>(Network.size());
+
         List<Double> taskCompletionTimes = new ArrayList<>(Network.size());
         List<Integer> finishedTasks = new ArrayList<>(Network.size());
         List<Integer> droppedTasks = new ArrayList<>(Network.size());
         List<Integer> totalTasks = new ArrayList<>(Network.size());
         List<Integer> isWorking = new ArrayList<>(Network.size());
         List<Double> energyConsumed = new ArrayList<>(Network.size());
+
 
         CloudInfo cinfo = null;
         if(hasCloud == 1) {
@@ -136,6 +141,9 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
                 overloadedTimes.add(worker.getTimesOverloaded());
                 droppedByExpirationOnNode.add(worker.getNoExpiredTasks());
                 droppedOnArrivalOnNode.add(worker.failedOnArrivalToNode());
+                totalReceivedByNode.add(worker.getTotalReceivedTasks());
+                completedOnNode.add(worker.getTotalTasksProcessed());
+
 
                 SDNNodeProperties props = worker.getProps();
                 positions.add(new Coordinates(props.getX(), props.getY()));
@@ -153,8 +161,9 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
                 totalTasks.add(client.getTotalTasks());
             }
         }
-        return new GlobalState(nodeIds, queues, processingPowers, noCores, layers, positions, bandwidths,
-                transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking, energyConsumed,overloadedTimes, droppedOnArrivalOnNode, droppedByExpirationOnNode, cinfo);
+        return new GlobalState(nodeIds, queues, processingPowers, noCores, layers, bandwidths,
+                transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking, energyConsumed,
+                overloadedTimes, droppedOnArrivalOnNode, droppedByExpirationOnNode, totalReceivedByNode, completedOnNode, positions,  cinfo);
     }
 
 

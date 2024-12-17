@@ -1,4 +1,4 @@
-random.seed 878588394624
+random.seed 486291403135
 SCALE 10
 SIZE 8
 CYCLE 1
@@ -31,7 +31,7 @@ layersThatGetTasks 0,1,2,3
 protocol.clt.numberOfDAG 1
 protocol.clt.dagWeights 1
 protocol.clt.edges 
-protocol.clt.minDeadline 100
+protocol.clt.minDeadline 5
 protocol.clt.vertices 1
 protocol.clt.defaultCPUWorkload 2.4e+9
 protocol.clt.defaultMemoryWorkload 100
