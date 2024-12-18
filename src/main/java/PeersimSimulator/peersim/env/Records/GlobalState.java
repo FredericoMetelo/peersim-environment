@@ -23,6 +23,7 @@ public record GlobalState(
         List<Integer> noExpired,
         List<Integer> totalTasksReceived,
         List<Integer> totalTasksProcessedPerNode,
+        List<Integer> totalOffloadedTasksPerNode,
         List<Coordinates> positions,
         CloudInfo cloudInfo
 ) {

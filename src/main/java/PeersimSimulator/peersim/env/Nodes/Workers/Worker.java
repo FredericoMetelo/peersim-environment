@@ -138,4 +138,6 @@ public interface Worker extends CDProtocol, EDProtocol {
     boolean sendFLUpdate(FLUpdate update);
 
     int getTotalReceivedTasks();
+
+    int getTotalOffloadedTasks();
 }

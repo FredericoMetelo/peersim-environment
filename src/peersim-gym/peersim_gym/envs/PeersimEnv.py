@@ -36,6 +36,10 @@ STATE_G_TOTAL_TASKS = "totalTasks"
 STATE_G_CONSUMED_ENERGY = "energyConsumed"
 STATE_G_DROPPED_BY_EXPIRED = "noExpired"
 STATE_G_DROPPED_ON_ARRIVAL = "noFailedOnArrival"
+STATE_G_TOTAL_RECEIVED_PER_NODE = "totalTasksReceived"
+STATE_G_OFFLOADED_TASKS_FROM_NODE = "totalOffloadedTasksPerNode"
+STATE_G_TOTAL_FINISHED_PER_NODE = "totalTasksProcessedPerNode"
+
 AGENT_PREFIX = "worker_"
 
 
@@ -102,7 +106,8 @@ def can_launch_simulation(port):
     return None
 def test_port_availability(port):
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-        return sock.connect_ex(('localhost', port)) == 0
+        # If you can connect to the port it means that the port is already listening.
+        return sock.connect_ex(('localhost', port)) != 0
 
 class PeersimEnv(ParallelEnv):
     metadata = {"render_modes": ["ansi", "human"], "render_fps": 4}
@@ -123,7 +128,7 @@ class PeersimEnv(ParallelEnv):
         self.render_mode = render_mode
         self.randomize_seed = randomize_seed
         self.port = preferred_port
-        if test_port_availability(self.port):
+        if not test_port_availability(self.port):
             print(f"Port {self.port} is not available. Trying to find a new port.")
             self.port = can_launch_simulation(self.port)
         if self.port is None:
@@ -150,7 +155,7 @@ class PeersimEnv(ParallelEnv):
         self.config_archive = configs
         self.simtype = simtype
 
-        self.controllers = self.__gen_config(configs, simtype=simtype)
+        self.controllers = self.__gen_config(configs, simtype=simtype, config_port=self.port)
         self.number_nodes = int(self.config_archive["SIZE"] ) + int(self.config_archive["CLOUD_EXISTS"] if "CLOUD_EXISTS" in self.config_archive else 0)
         self.possible_agents = [AGENT_PREFIX + str(r) for r in self.controllers]
         self.agent_name_mapping = dict(
@@ -471,6 +476,9 @@ class PeersimEnv(ParallelEnv):
                 STATE_G_OVERLOADED_NODES_SIM: extracted_data[7],
                 STATE_G_DROPPED_BY_EXPIRED: extracted_data[8],
                 STATE_G_DROPPED_ON_ARRIVAL: extracted_data[9],
+                STATE_G_TOTAL_RECEIVED_PER_NODE: extracted_data[10],
+                STATE_G_OFFLOADED_TASKS_FROM_NODE: extracted_data[11],
+                STATE_G_TOTAL_FINISHED_PER_NODE: extracted_data[12]
 
             }
 
@@ -783,8 +791,12 @@ class PeersimEnv(ParallelEnv):
         overloaded_nodes_sim = global_obs[STATE_G_OVERLOADED_NODES_SIM]
         dropped_by_expired = global_obs[STATE_G_DROPPED_BY_EXPIRED]
         dropped_on_arrival = global_obs[STATE_G_DROPPED_ON_ARRIVAL]
+        total_tasks_received = global_obs[STATE_G_TOTAL_RECEIVED_PER_NODE]
+        offloaded_tasks_from_node = global_obs[STATE_G_OFFLOADED_TASKS_FROM_NODE]
+        finished_per_node = global_obs[STATE_G_TOTAL_FINISHED_PER_NODE]
 
-        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival
+        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node
+
 
     def set_random_seed(self):
         seed = cg.randomize_seed(self.config_path)

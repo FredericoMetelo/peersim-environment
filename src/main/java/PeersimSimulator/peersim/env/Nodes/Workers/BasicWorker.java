@@ -212,7 +212,7 @@ public class BasicWorker extends AbstractWorker{
             if (lti == null) {
                 throw new RuntimeException("Something went wrong with tracking of lose tasks with loseTaskInfo. Killing the simulation.");
             }
-
+            this.timesOffloaded++;
             wrkInfoLog("OFFLOADING TASK", "taskId=" + task.getId() + " appId=" + task.getAppID() + " originalHandler=" + task.getOriginalHandlerID() + " to=" + target.getID());
             ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                     send(

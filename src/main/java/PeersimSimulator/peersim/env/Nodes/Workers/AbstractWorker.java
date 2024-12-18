@@ -107,6 +107,7 @@ public abstract class AbstractWorker implements Worker {
     protected int failedOnArrivalToNode;
     protected int expiredTasksInNode;
     protected int timesOverloaded;
+    protected int timesOffloaded;
 
 
     public AbstractWorker(String prefix) {
@@ -116,7 +117,7 @@ public abstract class AbstractWorker implements Worker {
         totalTasksRecieved = 0;
         tasksRecievedSinceLastCycle = 0;
         totalTasksProcessed = 0;
-        totalTasksOffloaded = 0;
+        timesOffloaded = 0;
 
         failedOnArrivalToNode = 0;
         expiredTasksInNode = 0;
@@ -687,6 +688,9 @@ public abstract class AbstractWorker implements Worker {
         return this.totalTasksRecieved;
     }
 
+    public int getTotalTasksOffloaded(){
+        return this.timesOffloaded;
+    }
     public double getEnergyConsumed() {
         return energyConsumed;
     }
@@ -829,10 +833,6 @@ public abstract class AbstractWorker implements Worker {
         return totalTasksProcessed;
     }
 
-    @Override
-    public int getTotalTasksOffloaded() {
-        return totalTasksOffloaded;
-    }
 
     @Override
     public void wrkInfoLog(String event, String info) {
