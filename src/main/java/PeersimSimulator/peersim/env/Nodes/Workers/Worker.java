@@ -106,7 +106,9 @@ public interface Worker extends CDProtocol, EDProtocol {
 
     int getTotalTasksProcessed();
 
-    int getTotalTasksOffloaded();
+    int getTasksOffloadedToNode();
+
+    int getTotalTasksOffloadedFromNode();
 
     void wrkInfoLog(String event, String info);
 
@@ -139,5 +141,4 @@ public interface Worker extends CDProtocol, EDProtocol {
 
     int getTotalReceivedTasks();
 
-    int getTotalOffloadedTasks();
 }

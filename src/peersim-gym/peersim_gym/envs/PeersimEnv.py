@@ -37,8 +37,10 @@ STATE_G_CONSUMED_ENERGY = "energyConsumed"
 STATE_G_DROPPED_BY_EXPIRED = "noExpired"
 STATE_G_DROPPED_ON_ARRIVAL = "noFailedOnArrival"
 STATE_G_TOTAL_RECEIVED_PER_NODE = "totalTasksReceived"
-STATE_G_OFFLOADED_TASKS_FROM_NODE = "totalOffloadedTasksPerNode"
 STATE_G_TOTAL_FINISHED_PER_NODE = "totalTasksProcessedPerNode"
+STATE_G_OFFLOADED_TASKS_FROM_NODE = "totalTasksOffloadedFromNode"
+STATE_G_OFFLOADED_TASKS_TO_NODE = "totalTasksOffloadedToNode"
+
 
 AGENT_PREFIX = "worker_"
 
@@ -478,8 +480,8 @@ class PeersimEnv(ParallelEnv):
                 STATE_G_DROPPED_ON_ARRIVAL: extracted_data[9],
                 STATE_G_TOTAL_RECEIVED_PER_NODE: extracted_data[10],
                 STATE_G_OFFLOADED_TASKS_FROM_NODE: extracted_data[11],
-                STATE_G_TOTAL_FINISHED_PER_NODE: extracted_data[12]
-
+                STATE_G_TOTAL_FINISHED_PER_NODE: extracted_data[12],
+                STATE_G_OFFLOADED_TASKS_TO_NODE: extracted_data[13],
             }
 
             self._info = dbg_info
@@ -792,10 +794,12 @@ class PeersimEnv(ParallelEnv):
         dropped_by_expired = global_obs[STATE_G_DROPPED_BY_EXPIRED]
         dropped_on_arrival = global_obs[STATE_G_DROPPED_ON_ARRIVAL]
         total_tasks_received = global_obs[STATE_G_TOTAL_RECEIVED_PER_NODE]
-        offloaded_tasks_from_node = global_obs[STATE_G_OFFLOADED_TASKS_FROM_NODE]
         finished_per_node = global_obs[STATE_G_TOTAL_FINISHED_PER_NODE]
 
-        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node
+        offloaded_tasks_from_node = global_obs[STATE_G_OFFLOADED_TASKS_FROM_NODE]
+        tasks_offloaded_to_node = global_obs[STATE_G_OFFLOADED_TASKS_TO_NODE]
+
+        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node, tasks_offloaded_to_node
 
 
     def set_random_seed(self):

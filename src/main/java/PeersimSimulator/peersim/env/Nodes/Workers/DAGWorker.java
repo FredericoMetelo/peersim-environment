@@ -22,7 +22,7 @@ public class DAGWorker extends AbstractWorker {
     //======================================================================================================
 
 
-    // invariant: totalTasksReceived = totalTasksProcessed + totalTasksDropped + totalTasksOffloaded + getQueueSize()
+    // invariant: totalTasksReceived = totalTasksProcessed + totalTasksDropped + totalTasksOffloadedToNode + getQueueSize()
 
 
     private double minCompLoad;
