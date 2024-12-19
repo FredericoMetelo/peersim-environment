@@ -588,7 +588,25 @@ Notably, the parameters here are only relevant if the cloud is enabled in the si
     ```
     MANUAL_QMAX 10,50
     ```
-  
+## Visualizing the environment
+The environment provides three visualization modes, that can be set with the render_mode parameter. The modes are:
+- `None`: Minimum information is printed to stdout.
+- `"ascii"`: We print extra information on the state of the simulation to stdout.
+- `"human"`: We provide a visual representation of the simulation using a pygame canvas.
+
+The visualization can be set as follows:
+```python
+render_mode = None # or
+render_mode = "ascii" # or
+render_mode = "human"
+
+env = PeersimEnv(..., render_mode=render_mode, ...)
+```
+
+A video explaining the "human" rendering mode can be observed on the following video (also available in the repository as FinalVisualization.mp4):
+
+
+https://github.com/FredericoMetelo/TaskOffloadingAgentLibrary/assets/50637681/ff10c38e-7026-4199-b662-1e424fd3d43a
 ### Configuration specific to the Trace Generation integration
 -**Workload File** - This parameter specifies the path to the json file that contains the workload to be used in the simulation. 
     ```
