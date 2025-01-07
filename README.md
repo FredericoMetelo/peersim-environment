@@ -578,15 +578,15 @@ Notably, the parameters here are only relevant if the cloud is enabled in the si
     ```
 - **Ether Cores Default**: Specifies the number of cores in each node in the ether topology. The value for each layer is separated by a ','. For example, given the value '4,8', the nodes in the layer index 0 will have 4 cores and the nodes in the layer index 1 will have 8 cores.
     ```
-    MANUAL_CORES 4,8
+    MANUAL_CORES 4;8
     ```
 - **Ether Frequencies Default** Specifies the frequency of the CPU of each node in the ether topology. The value for each layer is separated by a ','. For example, given the value '1e7,3e7', the nodes in the layer index 0 will have a frequency of 1e7 instr/second and the nodes in the layer index 1 will have a frequency of 3e7 instr/second.
     ```
-    MANUAL_FREQS 1e7,3e7
+    MANUAL_FREQS 1e7;3e7
     ```
 - **Ether Q Maxes Default** Specifies the maximum queue size of each node in the ether topology. The value for each layer is separated by a ','. For example, given the value '10,50', the nodes in the layer index 0 will have a maximum queue size of 10 and the nodes in the layer index 1 will have a maximum queue size of 50.
     ```
-    MANUAL_QMAX 10,50
+    MANUAL_QMAX 10;50
     ```
 ## Visualizing the environment
 The environment provides three visualization modes, that can be set with the render_mode parameter. The modes are:
