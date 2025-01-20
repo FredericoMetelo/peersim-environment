@@ -36,6 +36,8 @@ public interface Worker extends CDProtocol, EDProtocol {
     String EVENT_ERR_NO_TARGET_PID_AVAILABLE = "NO TARGET PID ACTIVE";
     String EVENT_ERR_NO_PATH = "FL-NPTH";
     String EVENT_ERR_NO_DST = "NO-DST";
+    String EVENT_OFF_TASK_EXPIRED = "OFFLOADED TASK EXPIRED";
+    String EVENT_APPS_EXPIRED = "APPS EXPIRED";
 
     static int getPid() {
         return AbstractWorker.pid;
@@ -104,7 +106,9 @@ public interface Worker extends CDProtocol, EDProtocol {
 
     int getTotalTasksProcessed();
 
-    int getTotalTasksOffloaded();
+    int getTasksOffloadedToNode();
+
+    int getTotalTasksOffloadedFromNode();
 
     void wrkInfoLog(String event, String info);
 
@@ -122,9 +126,19 @@ public interface Worker extends CDProtocol, EDProtocol {
     void setEnergyConsumed(double energyConsumed);
 
     double getCpuFreq();
+
+    int getTimesOverloaded();
+
+    int failedOnArrivalToNode();
+
+    int getNoExpiredTasks();
+
     int getQueueCapacity();
 
     int isWorking();
 
     boolean sendFLUpdate(FLUpdate update);
+
+    int getTotalReceivedTasks();
+
 }

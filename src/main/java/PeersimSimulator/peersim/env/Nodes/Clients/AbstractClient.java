@@ -57,10 +57,17 @@ public abstract class AbstractClient implements Client {
      * List with Ids of the tasks awaiting response.
      */
     List<AppInfo> tasksAwaiting;
+    /**
+     * Measures the tasks that are travelling.
+     * This is a metadata list that is used to keep track of the tasks that are travelling. A task is travelling when it
+     * moving through the network, wither by an offload or task generation to another worker or cloud.
+     */
+    int tasksOnClientTravelling;
+
     private int tasksCompleted;
     private int totalTasks;
     private int droppedTasks;
-
+    
     public AbstractClient(String prefix) {
         pid = Configuration.getPid(prefix + "."+PAR_NAME ); //
 
@@ -196,6 +203,22 @@ public abstract class AbstractClient implements Client {
         return AbstractClient.findFirstBigger(taskCumulativeProbs, aux);
     }
 
+
+//    /**
+//     * Adds the task to the travelling queue.
+//     */
+//    public  void setAppNotTravelling(){
+//        tasksOnClientTravelling++;
+//        assert tasksOnClientTravelling >= 0;
+//    }
+//
+//    /**
+//     * Removes the task from the travelling queue.
+//     */
+//    public void setAppTravelling(){
+//        tasksOnClientTravelling--;
+//        assert tasksOnClientTravelling >= 0;
+//    }
 
 
     @Override

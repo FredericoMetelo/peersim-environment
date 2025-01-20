@@ -32,6 +32,10 @@ public class BatchWorker extends AbstractWorker{
     @Override
     public void nextCycle(Node node, int protocolID) {
         if (!active) return;
+
+        if(this.getTotalNumberOfTasksInNode() >= qMAX){
+            this.timesOverloaded++;
+        }
         // Advance Task processinnd update status.
         double remainingProcessingPower = processingPower;
         while (remainingProcessingPower > 0 && !this.idle()) {
@@ -58,6 +62,8 @@ public class BatchWorker extends AbstractWorker{
         if (this.changedWorkerState) { // TODO Guarantee we inform neighbours. Guarantee no double offloading.
             broadcastStateChanges(node, protocolID);
         }
+
+
     }
 
 
@@ -74,6 +80,7 @@ public class BatchWorker extends AbstractWorker{
         if (this.getTotalNumberOfTasksInNode() > qMAX) {
             this.droppedLastCycle++;
             this.totalDropped++;
+            this.failedOnArrivalToNode++;
             Log.err("Dropping Tasks(" + this.droppedLastCycle + ") Node " + this.getId() + " is Overloaded!"); // TODO
         } else {
             LoseTaskInfo lti = ev.asLoseTaskInfo();
@@ -201,7 +208,7 @@ public class BatchWorker extends AbstractWorker{
                 if (lti == null) {
                     throw new RuntimeException("Something went wrong with tracking of lose tasks with loseTaskInfo. Killing the simulation.");
                 }
-
+                // TODO this does not count the number of offloaded tasks yet!!!!
                 wrkInfoLog("OFFLOADING TASK", "taskId=" + task.getId() + " appId=" + task.getAppID() + " originalHandler=" + task.getOriginalHandlerID() + " to=" + target.getID());
                 ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
                         send(

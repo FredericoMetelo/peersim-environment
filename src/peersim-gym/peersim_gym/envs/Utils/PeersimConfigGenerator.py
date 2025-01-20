@@ -93,9 +93,9 @@ def rescaled_value(key, value, scale):
         return rescaled_f_string
 
 
-def generate_config_file(config_dict, simtype, explicit_lines=False):
+def generate_config_file(config_dict, simtype, explicit_lines=False, sim_port=8080):
     BASE_FILE_PATH = os.path.join(this_dir, "../configs", f"config-{simtype}-BASE.txt")
-    TARGET_FILE_PATH = os.path.join(this_dir, "../configs", "config.txt")
+    TARGET_FILE_PATH = os.path.join(this_dir, "../configs", f"config_{sim_port}.txt")
 
     print("GENERATING CONFIG FILE")
     controllers = []

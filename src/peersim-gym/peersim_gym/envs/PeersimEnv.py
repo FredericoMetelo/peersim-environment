@@ -24,6 +24,7 @@ STATE_NO_NEIGHBOURS = "numberOfNeighbours"
 STATE_G_LAYERS = "layers"
 
 STATE_G_OVERLOADED_NODES = "overloadedNodes"
+STATE_G_OVERLOADED_NODES_SIM = "timesOverloaded"
 
 STATE_G_OCCUPANCY = "occupancy"
 
@@ -33,6 +34,13 @@ STATE_G_DROPPED_TASKS = "droppedTasks"
 STATE_G_FINISHED_TASKS = "finishedTasks"
 STATE_G_TOTAL_TASKS = "totalTasks"
 STATE_G_CONSUMED_ENERGY = "energyConsumed"
+STATE_G_DROPPED_BY_EXPIRED = "noExpired"
+STATE_G_DROPPED_ON_ARRIVAL = "noFailedOnArrival"
+STATE_G_TOTAL_RECEIVED_PER_NODE = "totalTasksReceived"
+STATE_G_TOTAL_FINISHED_PER_NODE = "totalTasksProcessedPerNode"
+STATE_G_OFFLOADED_TASKS_FROM_NODE = "totalTasksOffloadedFromNode"
+STATE_G_OFFLOADED_TASKS_TO_NODE = "totalTasksOffloadedToNode"
+
 
 AGENT_PREFIX = "worker_"
 
@@ -81,10 +89,27 @@ STATE_PROCESSING_POWER_FIELD = "processingPower"
 STATE_FREE_SPACES_FIELD = "freeSpaces"
 
 
-def can_launch_simulation():
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-        return sock.connect_ex(('localhost', 8080)) != 0
+# def can_launch_simulation():
+#     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+#         return sock.connect_ex(('localhost', 8080)) != 0
 
+def can_launch_simulation(port):
+    # for port in range(8080, 8090):
+    #         with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+    #             if sock.connect_ex(('localhost', port)) == 0:
+    #                 print(f"Port {port} is available")
+    #                 return port
+    max_attempts = 10
+    for i in range(max_attempts):
+        print(f"Trying to launch sim on port {port}. Attempt {i}")
+        if test_port_availability(port):
+            print(f"Port {port} is available")
+            return port
+    return None
+def test_port_availability(port):
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+        # If you can connect to the port it means that the port is already listening.
+        return sock.connect_ex(('localhost', port)) != 0
 
 class PeersimEnv(ParallelEnv):
     metadata = {"render_modes": ["ansi", "human"], "render_fps": 4}
@@ -93,7 +118,7 @@ class PeersimEnv(ParallelEnv):
              phy_rs_term: Callable[[Space], float] = None):
         self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed, phy_rs_term=phy_rs_term)
 
-    def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False,
+    def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False, preferred_port=8080,
                  phy_rs_term: Callable[[Space], float] = None, fl_update_size: Callable[[Any], int] = None):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
@@ -104,15 +129,20 @@ class PeersimEnv(ParallelEnv):
         validate_simulation_type(simtype)
         self.render_mode = render_mode
         self.randomize_seed = randomize_seed
-        if not can_launch_simulation():
-            print("Simulation Failed to launch. Port 8080 is taken, please free port 8080 first.")
+        self.port = preferred_port
+        if not test_port_availability(self.port):
+            print(f"Port {self.port} is not available. Trying to find a new port.")
+            self.port = can_launch_simulation(self.port)
+        if self.port is None:
+            print("Simulation Failed to launch. No ports available, please free a port in range  8080-8089 first.")
             exit(1)
+
         self.number_nodes = -1
         self.max_Q_size = [10, 50]  # TODO this is specified from outside.
         self.max_w = 1
 
         self.fl_update_store = FLUpdateStoreManager(fl_update_size)
-        self.url_api = "http://localhost:8080"
+        self.url_api = f"http://localhost:{self.port}"
         self.url_action_path = "/action"
         self.url_forward_path = "/forward"
         self.url_state_path = "/state"
@@ -127,7 +157,7 @@ class PeersimEnv(ParallelEnv):
         self.config_archive = configs
         self.simtype = simtype
 
-        self.controllers = self.__gen_config(configs, simtype=simtype)
+        self.controllers = self.__gen_config(configs, simtype=simtype, config_port=self.port)
         self.number_nodes = int(self.config_archive["SIZE"] ) + int(self.config_archive["CLOUD_EXISTS"] if "CLOUD_EXISTS" in self.config_archive else 0)
         self.possible_agents = [AGENT_PREFIX + str(r) for r in self.controllers]
         self.agent_name_mapping = dict(
@@ -181,7 +211,8 @@ class PeersimEnv(ParallelEnv):
         self.UTILITY_REWARD = self.config_archive["utility_reward"]
         self.DELAY_WEIGHT = self.config_archive["delay_weight"]
         self.OVERLOAD_WEIGHT = self.config_archive["overload_weight"]
-        self.NO_OP_REWARD = self.config_archive["no_op_reward"]
+        self.NO_OP_REWARD = self.config_archive["no_op_reward"] if "no_op_reward" in self.config_archive else 0
+
         self.scale = int(self.config_archive["SCALE"])
         self.TRANSMISSION_POWER = float(self.config_archive["protocol.props.P_ti"])
         self.PATH_LOSS_CONSTANT = float(self.config_archive["protocol.props.Beta1"])
@@ -307,6 +338,7 @@ class PeersimEnv(ParallelEnv):
     def close(self):
         self.simulator.stop()
 
+
     def post_updates(self, agents, srcs, dst, updates, extra_info=None, sent_to_global=False):
         """
         (Outside of PettingZoo API)
@@ -366,14 +398,14 @@ class PeersimEnv(ParallelEnv):
         for update_uuid in r:
             self.fl_update_store.set_completed(update_uuid)
 
-    def __gen_config(self, configs, simtype, regen_seed=False):
+    def __gen_config(self, configs, simtype, regen_seed=False, config_port=8080):
         controller = []
         # Checking the configurations
         if configs is None:
             configs = {"Q_MAX": str(self.max_Q_size), "SIZE": str(self.number_nodes),
                        "random.seed": self.__gen_seed(), "HAS_CLOUD": str(self.has_cloud)}
 
-            controller, self.config_path = cg.generate_config_file(configs, simtype)
+            controller, self.config_path = cg.generate_config_file(configs, simtype, sim_port=config_port)
         elif type(configs) is dict:
             # Consistency of QMax in configs and the arguments.
             if "Q_MAX" in configs:
@@ -390,7 +422,7 @@ class PeersimEnv(ParallelEnv):
                 configs["random.seed"] = self.__gen_seed()
                 print(f'seed:{configs["random.seed"]}')
 
-            controller, self.config_path = cg.generate_config_file(configs, simtype)
+            controller, self.config_path = cg.generate_config_file(configs, simtype, sim_port=config_port)
         elif type(configs) is str:
             self.config_path = configs
             controller, self.config_archive = cg.compile_dict(configs)
@@ -407,7 +439,7 @@ class PeersimEnv(ParallelEnv):
             log_file = self.__log_dir + f'log_run_{self.__run_counter}.txt'
             if os.path.exists(log_file):
                 os.remove(log_file)
-        self.simulator.run(output_file=log_file)
+        self.simulator.run(port=self.port, output_file=log_file)
 
     def __get_obs(self):
         # Retrieve Observation
@@ -444,6 +476,13 @@ class PeersimEnv(ParallelEnv):
                 STATE_G_FINISHED_TASKS: extracted_data[4],
                 STATE_G_TOTAL_TASKS: extracted_data[5],
                 STATE_G_CONSUMED_ENERGY: extracted_data[6],
+                STATE_G_OVERLOADED_NODES_SIM: extracted_data[7],
+                STATE_G_DROPPED_BY_EXPIRED: extracted_data[8],
+                STATE_G_DROPPED_ON_ARRIVAL: extracted_data[9],
+                STATE_G_TOTAL_RECEIVED_PER_NODE: extracted_data[10],
+                STATE_G_OFFLOADED_TASKS_FROM_NODE: extracted_data[11],
+                STATE_G_TOTAL_FINISHED_PER_NODE: extracted_data[12],
+                STATE_G_OFFLOADED_TASKS_TO_NODE: extracted_data[13],
             }
 
             self._info = dbg_info
@@ -628,17 +667,20 @@ class PeersimEnv(ParallelEnv):
         U = self.UTILITY_REWARD  # * math.log(1 + w_l + w_o)
 
         # Compute Delay
-
-        t_w = not_zero(w_l) * (q_l / miu_l) + not_zero(w_o) * ((q_l / miu_l) + (
+        q_l = (q_l - 1)  if (q_l - 1) >= 0 else 0 # Patches the considering of the task processing time twice. In t_w and in t_e
+        t_w = not_zero(w_l) * (q_l * self.AVERAGE_TASK_INSTR / miu_l) + not_zero(w_o) * ((q_l * self.AVERAGE_TASK_INSTR/ miu_l) + (
                     q_o / miu_o))  # q_l/miu_l on the second term represents the time spent waiting in queue before being selected for offloading
         t_c = self._compute_delay(d_i_j, w_o)
-
+    
         # og: t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
         t_e = self.AVERAGE_TASK_INSTR / target_processing_power - self.AVERAGE_TASK_INSTR / source_processing_power
 
         t_w = min(t_w, self.UTILITY_REWARD * self.DELAY_WEIGHT["queue"])
         t_e = max(min(t_e, self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"]), -self.UTILITY_REWARD * self.DELAY_WEIGHT["exec"])
         t_c = min(t_c, self.UTILITY_REWARD * self.DELAY_WEIGHT["comm"])
+        # t_w = t_w * self.DELAY_WEIGHT["queue"]
+        # t_e = t_e * self.DELAY_WEIGHT["exec"]
+        # t_c = t_c * self.DELAY_WEIGHT["comm"]
 
         D = t_w + t_c + t_e  # / (w_l + w_o)
 
@@ -669,6 +711,10 @@ class PeersimEnv(ParallelEnv):
         return (reward, {"U": U, "D": D, "O": O, "F": F})
 
     def _compute_avg_task_data(self):
+        """
+        This will be updated to include to mecanisms. If MANUAL_CONFIG is true. Use the MANUAL_CORES and MANUAL_FREQS instead.
+        :return:
+        """
         task_sizes = self.config_archive["protocol.clt.T"].strip().split(",")
         acc_task_size = 0
         task_instr = self.config_archive["protocol.clt.I"].strip().split(",")
@@ -681,7 +727,7 @@ class PeersimEnv(ParallelEnv):
 
         for i in range(len(task_weights)):
             acc_weights = float(task_weights[i])
-            acc_task_instr = (float(task_instr[i]) + float(task_instr_size[i])) * int(task_weights[i])
+            acc_task_instr = (float(task_instr[i]) * float(task_instr_size[i])) * int(task_weights[i])
             acc_task_size = float(task_sizes[i]) * float(task_weights[i])
 
         return acc_task_size / acc_weights, acc_task_instr / acc_weights, task_arrival_rate
@@ -740,11 +786,22 @@ class PeersimEnv(ParallelEnv):
         response_time = global_obs[STATE_G_AVERAGE_COMPLETION_TIMES]
 
         dropped_tasks = global_obs[STATE_G_DROPPED_TASKS]
+
         finished_tasks = global_obs[STATE_G_FINISHED_TASKS]
         total_tasks = global_obs[STATE_G_TOTAL_TASKS]
         energy_consumed = global_obs[STATE_G_CONSUMED_ENERGY]
 
-        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed
+        overloaded_nodes_sim = global_obs[STATE_G_OVERLOADED_NODES_SIM]
+        dropped_by_expired = global_obs[STATE_G_DROPPED_BY_EXPIRED]
+        dropped_on_arrival = global_obs[STATE_G_DROPPED_ON_ARRIVAL]
+        total_tasks_received = global_obs[STATE_G_TOTAL_RECEIVED_PER_NODE]
+        finished_per_node = global_obs[STATE_G_TOTAL_FINISHED_PER_NODE]
+
+        offloaded_tasks_from_node = global_obs[STATE_G_OFFLOADED_TASKS_FROM_NODE]
+        tasks_offloaded_to_node = global_obs[STATE_G_OFFLOADED_TASKS_TO_NODE]
+
+        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node, tasks_offloaded_to_node
+
 
     def set_random_seed(self):
         seed = cg.randomize_seed(self.config_path)

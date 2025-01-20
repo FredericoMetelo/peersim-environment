@@ -327,9 +327,9 @@ public abstract class AbstractController implements Controller {
             totalTasksRecieved.add(w.getTotalTasksRecieved());
             tasksRecievedSinceLastCycle.add(w.getTasksRecievedSinceLastCycle());
             totalTasksProcessed.add(w.getTotalTasksProcessed());
-            totalTasksOffloaded.add(w.getTotalTasksOffloaded());
+            totalTasksOffloaded.add(w.getTotalTasksOffloadedFromNode());
             workerInvariant.add(
-                    w.getTotalTasksRecieved() == w.getTotalDropped() + w.getTotalTasksProcessed() + w.getTotalTasksOffloaded() + w.getTotalNumberOfTasksInNode()
+                    w.getTotalTasksRecieved() == w.getTotalDropped() + w.getTotalTasksProcessed() + w.getTotalTasksOffloadedFromNode() + w.getTotalNumberOfTasksInNode()
             );
         }
         return new DebugInfo(this.selectedNode,

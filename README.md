@@ -316,6 +316,9 @@ The global configurations encompass six domains: Global Configurations, Worker-s
     ```
     random.seed 1234567890
     ```
+- **Simulaiton Scaling** To allow a finer grained time-scale we permit a re-scaling parameter that will convert each simulation cycle into `SCALE*CYCLE`. All the time-dependent properties of the simulation except cycle are rescaled as well. At it's core, the scaling parameter allows events that would happen at the same time to be more separated in time.
+  ```SCALE 10```
+
 <a name="ConfiguringTheController"></a>
 #### Configurations of the DiscreteTimeStepManager and PettingZoo environment
 - **Utility Reward..** a parameter of the reward function acts as a weight in the expression that computes the utility of a reward. This parameter receives an int. It is directly used by the environment and not the simulation.

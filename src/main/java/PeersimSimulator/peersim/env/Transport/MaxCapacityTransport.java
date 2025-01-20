@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class MaxCapacityTransport implements Transport {
     /**
      * String name of the parameter used to configure the minimum latency.
@@ -37,10 +38,11 @@ public class MaxCapacityTransport implements Transport {
     protected static final String PAR_BANDWIDTH = "B";
 
     protected static final String PAR_RANDOMIZETOPOLOGY = "RANDOMIZETOPOLOGY";
+    protected static final String PAR_MANUAL_CONFIG = "MANUAL_CONFIG";
     protected static final String PAR_NO_LAYERS= "NO_LAYERS";
 
     protected final boolean RANDOMIZETOPOLOGY;
-
+    protected final boolean MANUAL_CONFIG;
     // ====== End of original class by peersim ======
     protected static int pid;
     protected static final String PAR_NAME = "name";
@@ -67,6 +69,7 @@ public class MaxCapacityTransport implements Transport {
         pid = Configuration.getPid(prefix + "." + PAR_NAME);
         int no_layers = Configuration.getInt(PAR_NO_LAYERS);
         RANDOMIZETOPOLOGY = Configuration.getBoolean(PAR_RANDOMIZETOPOLOGY, true);
+        MANUAL_CONFIG = Configuration.getBoolean(PAR_MANUAL_CONFIG, false);
         BANDWIDTH = Configuration.getDouble( PROPERTY_PROTOCOL + "." + PAR_BANDWIDTH, 2); // 2Mhz
         min = Configuration.getLong(prefix + "." + PAR_MINDELAY);
         long max = Configuration.getLong(prefix + "." + PAR_MAXDELAY,min);
@@ -91,17 +94,19 @@ public class MaxCapacityTransport implements Transport {
      */
     private List<List<Integer>> getChannelTypeBetweenLayers(String channelTypePerLayer) {
         List<List<Integer>> channelTypePerLayerList = new ArrayList<>();
-        if(RANDOMIZETOPOLOGY){
-            for(int i = 0; i< Network.size(); i++){
+        if(RANDOMIZETOPOLOGY && !MANUAL_CONFIG){
+            String[] layers = channelTypePerLayer.split(";");
+
+            for(int i = 0; i < layers.length; i++){
                 List<Integer> channelTypeList = new ArrayList<>();
 //                Linkable l = (Linkable) Network.get(i).getProtocol(FastConfig.getLinkable(CommonState.getPid()));
 //                int l_pos = 0;
-                for(int j = 0; j< Network.size(); j++){
+                for(int j = 0; j < layers.length; j++){
                     channelTypeList.add(0); // In random mode, everything communicates through the same channel type.
                 }
                 channelTypePerLayerList.add(channelTypeList);
             }
-        }
+        }else{
         String[] layers = channelTypePerLayer.split(";");
         for (String layer : layers) {
             String[] channelTypes = layer.split(",");
@@ -110,6 +115,7 @@ public class MaxCapacityTransport implements Transport {
                 channelTypeList.add(Integer.parseInt(channelType));
             }
             channelTypePerLayerList.add(channelTypeList);
+        }
         }
         return channelTypePerLayerList;
     }

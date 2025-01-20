@@ -22,7 +22,7 @@ public class DAGWorker extends AbstractWorker {
     //======================================================================================================
 
 
-    // invariant: totalTasksReceived = totalTasksProcessed + totalTasksDropped + totalTasksOffloaded + getQueueSize()
+    // invariant: totalTasksReceived = totalTasksProcessed + totalTasksDropped + totalTasksOffloadedToNode + getQueueSize()
 
 
     private double minCompLoad;
@@ -78,6 +78,11 @@ public class DAGWorker extends AbstractWorker {
     @Override
     public void nextCycle(Node node, int protocolID) {
         if (!active) return;
+
+        if(this.getTotalNumberOfTasksInNode() >= qMAX){
+            this.timesOverloaded++;
+        }
+
         // Advance Task processing and update status.
         double remainingProcessingPower = processingPower;
         while (remainingProcessingPower > 0 && !this.idle()) {
@@ -146,6 +151,7 @@ public class DAGWorker extends AbstractWorker {
         if (this.getTotalNumberOfTasksInNode() > qMAX) {
             this.droppedLastCycle++;
             this.totalDropped++;
+            this.failedOnArrivalToNode++;
             Log.err("Dropping Tasks(" + this.droppedLastCycle + ") Node " + this.getId() + " is Overloaded!"); // TODO
         } else {
             LoseTaskInfo lti = ev.asLoseTaskInfo();

@@ -3,7 +3,6 @@ package PeersimSimulator.peersim.env.SimulationManagers;
 import PeersimSimulator.peersim.cdsim.CDProtocol;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
-import PeersimSimulator.peersim.core.CommonState;
 import PeersimSimulator.peersim.core.Linkable;
 import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.core.Node;
@@ -83,7 +82,8 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
     public State getState() {
         List<PartialState> partialStates = getPartialStates();
         GlobalState globalState = getGlobalState();
-        return new State(partialStates, globalState);
+
+        return new State(globalState, partialStates);
     }
 
 
@@ -105,6 +105,14 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
         List<Coordinates> positions = new ArrayList<>(Network.size());
         List<Double> bandwidths = new ArrayList<>(Network.size());
         List<Double> transmissionPowers = new ArrayList<>(Network.size());
+        List<Integer> overloadedTimes = new ArrayList<>(Network.size());
+        List<Integer> droppedByExpirationOnNode = new ArrayList<>(Network.size());
+        List<Integer> droppedOnArrivalOnNode = new ArrayList<>(Network.size());
+        List<Integer> totalReceivedByNode = new ArrayList<>(Network.size());
+        List<Integer> completedOnNode = new ArrayList<>(Network.size());
+        List<Integer> totalOffloadedTasksFromNode = new ArrayList<>(Network.size());
+        List<Integer> tasksOffloadedToNode = new ArrayList<>(Network.size());
+
         List<Double> taskCompletionTimes = new ArrayList<>(Network.size());
         List<Integer> finishedTasks = new ArrayList<>(Network.size());
         List<Integer> droppedTasks = new ArrayList<>(Network.size());
@@ -130,13 +138,19 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
                 layers.add(worker.getLayer());
                 noCores.add(worker.getCpuNoCores());
                 energyConsumed.add(worker.getEnergyConsumed());
+                overloadedTimes.add(worker.getTimesOverloaded());
+                droppedByExpirationOnNode.add(worker.getNoExpiredTasks());
+                droppedOnArrivalOnNode.add(worker.failedOnArrivalToNode());
+                totalReceivedByNode.add(worker.getTotalReceivedTasks());
+                completedOnNode.add(worker.getTotalTasksProcessed());
+                totalOffloadedTasksFromNode.add(worker.getTotalTasksOffloadedFromNode());
+                tasksOffloadedToNode.add(worker.getTasksOffloadedToNode());
+
                 SDNNodeProperties props = worker.getProps();
                 positions.add(new Coordinates(props.getX(), props.getY()));
                 bandwidths.add(props.getBANDWIDTH());
                 transmissionPowers.add(props.getTRANSMISSION_POWER());
                 isWorking.add(worker.isWorking());
-
-
 
                 Client client = (Client) n.getProtocol(Client.getPid());
                 if (client == null || !client.isActive()) {
@@ -148,8 +162,9 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
                 totalTasks.add(client.getTotalTasks());
             }
         }
-        return new GlobalState(nodeIds, queues, processingPowers, noCores, layers, positions, bandwidths,
-                transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking, energyConsumed, cinfo);
+        return new GlobalState(nodeIds, queues, processingPowers, noCores, layers, bandwidths,
+                transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking, energyConsumed,
+                overloadedTimes, droppedOnArrivalOnNode, droppedByExpirationOnNode, totalReceivedByNode, completedOnNode, totalOffloadedTasksFromNode, tasksOffloadedToNode, positions,  cinfo);
     }
 
 

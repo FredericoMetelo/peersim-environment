@@ -97,9 +97,9 @@ if __name__ == "__main__":
         "protocol.props.P_ti": "20",
 
     }
-    randomize_seed = True
+    randomize_seed = False
 
-    env = PeersimEnv(configs=configs, simtype="basic", randomize_seed=randomize_seed, log_dir="stdout", render_mode="human")
+    env = PeersimEnv(configs="/home/fm/IdeaProjects/peersim-environment/src/peersim-gym/peersim_gym/envs/configs/config_8080.txt", preferred_port=8081, simtype="basic-workload", randomize_seed=randomize_seed, log_dir="stdout", render_mode="human")
     # env = PeersimEnv(
     #     configs="/home/fm/IdeaProjects/peersim-environment/src/peersim-gym/peersim_gym/envs/configs/config.txt",
     #     simtype="basic", randomize_seed=randomize_seed, render_mode="human")
@@ -151,3 +151,4 @@ if __name__ == "__main__":
             # print(r)
             observations, rewards, terminations, truncations, infos = env.step(actions)
             print(rewards)
+
