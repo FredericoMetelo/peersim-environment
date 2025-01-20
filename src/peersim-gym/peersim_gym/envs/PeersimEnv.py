@@ -211,7 +211,8 @@ class PeersimEnv(ParallelEnv):
         self.UTILITY_REWARD = self.config_archive["utility_reward"]
         self.DELAY_WEIGHT = self.config_archive["delay_weight"]
         self.OVERLOAD_WEIGHT = self.config_archive["overload_weight"]
-        self.NO_OP_REWARD = self.config_archive["no_op_reward"]
+        self.NO_OP_REWARD = self.config_archive["no_op_reward"] if "no_op_reward" in self.config_archive else 0
+
         self.scale = int(self.config_archive["SCALE"])
         self.TRANSMISSION_POWER = float(self.config_archive["protocol.props.P_ti"])
         self.PATH_LOSS_CONSTANT = float(self.config_archive["protocol.props.Beta1"])
