@@ -578,17 +578,35 @@ Notably, the parameters here are only relevant if the cloud is enabled in the si
     ```
 - **Ether Cores Default**: Specifies the number of cores in each node in the ether topology. The value for each layer is separated by a ','. For example, given the value '4,8', the nodes in the layer index 0 will have 4 cores and the nodes in the layer index 1 will have 8 cores.
     ```
-    MANUAL_CORES 4,8
+    MANUAL_CORES 4;8
     ```
 - **Ether Frequencies Default** Specifies the frequency of the CPU of each node in the ether topology. The value for each layer is separated by a ','. For example, given the value '1e7,3e7', the nodes in the layer index 0 will have a frequency of 1e7 instr/second and the nodes in the layer index 1 will have a frequency of 3e7 instr/second.
     ```
-    MANUAL_FREQS 1e7,3e7
+    MANUAL_FREQS 1e7;3e7
     ```
 - **Ether Q Maxes Default** Specifies the maximum queue size of each node in the ether topology. The value for each layer is separated by a ','. For example, given the value '10,50', the nodes in the layer index 0 will have a maximum queue size of 10 and the nodes in the layer index 1 will have a maximum queue size of 50.
     ```
-    MANUAL_QMAX 10,50
+    MANUAL_QMAX 10;50
     ```
-  
+## Visualizing the environment
+The environment provides three visualization modes, that can be set with the render_mode parameter. The modes are:
+- `None`: Minimum information is printed to stdout.
+- `"ascii"`: We print extra information on the state of the simulation to stdout.
+- `"human"`: We provide a visual representation of the simulation using a pygame canvas.
+
+The visualization can be set as follows:
+```python
+render_mode = None # or
+render_mode = "ascii" # or
+render_mode = "human"
+
+env = PeersimEnv(..., render_mode=render_mode, ...)
+```
+
+A video explaining the "human" rendering mode can be observed on the following video (also available in the repository as FinalVisualization.mp4):
+
+
+https://github.com/FredericoMetelo/TaskOffloadingAgentLibrary/assets/50637681/ff10c38e-7026-4199-b662-1e424fd3d43a
 ### Configuration specific to the Trace Generation integration
 -**Workload File** - This parameter specifies the path to the json file that contains the workload to be used in the simulation. 
     ```
