@@ -28,9 +28,9 @@ public class BasicWorker extends AbstractWorker{
     public void nextCycle(Node node, int protocolID) {
         if (!active) return;
 
-        if(this.id == 1){
-            this.wrkErrLog("RAN THE CYCLE FOR 1", "RAN THE CYCLE FOR 1");
-        }
+//        if(this.id == 1){
+//            this.wrkErrLog("RAN THE CYCLE FOR 1", "RAN THE CYCLE FOR 1");
+//        }
 
         if(this.getTotalNumberOfTasksInNode() >= this.qMAX){
             this.wrkErrLog("PROCESSING OVERLOADED", "Began processing task overloaded");

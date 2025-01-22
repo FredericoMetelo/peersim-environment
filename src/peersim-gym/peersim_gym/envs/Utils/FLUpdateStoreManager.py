@@ -47,6 +47,15 @@ class FLUpdateStoreManager:
             return size
         # 2. Check if it's a pytorch gradients list, only can accept lists in this mode.
         elif isinstance(update, list):
+            # List of models
+            test_mode = [isinstance(m, OrderedDict) for m in update]
+            if any(test_mode):
+                size = 0
+                for model in update:
+                    for key in model.keys():
+                        size += model[key].numel() * model[key].element_size()
+                return size
+            # List of tensors
             size = 0
             for i in range(len(update)):
                 size += update[i].numel() * update[i].element_size()

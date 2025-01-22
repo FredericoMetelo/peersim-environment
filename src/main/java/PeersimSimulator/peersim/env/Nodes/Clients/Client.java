@@ -5,6 +5,8 @@ import PeersimSimulator.peersim.core.Node;
 import PeersimSimulator.peersim.edsim.EDProtocol;
 import PeersimSimulator.peersim.env.Tasks.Application;
 
+import java.util.List;
+
 public interface Client extends CDProtocol, EDProtocol {
 
     // PARAMETER NAMES ==========================================================
@@ -79,6 +81,8 @@ public interface Client extends CDProtocol, EDProtocol {
     int getTasksCompleted();
 
     int getDroppedTasks();
+
+    void setSchedules(String schedule);
 
 //    void setAppNotTravelling();
 //    void setAppTravelling();

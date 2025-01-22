@@ -6,6 +6,7 @@ import PeersimSimulator.peersim.core.Network;
 import PeersimSimulator.peersim.env.Nodes.Workers.WorkerInitializer;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class ClientInitializer  implements Control {
     // ------------------------------------------------------------------------
@@ -32,6 +33,8 @@ public class ClientInitializer  implements Control {
 
     private static final String LAYERS_THAT_GET_TASKS = "layersThatGetTasks";
 
+    protected static final String PAR_SCHEDULE = "schedules";
+
     // ------------------------------------------------------------------------
     // Fields
     // ------------------------------------------------------------------------
@@ -45,7 +48,7 @@ public class ClientInitializer  implements Control {
 
     private final int[] layers;
     private final int[] clientLayers;
-
+    List<String> schedules;
     // ------------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------------
@@ -66,6 +69,13 @@ public class ClientInitializer  implements Control {
 
         String[] _clientLayers = Configuration.getString(LAYERS_THAT_GENERATE_TASKS).split(",");
         clientLayers = Arrays.stream(_clientLayers).mapToInt(Integer::parseInt).toArray();
+
+        String[] schedules = Configuration.getString(PAR_SCHEDULE).split(";");
+        this.schedules = Arrays.asList(schedules);
+
+        if (schedules.length != layersThatGetTasks.length) {
+            throw new IllegalArgumentException("The number of schedules must be equal to the number of layersThatGetTasks");
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -82,6 +92,7 @@ public class ClientInitializer  implements Control {
         int base = 0;
         for( int layer = 0 ; layer < layers.length; layer++) {
             int l = layer;
+            int schedule = 0;
             if (Arrays.stream(clientLayers).anyMatch(x -> x == l)) {
                 // TODO need to guarantee that if the task production is for the node only, and the worker in this node
                 //  does not get tasks, then the client should not be active.
@@ -91,6 +102,8 @@ public class ClientInitializer  implements Control {
                         c.setActive(false);
                     }else {
                         c.setActive(true);
+                        c.setSchedules(schedules.get(schedule));
+                        schedule++;
                     }
                     c.setId(i);
                     // Set other Variables like CPU speed and others here.

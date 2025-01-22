@@ -10,7 +10,6 @@ import PeersimSimulator.peersim.env.Nodes.Events.NewApplicationEvent;
 import PeersimSimulator.peersim.env.Nodes.Workers.Worker;
 import PeersimSimulator.peersim.env.Nodes.Workers.WorkerInitializer;
 import PeersimSimulator.peersim.env.Tasks.Application;
-import PeersimSimulator.peersim.env.Tasks.Task;
 import PeersimSimulator.peersim.env.Util.Log;
 import PeersimSimulator.peersim.transport.Transport;
 
@@ -44,7 +43,9 @@ public abstract class AbstractClient implements Client {
 
     protected final int[] layers;
     protected int numberOfTasks;
-    protected final double TASK_ARRIVAL_RATE;
+    protected Schedule schedule;
+
+    protected double taskArrivalRate;
 
     private final int[] layersThatGetTasks;
 
@@ -74,7 +75,7 @@ public abstract class AbstractClient implements Client {
         // Read Constants
         minDeadline = Configuration.getInt(prefix + "." + PAR_MIN_DEADLINE, DEFAULT_MAX_DEADLINE);
         minDeadline = (minDeadline <= 0) ? Integer.MAX_VALUE : minDeadline;
-        TASK_ARRIVAL_RATE = Configuration.getDouble( prefix + "." + PAR_TASKARRIVALRATE, DEFAULT_TASKARRIVALRATE );
+        taskArrivalRate = Configuration.getDouble( prefix + "." + PAR_TASKARRIVALRATE, DEFAULT_TASKARRIVALRATE );
         numberOfTasks = Configuration.getInt( prefix + "." + PAR_NO_TASKS, DEFAULT_NUMBEROFTASKS);
         String[] _layers = Configuration.getString(WorkerInitializer.PAR_NO_NODES_PER_LAYERS).split(",");
         layers = Arrays.stream(_layers).mapToInt(Integer::parseInt).toArray();
@@ -159,6 +160,14 @@ public abstract class AbstractClient implements Client {
         // might be to clean up dropped tasks whenever a task completes. Because tasksAwaiting is a list, the older tasks
         // will be at the start of the list and the newer ones at the end. So by cleaning up the start of the list we
         // will get the benefits of making the tasksAwaiting list smaller and also get the droppedTasks count.
+        double oldTA = taskArrivalRate;
+        taskArrivalRate = schedule.getCurrentTaskArrivalRate();
+        Long curr = nextArrival.get(0);
+        Long next = Math.round(CommonState.getTime() + selectNextTime());
+        // Reschedule the next task arrival. If the current task arrival would have the task arrive sooner than the current arrival time;
+        if (oldTA != taskArrivalRate && next < curr) {
+            nextArrival.set(0, next);
+        }
     }
 
     private void sendTaskAndDecideNextEventTime(Node node, Linkable linkable, int i) {
@@ -251,11 +260,16 @@ public abstract class AbstractClient implements Client {
              Note: The task arrival rate of this poisson process is lambda.
          */
         // If Im expecting more tasks then time between them must be smaller! Capped at 1 task per time-step though.
-        double time = (-Math.log(CommonState.r.nextDouble()) / (TASK_ARRIVAL_RATE/scale)) ;
+        double time = (-Math.log(CommonState.r.nextDouble()) / (taskArrivalRate /scale)) ;
         return time;
     }
 
     private void initTaskManagement(int degree) {
+        if (schedule == null)
+            throw new RuntimeException("Schedule is null. This should not happen.");
+        if(!schedule.isStarted())
+            schedule.start();
+
         nextArrival = new ArrayList<Long>(degree);
         amountToGenerate = new ArrayList<>(degree);
         for (int i = 0; i < degree; i++) {
@@ -263,6 +277,7 @@ public abstract class AbstractClient implements Client {
             this.amountToGenerate.add(1); // .add((int) Math.max(1/time, 1));
             nextArrival.add(Math.round(time));
         }
+
     }
 
     public void clientInit(){
@@ -368,5 +383,84 @@ public abstract class AbstractClient implements Client {
             this.deadline = deadline;
         }
 
+    }
+
+    @Override
+    public void setSchedules(String schedule) {
+        this.schedule = new Schedule(schedule); // Started inside the constructor.
+        this.taskArrivalRate = this.schedule.getCurrentTaskArrivalRate();
+
+    }
+
+    private class Schedule{
+        Queue<ScheduleEntry> scheduleEntries;
+        ScheduleEntry currentEntry;
+        int timeInEntry;
+
+        public Schedule(String schedule){
+            scheduleEntries = new LinkedList<>();
+            currentEntry = null;
+            timeInEntry = 0;
+            String[] entries = schedule.split(",");
+            for (String entry : entries) {
+                String[] entryData = entry.split("-");
+                addEntry(Double.parseDouble(entryData[0]), Integer.parseInt(entryData[1]));
+            }
+        }
+
+        public Schedule() {
+            scheduleEntries = new LinkedList<>();
+            currentEntry = null;
+            timeInEntry = 0;
+        }
+
+        private void addEntry(double taskArrivalRate, int time){
+            scheduleEntries.add(new ScheduleEntry(taskArrivalRate, time));
+            if (!isStarted()){
+                start();
+            }
+        }
+        public void start(){
+            currentEntry = scheduleEntries.poll();
+            timeInEntry = 0;
+        }
+        public boolean isStarted(){
+            return currentEntry != null;
+        }
+        public double getCurrentTaskArrivalRate(){
+            /**
+             * Returns the current task arrival rate given the time. This function should be called every time step.
+             * If the time in the current entry is greater than the time in the entry, then the current entry is updated.
+             */
+            timeInEntry++;
+            if (timeInEntry >= currentEntry.time && !scheduleEntries.isEmpty()){
+                currentEntry = next();
+                timeInEntry = 0;
+            }
+            return currentEntry.taskArrivalRate;
+        }
+
+        public int getCurrentTime(){
+            return currentEntry.time;
+        }
+
+        private boolean hasNext(){
+            return currentEntry != null;
+        }
+
+        private ScheduleEntry next(){
+            return scheduleEntries.poll();
+        }
+
+
+    }
+    private class ScheduleEntry{
+        double taskArrivalRate;
+        int time;
+
+        public ScheduleEntry(double taskArrivalRate, int time) {
+            this.taskArrivalRate = taskArrivalRate;
+            this.time = time;
+        }
     }
 }
