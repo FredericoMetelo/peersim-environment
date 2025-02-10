@@ -1,5 +1,6 @@
 package PeersimSimulator.peersim.env.Nodes.Clients;
 
+import PeersimSimulator.peersim.Simulator;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
 import PeersimSimulator.peersim.core.CommonState;
@@ -395,7 +396,7 @@ public abstract class AbstractClient implements Client {
     private class Schedule{
         Queue<ScheduleEntry> scheduleEntries;
         ScheduleEntry currentEntry;
-        int timeInEntry;
+        long timeInEntry;
 
         public Schedule(String schedule){
             scheduleEntries = new LinkedList<>();
@@ -404,7 +405,7 @@ public abstract class AbstractClient implements Client {
             String[] entries = schedule.split(",");
             for (String entry : entries) {
                 String[] entryData = entry.split("-");
-                addEntry(Double.parseDouble(entryData[0]), Integer.parseInt(entryData[1]));
+                addEntry(Double.parseDouble(entryData[0]), Integer.parseInt(entryData[1]) );
             }
         }
 
@@ -432,10 +433,12 @@ public abstract class AbstractClient implements Client {
              * Returns the current task arrival rate given the time. This function should be called every time step.
              * If the time in the current entry is greater than the time in the entry, then the current entry is updated.
              */
-            timeInEntry++;
-            if (timeInEntry >= currentEntry.time && !scheduleEntries.isEmpty()){
+//            timeInEntry++;
+            long currTime = CommonState.getTime();
+            if (currTime >= currentEntry.time + timeInEntry && !scheduleEntries.isEmpty()){
                 currentEntry = next();
-                timeInEntry = 0;
+                timeInEntry = CommonState.getTime();
+                cltInfoLog("SCHEDULE_CHANGE", "client="+ id +" time=" + currTime + " newRate=" + currentEntry.taskArrivalRate);
             }
             return currentEntry.taskArrivalRate;
         }
@@ -461,6 +464,14 @@ public abstract class AbstractClient implements Client {
         public ScheduleEntry(double taskArrivalRate, int time) {
             this.taskArrivalRate = taskArrivalRate;
             this.time = time;
+        }
+
+        @Override
+        public String toString() {
+            return "ScheduleEntry{" +
+                    "taskArrivalRate=" + taskArrivalRate +
+                    ", time=" + time +
+                    '}';
         }
     }
 }

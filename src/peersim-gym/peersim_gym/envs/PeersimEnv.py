@@ -106,6 +106,7 @@ def can_launch_simulation(port):
             print(f"Port {port} is available")
             return port
     return None
+
 def test_port_availability(port):
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
         # If you can connect to the port it means that the port is already listening.
@@ -133,6 +134,7 @@ class PeersimEnv(ParallelEnv):
         if not test_port_availability(self.port):
             print(f"Port {self.port} is not available. Trying to find a new port.")
             self.port = can_launch_simulation(self.port)
+
         if self.port is None:
             print("Simulation Failed to launch. No ports available, please free a port in range  8080-8089 first.")
             exit(1)
@@ -143,6 +145,7 @@ class PeersimEnv(ParallelEnv):
 
         self.fl_update_store = FLUpdateStoreManager(fl_update_size)
         self.url_api = f"http://localhost:{self.port}"
+        print("API URL: " + self.url_api)
         self.url_action_path = "/action"
         self.url_forward_path = "/forward"
         self.url_state_path = "/state"
@@ -158,6 +161,8 @@ class PeersimEnv(ParallelEnv):
         self.simtype = simtype
 
         self.controllers = self.__gen_config(configs, simtype=simtype, config_port=self.port)
+        print(f"Config paht: {self.config_path}")
+
         self.number_nodes = int(self.config_archive["SIZE"] ) + int(self.config_archive["CLOUD_EXISTS"] if "CLOUD_EXISTS" in self.config_archive else 0)
         self.possible_agents = [AGENT_PREFIX + str(r) for r in self.controllers]
         self.agent_name_mapping = dict(

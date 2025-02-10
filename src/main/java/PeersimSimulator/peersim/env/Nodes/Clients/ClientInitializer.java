@@ -89,10 +89,10 @@ public class ClientInitializer  implements Control {
      */
     public boolean execute() {
         // Initialize the Clients
+        int schedule = 0;
         int base = 0;
         for( int layer = 0 ; layer < layers.length; layer++) {
             int l = layer;
-            int schedule = 0;
             if (Arrays.stream(clientLayers).anyMatch(x -> x == l)) {
                 // TODO need to guarantee that if the task production is for the node only, and the worker in this node
                 //  does not get tasks, then the client should not be active.
@@ -103,11 +103,13 @@ public class ClientInitializer  implements Control {
                     }else {
                         c.setActive(true);
                         c.setSchedules(schedules.get(schedule));
-                        schedule++;
+
                     }
                     c.setId(i);
                     // Set other Variables like CPU speed and others here.
                 }
+                schedule++;
+
              }
             base += layers[layer];
         }

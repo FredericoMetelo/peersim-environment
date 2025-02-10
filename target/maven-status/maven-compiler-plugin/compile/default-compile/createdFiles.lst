@@ -132,6 +132,7 @@ PeersimSimulator/peersim/env/Links/TableProtocol.class
 PeersimSimulator/peersim/env/Nodes/Cloud/Cloud.class
 PeersimSimulator/peersim/core/Network.class
 PeersimSimulator/example/loadbalance/ResetQuota.class
+PeersimSimulator/peersim/env/Nodes/Clients/AbstractClient$ScheduleEntry.class
 PeersimSimulator/peersim/vector/SingleValueHolder.class
 PeersimSimulator/peersim/env/Nodes/Controllers/AbstractController.class
 PeersimSimulator/peersim/env/Tasks/TaskHistory.class
@@ -150,6 +151,7 @@ PeersimSimulator/peersim/env/Links/WireSDNTopology.class
 PeersimSimulator/peersim/env/Links/SDNInitializer.class
 PeersimSimulator/peersim/edsim/EDProtocol.class
 PeersimSimulator/peersim/env/Records/State.class
+PeersimSimulator/peersim/env/Nodes/Clients/AbstractClient$Schedule.class
 PeersimSimulator/peersim/env/Nodes/Events/CloudInfo.class
 PeersimSimulator/peersim/env/Nodes/Events/TaskOffloadEvent.class
 PeersimSimulator/example/hot/InetInitializer.class
