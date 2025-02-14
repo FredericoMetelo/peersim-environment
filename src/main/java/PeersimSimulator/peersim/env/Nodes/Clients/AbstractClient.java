@@ -76,6 +76,7 @@ public abstract class AbstractClient implements Client {
         // Read Constants
         minDeadline = Configuration.getInt(prefix + "." + PAR_MIN_DEADLINE, DEFAULT_MAX_DEADLINE);
         minDeadline = (minDeadline <= 0) ? Integer.MAX_VALUE : minDeadline;
+
         taskArrivalRate = Configuration.getDouble( prefix + "." + PAR_TASKARRIVALRATE, DEFAULT_TASKARRIVALRATE );
         numberOfTasks = Configuration.getInt( prefix + "." + PAR_NO_TASKS, DEFAULT_NUMBEROFTASKS);
         String[] _layers = Configuration.getString(WorkerInitializer.PAR_NO_NODES_PER_LAYERS).split(",");
@@ -85,6 +86,7 @@ public abstract class AbstractClient implements Client {
         layersThatGetTasks = Arrays.stream(_layersThatGetTasks).mapToInt(Integer::parseInt).toArray();
 
         scale = Configuration.getInt(PAR_SCALE, 1);
+        minDeadline = minDeadline * scale; // Scale the deadline to the time scale of the simulation.
 
         clientIsSelf = Configuration.getInt(PAR_CLIENT_IS_SELF, 0);
         tasksCompleted = 0;
