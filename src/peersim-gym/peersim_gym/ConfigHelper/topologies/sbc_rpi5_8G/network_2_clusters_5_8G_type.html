@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1>Urban Sensing</h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1>Urban Sensing</h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 90%;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": {"background": "#fff"}, "id": "rpi6_0", "label": "rpi6_0", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a115040){\u0027name\u0027: \u0027link_rpi6_0\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_lan_143", "label": "switch_lan_143", "shape": "box"}, {"color": {"background": "#fff"}, "id": "rpi6_1", "label": "rpi6_1", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a114ec0){\u0027name\u0027: \u0027link_rpi6_1\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": "#97c2fc", "id": "Link(0x74fd5a095310){\u0027name\u0027: \u0027shared_31\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff"}, "id": "rpi6_2", "label": "rpi6_2", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116f30){\u0027name\u0027: \u0027link_rpi6_2\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_lan_144", "label": "switch_lan_144", "shape": "box"}, {"color": {"background": "#fff"}, "id": "rpi6_3", "label": "rpi6_3", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116ba0){\u0027name\u0027: \u0027link_rpi6_3\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff"}, "id": "rpi6_4", "label": "rpi6_4", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a1175c0){\u0027name\u0027: \u0027link_rpi6_4\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_lan_145", "label": "switch_lan_145", "shape": "box"}, {"color": {"background": "#fff"}, "id": "rpi6_5", "label": "rpi6_5", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116fc0){\u0027name\u0027: \u0027link_rpi6_5\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff"}, "id": "rpi6_6", "label": "rpi6_6", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116750){\u0027name\u0027: \u0027link_rpi6_6\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_lan_146", "label": "switch_lan_146", "shape": "box"}, {"color": {"background": "#fff"}, "id": "rpi6_7", "label": "rpi6_7", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a1160c0){\u0027name\u0027: \u0027link_rpi6_7\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff"}, "id": "rpi6_8", "label": "rpi6_8", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116e70){\u0027name\u0027: \u0027link_rpi6_8\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_lan_147", "label": "switch_lan_147", "shape": "box"}, {"color": {"background": "#fff"}, "id": "rpi6_9", "label": "rpi6_9", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116240){\u0027name\u0027: \u0027link_rpi6_9\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff"}, "id": "nuc_0", "label": "nuc_0", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116c90){\u0027name\u0027: \u0027link_nuc_0\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_lan_148", "label": "switch_lan_148", "shape": "box"}, {"color": {"background": "#fff"}, "id": "tx2_0", "label": "tx2_0", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116c60){\u0027name\u0027: \u0027link_tx2_0\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff"}, "id": "tx2_1", "label": "tx2_1", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a117290){\u0027name\u0027: \u0027link_tx2_1\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": "#97c2fc", "id": "Link(0x74fd5a096540){\u0027type\u0027: \u0027uplink\u0027, \u0027name\u0027: \u0027up_shared_31\u0027}", "label": "Link", "shape": "ellipse"}, {"color": "#97c2fc", "id": "Link(0x74fd5a117dd0){\u0027type\u0027: \u0027downlink\u0027, \u0027name\u0027: \u0027down_shared_31\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "internet_chix", "label": "internet_chix", "shape": "box"}, {"color": {"background": "#fff"}, "id": "rpi6_10", "label": "rpi6_10", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116360){\u0027name\u0027: \u0027link_rpi6_10\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_lan_149", "label": "switch_lan_149", "shape": "box"}, {"color": {"background": "#fff"}, "id": "rpi6_11", "label": "rpi6_11", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116330){\u0027name\u0027: \u0027link_rpi6_11\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": "#97c2fc", "id": "Link(0x74fd5a1178f0){\u0027name\u0027: \u0027shared_32\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff"}, "id": "rpi6_12", "label": "rpi6_12", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116120){\u0027name\u0027: \u0027link_rpi6_12\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_lan_150", "label": "switch_lan_150", "shape": "box"}, {"color": {"background": "#fff"}, "id": "rpi6_13", "label": "rpi6_13", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116720){\u0027name\u0027: \u0027link_rpi6_13\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff"}, "id": "rpi6_14", "label": "rpi6_14", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a115df0){\u0027name\u0027: \u0027link_rpi6_14\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_lan_151", "label": "switch_lan_151", "shape": "box"}, {"color": {"background": "#fff"}, "id": "rpi6_15", "label": "rpi6_15", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a115dc0){\u0027name\u0027: \u0027link_rpi6_15\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff"}, "id": "nuc_1", "label": "nuc_1", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a115940){\u0027name\u0027: \u0027link_nuc_1\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_lan_152", "label": "switch_lan_152", "shape": "box"}, {"color": {"background": "#fff"}, "id": "tx2_2", "label": "tx2_2", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a115850){\u0027name\u0027: \u0027link_tx2_2\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff"}, "id": "tx2_3", "label": "tx2_3", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a115400){\u0027name\u0027: \u0027link_tx2_3\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": "#97c2fc", "id": "Link(0x74fd5a116a20){\u0027type\u0027: \u0027uplink\u0027, \u0027name\u0027: \u0027up_shared_32\u0027}", "label": "Link", "shape": "ellipse"}, {"color": "#97c2fc", "id": "Link(0x74fd5a115bb0){\u0027type\u0027: \u0027downlink\u0027, \u0027name\u0027: \u0027down_shared_32\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff"}, "id": "server_0", "label": "server_0", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a117cb0){\u0027name\u0027: \u0027link_server_0\u0027, \u0027type\u0027: \u0027node\u0027}", "label": "Link", "shape": "ellipse"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_lan_153", "label": "switch_lan_153", "shape": "box"}, {"color": {"background": "#fff", "border": "#000"}, "id": "switch_cloudlet_13", "label": "switch_cloudlet_13", "shape": "box"}, {"color": "#97c2fc", "id": "Link(0x74fd5a097f50){\u0027type\u0027: \u0027uplink\u0027, \u0027name\u0027: \u0027up_cloudlet_13\u0027}", "label": "Link", "shape": "ellipse"}, {"color": "#97c2fc", "id": "Link(0x74fd5a096570){\u0027type\u0027: \u0027downlink\u0027, \u0027name\u0027: \u0027down_cloudlet_13\u0027}", "label": "Link", "shape": "ellipse"}]);
+                  edges = new vis.DataSet([{"color": "red", "from": "rpi6_0", "label": "0.5", "to": "Link(0x74fd5a115040){\u0027name\u0027: \u0027link_rpi6_0\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a115040){\u0027name\u0027: \u0027link_rpi6_0\u0027, \u0027type\u0027: \u0027node\u0027}", "to": "switch_lan_143"}, {"from": "switch_lan_143", "to": "Link(0x74fd5a114ec0){\u0027name\u0027: \u0027link_rpi6_1\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "switch_lan_143", "label": "0.5", "to": "Link(0x74fd5a095310){\u0027name\u0027: \u0027shared_31\u0027, \u0027type\u0027: \u0027shared\u0027}"}, {"color": "red", "from": "rpi6_1", "label": "0.5", "to": "Link(0x74fd5a114ec0){\u0027name\u0027: \u0027link_rpi6_1\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "Link(0x74fd5a095310){\u0027name\u0027: \u0027shared_31\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "0.5", "to": "switch_lan_144"}, {"color": "red", "from": "Link(0x74fd5a095310){\u0027name\u0027: \u0027shared_31\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "0.5", "to": "switch_lan_145"}, {"color": "red", "from": "Link(0x74fd5a095310){\u0027name\u0027: \u0027shared_31\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "0.5", "to": "switch_lan_146"}, {"color": "red", "from": "Link(0x74fd5a095310){\u0027name\u0027: \u0027shared_31\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "0.5", "to": "switch_lan_147"}, {"color": "red", "from": "Link(0x74fd5a095310){\u0027name\u0027: \u0027shared_31\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "0.5", "to": "switch_lan_148"}, {"color": "red", "from": "Link(0x74fd5a095310){\u0027name\u0027: \u0027shared_31\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "22.5", "to": "Link(0x74fd5a096540){\u0027type\u0027: \u0027uplink\u0027, \u0027name\u0027: \u0027up_shared_31\u0027}"}, {"color": "red", "from": "rpi6_2", "label": "0.5", "to": "Link(0x74fd5a116f30){\u0027name\u0027: \u0027link_rpi6_2\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a116f30){\u0027name\u0027: \u0027link_rpi6_2\u0027, \u0027type\u0027: \u0027node\u0027}", "to": "switch_lan_144"}, {"from": "switch_lan_144", "to": "Link(0x74fd5a116ba0){\u0027name\u0027: \u0027link_rpi6_3\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "rpi6_3", "label": "0.5", "to": "Link(0x74fd5a116ba0){\u0027name\u0027: \u0027link_rpi6_3\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "rpi6_4", "label": "0.5", "to": "Link(0x74fd5a1175c0){\u0027name\u0027: \u0027link_rpi6_4\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a1175c0){\u0027name\u0027: \u0027link_rpi6_4\u0027, \u0027type\u0027: \u0027node\u0027}", "to": "switch_lan_145"}, {"from": "switch_lan_145", "to": "Link(0x74fd5a116fc0){\u0027name\u0027: \u0027link_rpi6_5\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "rpi6_5", "label": "0.5", "to": "Link(0x74fd5a116fc0){\u0027name\u0027: \u0027link_rpi6_5\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "rpi6_6", "label": "0.5", "to": "Link(0x74fd5a116750){\u0027name\u0027: \u0027link_rpi6_6\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a116750){\u0027name\u0027: \u0027link_rpi6_6\u0027, \u0027type\u0027: \u0027node\u0027}", "to": "switch_lan_146"}, {"from": "switch_lan_146", "to": "Link(0x74fd5a1160c0){\u0027name\u0027: \u0027link_rpi6_7\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "rpi6_7", "label": "0.5", "to": "Link(0x74fd5a1160c0){\u0027name\u0027: \u0027link_rpi6_7\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "rpi6_8", "label": "0.5", "to": "Link(0x74fd5a116e70){\u0027name\u0027: \u0027link_rpi6_8\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a116e70){\u0027name\u0027: \u0027link_rpi6_8\u0027, \u0027type\u0027: \u0027node\u0027}", "to": "switch_lan_147"}, {"from": "switch_lan_147", "to": "Link(0x74fd5a116240){\u0027name\u0027: \u0027link_rpi6_9\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "rpi6_9", "label": "0.5", "to": "Link(0x74fd5a116240){\u0027name\u0027: \u0027link_rpi6_9\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "nuc_0", "label": "0.5", "to": "Link(0x74fd5a116c90){\u0027name\u0027: \u0027link_nuc_0\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a116c90){\u0027name\u0027: \u0027link_nuc_0\u0027, \u0027type\u0027: \u0027node\u0027}", "to": "switch_lan_148"}, {"from": "switch_lan_148", "to": "Link(0x74fd5a116c60){\u0027name\u0027: \u0027link_tx2_0\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "switch_lan_148", "to": "Link(0x74fd5a117290){\u0027name\u0027: \u0027link_tx2_1\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "tx2_0", "label": "0.5", "to": "Link(0x74fd5a116c60){\u0027name\u0027: \u0027link_tx2_0\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "tx2_1", "label": "0.5", "to": "Link(0x74fd5a117290){\u0027name\u0027: \u0027link_tx2_1\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a096540){\u0027type\u0027: \u0027uplink\u0027, \u0027name\u0027: \u0027up_shared_31\u0027}", "to": "internet_chix"}, {"from": "Link(0x74fd5a117dd0){\u0027type\u0027: \u0027downlink\u0027, \u0027name\u0027: \u0027down_shared_31\u0027}", "to": "Link(0x74fd5a095310){\u0027name\u0027: \u0027shared_31\u0027, \u0027type\u0027: \u0027shared\u0027}"}, {"color": "red", "from": "internet_chix", "label": "22.5", "to": "Link(0x74fd5a117dd0){\u0027type\u0027: \u0027downlink\u0027, \u0027name\u0027: \u0027down_shared_31\u0027}"}, {"color": "red", "from": "internet_chix", "label": "22.5", "to": "Link(0x74fd5a115bb0){\u0027type\u0027: \u0027downlink\u0027, \u0027name\u0027: \u0027down_shared_32\u0027}"}, {"color": "red", "from": "internet_chix", "label": "0.5", "to": "Link(0x74fd5a096570){\u0027type\u0027: \u0027downlink\u0027, \u0027name\u0027: \u0027down_cloudlet_13\u0027}"}, {"color": "red", "from": "rpi6_10", "label": "0.5", "to": "Link(0x74fd5a116360){\u0027name\u0027: \u0027link_rpi6_10\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a116360){\u0027name\u0027: \u0027link_rpi6_10\u0027, \u0027type\u0027: \u0027node\u0027}", "to": "switch_lan_149"}, {"from": "switch_lan_149", "to": "Link(0x74fd5a116330){\u0027name\u0027: \u0027link_rpi6_11\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "switch_lan_149", "label": "0.5", "to": "Link(0x74fd5a1178f0){\u0027name\u0027: \u0027shared_32\u0027, \u0027type\u0027: \u0027shared\u0027}"}, {"color": "red", "from": "rpi6_11", "label": "0.5", "to": "Link(0x74fd5a116330){\u0027name\u0027: \u0027link_rpi6_11\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "Link(0x74fd5a1178f0){\u0027name\u0027: \u0027shared_32\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "0.5", "to": "switch_lan_150"}, {"color": "red", "from": "Link(0x74fd5a1178f0){\u0027name\u0027: \u0027shared_32\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "0.5", "to": "switch_lan_151"}, {"color": "red", "from": "Link(0x74fd5a1178f0){\u0027name\u0027: \u0027shared_32\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "0.5", "to": "switch_lan_152"}, {"color": "red", "from": "Link(0x74fd5a1178f0){\u0027name\u0027: \u0027shared_32\u0027, \u0027type\u0027: \u0027shared\u0027}", "label": "22.5", "to": "Link(0x74fd5a116a20){\u0027type\u0027: \u0027uplink\u0027, \u0027name\u0027: \u0027up_shared_32\u0027}"}, {"color": "red", "from": "rpi6_12", "label": "0.5", "to": "Link(0x74fd5a116120){\u0027name\u0027: \u0027link_rpi6_12\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a116120){\u0027name\u0027: \u0027link_rpi6_12\u0027, \u0027type\u0027: \u0027node\u0027}", "to": "switch_lan_150"}, {"from": "switch_lan_150", "to": "Link(0x74fd5a116720){\u0027name\u0027: \u0027link_rpi6_13\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "rpi6_13", "label": "0.5", "to": "Link(0x74fd5a116720){\u0027name\u0027: \u0027link_rpi6_13\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "rpi6_14", "label": "0.5", "to": "Link(0x74fd5a115df0){\u0027name\u0027: \u0027link_rpi6_14\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a115df0){\u0027name\u0027: \u0027link_rpi6_14\u0027, \u0027type\u0027: \u0027node\u0027}", "to": "switch_lan_151"}, {"from": "switch_lan_151", "to": "Link(0x74fd5a115dc0){\u0027name\u0027: \u0027link_rpi6_15\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "rpi6_15", "label": "0.5", "to": "Link(0x74fd5a115dc0){\u0027name\u0027: \u0027link_rpi6_15\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "nuc_1", "label": "0.5", "to": "Link(0x74fd5a115940){\u0027name\u0027: \u0027link_nuc_1\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a115940){\u0027name\u0027: \u0027link_nuc_1\u0027, \u0027type\u0027: \u0027node\u0027}", "to": "switch_lan_152"}, {"from": "switch_lan_152", "to": "Link(0x74fd5a115850){\u0027name\u0027: \u0027link_tx2_2\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "switch_lan_152", "to": "Link(0x74fd5a115400){\u0027name\u0027: \u0027link_tx2_3\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "tx2_2", "label": "0.5", "to": "Link(0x74fd5a115850){\u0027name\u0027: \u0027link_tx2_2\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"color": "red", "from": "tx2_3", "label": "0.5", "to": "Link(0x74fd5a115400){\u0027name\u0027: \u0027link_tx2_3\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a116a20){\u0027type\u0027: \u0027uplink\u0027, \u0027name\u0027: \u0027up_shared_32\u0027}", "to": "internet_chix"}, {"from": "Link(0x74fd5a115bb0){\u0027type\u0027: \u0027downlink\u0027, \u0027name\u0027: \u0027down_shared_32\u0027}", "to": "Link(0x74fd5a1178f0){\u0027name\u0027: \u0027shared_32\u0027, \u0027type\u0027: \u0027shared\u0027}"}, {"color": "red", "from": "server_0", "label": "0.5", "to": "Link(0x74fd5a117cb0){\u0027name\u0027: \u0027link_server_0\u0027, \u0027type\u0027: \u0027node\u0027}"}, {"from": "Link(0x74fd5a117cb0){\u0027name\u0027: \u0027link_server_0\u0027, \u0027type\u0027: \u0027node\u0027}", "to": "switch_lan_153"}, {"color": "red", "from": "switch_lan_153", "label": "0.5", "to": "switch_cloudlet_13"}, {"color": "red", "from": "switch_cloudlet_13", "label": "0.5", "to": "Link(0x74fd5a097f50){\u0027type\u0027: \u0027uplink\u0027, \u0027name\u0027: \u0027up_cloudlet_13\u0027}"}, {"from": "Link(0x74fd5a097f50){\u0027type\u0027: \u0027uplink\u0027, \u0027name\u0027: \u0027up_cloudlet_13\u0027}", "to": "internet_chix"}, {"from": "Link(0x74fd5a096570){\u0027type\u0027: \u0027downlink\u0027, \u0027name\u0027: \u0027down_cloudlet_13\u0027}", "to": "switch_cloudlet_13"}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

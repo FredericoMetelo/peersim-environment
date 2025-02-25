@@ -407,7 +407,7 @@ public abstract class AbstractClient implements Client {
             String[] entries = schedule.split(",");
             for (String entry : entries) {
                 String[] entryData = entry.split("-");
-                addEntry(Double.parseDouble(entryData[0]), Integer.parseInt(entryData[1]) );
+                addEntry(Double.parseDouble(entryData[0]), Integer.parseInt(entryData[1])*scale);
             }
         }
 
