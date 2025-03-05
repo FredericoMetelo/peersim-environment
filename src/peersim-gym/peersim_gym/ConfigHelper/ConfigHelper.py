@@ -7,6 +7,38 @@ import numpy as np
 Class with utility functions for generating the Schedules and configuration files for the PeersimGym Enviroment.
 """
 
+# def linearSchedule(total_time, no_schedules):
+#     """
+#     This function generates a linear schedule for the task arrival rate. The task arrival rate increases linearly
+#     from 1 to 10 over the total time specified. The rate is increased by 1 every 100 time units. The schedule is duplicated
+#     no_schedule times.
+#
+#     :param total_time: Total time for the simulation
+#     :param no_schedules: Number of schedules to generate.
+#     :return: tuple(string, string) with the scheduled string in a Peersimgym understandable format - And the schedule name.
+#     """
+#     schedule_info = "Linear"
+#     max_rate = 10
+#     rate = 1.0
+#     slot_time = 100
+#     schedule = ""
+#     curr_time = 0
+#     while curr_time < total_time:
+#         schedule += f"{rate}-{slot_time}"
+#         curr_time += slot_time
+#         rate += 1
+#         if rate > max_rate:
+#             rate = max_rate
+#         if curr_time < total_time:
+#             schedule += ","
+#
+#     list_of_schedules = [schedule] * no_schedules # Yes, this was done close to the deadline.
+#     schedules = ""
+#     for schedule in list_of_schedules:
+#         schedules += schedule + ";"
+#     schedules = schedules[:-1]
+#     return schedules, schedule_info
+
 def linearSchedule(total_time, no_schedules):
     """
     This function generates a linear schedule for the task arrival rate. The task arrival rate increases linearly
@@ -38,6 +70,7 @@ def linearSchedule(total_time, no_schedules):
         schedules += schedule + ";"
     schedules = schedules[:-1]
     return schedules, schedule_info
+
 
 def zigzagSchedule(total_time, no_schedules):
     """
@@ -490,7 +523,9 @@ def generate_config_dict(controllers="[0]",
         q_max_per_layer = import_string_to_int_array(MANUAL_QMAX)
 
     # Preparing the schedules. Either a number is given or a function is given. The schedules are then generated.
-    schedule = [f"{lambda_task_arrival_rate}-{simulation_time}"] * len(layersThatGetTasks)
+    # schedule = [f"{lambda_task_arrival_rate}-{simulation_time}" for i in range(len(layersThatGetTasks))]
+    schedule = ";".join(f"{lambda_task_arrival_rate}-{simulation_time}" for i in range(len(layersThatGetTasks)))
+
     schdule_info = "FixedLambda"+str(lambda_task_arrival_rate)
     if schedule_task_arrival_rate is not None and callable(schedule_task_arrival_rate):
         schedule,schedule_info = schedule_task_arrival_rate(simulation_time, len(layersThatGetTasks))
