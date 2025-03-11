@@ -220,7 +220,7 @@ To start the simulation all you need to do is create a PeersimEnv object in your
 like a regular PettingZoo environment. 
 
 ```python
-import peersim_gym.envs.PeersimEnv import PeersimEnv
+from peersim_gym.envs.PeersimEnv import PeersimEnv
 
 env = PeersimEnv(configs={...})
 actions = {agent: env.action_space(agent).sample() for agent in env.agents}
