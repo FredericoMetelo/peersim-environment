@@ -131,10 +131,48 @@ def rescaleDatasetWithMeansAndStds(dataset, aggregate_metrics):
                 mean = aggregate_metrics[var].get("mean", 0.0)
                 std = aggregate_metrics[var].get("std", 1.0)
                 if std != 0:
-                    rescaled_value = (value - mean) / std
+                    rescaled_value = (value * std) + mean
                 else:
                     rescaled_value = 0.0  # Avoid division by zero
                 rescaled_job[var] = rescaled_value
         rescaled_dataset[job_id] = rescaled_job
 
     return rescaled_dataset
+
+
+
+def getAggregateInstructionAndMemoryMetrics(dataset, defaultCPUWorkload, defaultMemoryWorkload):
+    """
+    Computes aggregate metrics (mean, std, min, max) for:
+    - estimated_instructions
+    - estimated_memory
+    using the formulas provided and constant workloads.
+
+    Returns a dictionary with metrics.
+    """
+    instruction_list = []
+    memory_list = []
+
+    for job in dataset.values():
+        max_cpu = job.get("max_cpu", 0.0)
+        duration = job.get("total_resources_duration", 0.0)
+        max_mem = job.get("max_mem", 0.0)
+
+        est_instructions = (max_cpu / 100.0) * (duration / 1000.0) * defaultCPUWorkload
+        est_memory = max_mem * defaultMemoryWorkload
+
+        instruction_list.append(est_instructions)
+        memory_list.append(est_memory)
+
+    def compute_metrics(values):
+        return {
+            "mean": np.mean(values),
+            "std": np.std(values),
+            "min": np.min(values),
+            "max": np.max(values)
+        }
+
+    return {
+        "estimated_instructions": compute_metrics(instruction_list),
+        "estimated_memory": compute_metrics(memory_list)
+    }
