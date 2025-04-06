@@ -284,10 +284,11 @@ class PeersimEnv(ParallelEnv):
             self.vis = PeersimVis(self.has_cloud, int(self.config_archive["CYCLES"]), self.config_archive["SCALE"])
 
     def observation_space(self, agent):
+
         base_space = {
             STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
-            STATE_Q_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
-            STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
+            STATE_Q_FIELD: MultiDiscrete(self.q_list),
+            STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list),
             STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
         }
 
@@ -1003,14 +1004,9 @@ class PeersimEnv(ParallelEnv):
                 }
                 for task in obs[STATE_TASKS_IN_QUEUE]
             ]
-        if self.state_info in {"qaggr", "qaggr_next"} and STATE_TASKS_IN_QUEUE in obs:
-            instr_acc = 0
-            local_acc = 0
-            for task in obs[STATE_TASKS_IN_QUEUE]:
-                instr_acc += task[STATE_TASK_PARAM_TOTAL_INSTR]
-                local_acc += task[STATE_TASK_PARAM_PROCESSED_LOCALLY] * task[STATE_TASK_PARAM_TOTAL_INSTR]
-            normalized_obs[STATE_TASKQ_AGGR_TOTAL_INSTR] = instr_acc/processingPower
-            normalized_obs[STATE_TASKQ_AGGR_TOTAL_LOCAL] = local_acc/processingPower
+        if self.state_info in {"qaggr", "qaggr_next"} and STATE_TASKQ_AGGR_TOTAL_INSTR and STATE_TASKQ_AGGR_TOTAL_LOCAL in obs:
+            normalized_obs[STATE_TASKQ_AGGR_TOTAL_INSTR] = obs[STATE_TASKQ_AGGR_TOTAL_INSTR]/processingPower
+            normalized_obs[STATE_TASKQ_AGGR_TOTAL_LOCAL] = obs[STATE_TASKQ_AGGR_TOTAL_LOCAL]/processingPower
 
         return normalized_obs
 

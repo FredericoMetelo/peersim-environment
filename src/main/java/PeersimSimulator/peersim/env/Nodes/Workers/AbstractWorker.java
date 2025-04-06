@@ -524,6 +524,17 @@ public abstract class AbstractWorker implements Worker {
             lti = this.loseTaskInformation.remove(task.getId());
         } else {
             wrkErrLog("ERROR", "Something went terribly wrong. A task that should not be in this node is being offloaded. Node: " + node.getID() + " Timestep: " + CommonState.getIntTime());
+            wrkErrLog("ERROR", "Dumping worker state: ");
+            wrkErrLog("ERROR", "ID: " + this.id);
+            wrkErrLog("ERROR", "Recieved Apps: " + this.recievedApplications);
+            wrkErrLog("ERROR", "Managed Apps: " + this.managedApplications);
+            wrkErrLog("ERROR", "Queue: " + this.queue);
+            wrkErrLog("ERROR", "LoseTaskInfo: " + this.loseTaskInformation);
+            wrkErrLog("ERROR", "Current: " + this.current);
+            wrkErrLog("ERROR", "TasksCompletedSinceLastCycle: " + this.tasksCompletedSinceLastCycle);
+            wrkErrLog("ERROR", "TasksToBeLocallyProcessed: " + this.tasksToBeLocallyProcessed);
+            wrkErrLog("ERROR", "Task: " + task.getId() + " AppID: " + task.getAppID() + " ClientID: " + task.getClientID());
+
             return null;
         }
         return lti;

@@ -15,6 +15,7 @@ import PeersimSimulator.peersim.env.Tasks.TaskHistory;
 import PeersimSimulator.peersim.env.Util.Log;
 import PeersimSimulator.peersim.transport.Transport;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -158,9 +159,12 @@ public class BasicWorker extends AbstractWorker{
             if(!this.recievedApplications.isEmpty()) {
                 applicationSerialization();
             }
-            for (ITask task : this.queue) {
+            Iterator<ITask> iterator = this.queue.iterator();
+            while (iterator.hasNext()) {
+                ITask task = iterator.next();
                 if (!this.tasksToBeLocallyProcessed.contains(task.getId())) {
-                    this.queue.remove(task);
+                    iterator.remove();
+                    assert task != this.current;
                     return task;
                 }
             }
