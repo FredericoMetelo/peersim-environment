@@ -1,0 +1,475 @@
+{
+  "nodes": {
+    "rpi5_8G_0": {
+      "id": 222963100442296,
+      "arch": "arm32v7",
+      "name": "rpi5_8G_0",
+      "coordinates": [
+        100.0,
+        50.0
+      ],
+      "capacity": {
+        "cpu_milis": 9600,
+        "memory": 8589934592
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sbc",
+        "ether.edgerun.io/model": "rpi5_6G"
+      }
+    },
+    "rpi5_8G_1": {
+      "id": 190234151972882,
+      "arch": "arm32v7",
+      "name": "rpi5_8G_1",
+      "coordinates": [
+        95.67727288213004,
+        70.33683215379
+      ],
+      "capacity": {
+        "cpu_milis": 9600,
+        "memory": 8589934592
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sbc",
+        "ether.edgerun.io/model": "rpi5_6G"
+      }
+    },
+    "nuc_0": {
+      "id": 569532966562732,
+      "arch": "x86_64",
+      "name": "nuc_0",
+      "coordinates": [
+        83.4565303179429,
+        87.15724127386972
+      ],
+      "capacity": {
+        "cpu_milis": 14800,
+        "memory": 68719476736
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sffc",
+        "ether.edgerun.io/model": "nuci5"
+      }
+    },
+    "rpi5_6G_0": {
+      "id": 976360921848761,
+      "arch": "arm32v7",
+      "name": "rpi5_6G_0",
+      "coordinates": [
+        65.45084971874738,
+        97.55282581475768
+      ],
+      "capacity": {
+        "cpu_milis": 9600,
+        "memory": 6442450944
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sbc",
+        "ether.edgerun.io/model": "rpi5_6G"
+      }
+    },
+    "rpi4_0": {
+      "id": 923932732506620,
+      "arch": "arm32v7",
+      "name": "rpi4_0",
+      "coordinates": [
+        44.77357683661733,
+        99.72609476841367
+      ],
+      "capacity": {
+        "cpu_milis": 7200,
+        "memory": 6442450944
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sbc",
+        "ether.edgerun.io/model": "rpi4"
+      }
+    },
+    "rpi5_8G_2": {
+      "id": 911648020237709,
+      "arch": "arm32v7",
+      "name": "rpi5_8G_2",
+      "coordinates": [
+        25.00000000000001,
+        93.30127018922194
+      ],
+      "capacity": {
+        "cpu_milis": 9600,
+        "memory": 8589934592
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sbc",
+        "ether.edgerun.io/model": "rpi5_6G"
+      }
+    },
+    "nuc_1": {
+      "id": 4483451712968,
+      "arch": "x86_64",
+      "name": "nuc_1",
+      "coordinates": [
+        9.549150281252636,
+        79.38926261462366
+      ],
+      "capacity": {
+        "cpu_milis": 14800,
+        "memory": 68719476736
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sffc",
+        "ether.edgerun.io/model": "nuci5"
+      }
+    },
+    "rpi4_1": {
+      "id": 872536984413165,
+      "arch": "arm32v7",
+      "name": "rpi4_1",
+      "coordinates": [
+        1.0926199633097156,
+        60.39558454088797
+      ],
+      "capacity": {
+        "cpu_milis": 7200,
+        "memory": 6442450944
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sbc",
+        "ether.edgerun.io/model": "rpi4"
+      }
+    },
+    "rpi5_8G_3": {
+      "id": 202133372642556,
+      "arch": "arm32v7",
+      "name": "rpi5_8G_3",
+      "coordinates": [
+        1.0926199633097227,
+        39.604415459112026
+      ],
+      "capacity": {
+        "cpu_milis": 9600,
+        "memory": 8589934592
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sbc",
+        "ether.edgerun.io/model": "rpi5_6G"
+      }
+    },
+    "rpi5_6G_1": {
+      "id": 381239261197252,
+      "arch": "arm32v7",
+      "name": "rpi5_6G_1",
+      "coordinates": [
+        9.549150281252636,
+        20.610737385376332
+      ],
+      "capacity": {
+        "cpu_milis": 9600,
+        "memory": 6442450944
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sbc",
+        "ether.edgerun.io/model": "rpi5_6G"
+      }
+    },
+    "nuc_2": {
+      "id": 924925180403442,
+      "arch": "x86_64",
+      "name": "nuc_2",
+      "coordinates": [
+        25.000000000000018,
+        6.698729810778062
+      ],
+      "capacity": {
+        "cpu_milis": 14800,
+        "memory": 68719476736
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sffc",
+        "ether.edgerun.io/model": "nuci5"
+      }
+    },
+    "nuc_3": {
+      "id": 559581158069735,
+      "arch": "x86_64",
+      "name": "nuc_3",
+      "coordinates": [
+        44.77357683661733,
+        0.2739052315863333
+      ],
+      "capacity": {
+        "cpu_milis": 14800,
+        "memory": 68719476736
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sffc",
+        "ether.edgerun.io/model": "nuci5"
+      }
+    },
+    "nuc_4": {
+      "id": 9032937080338,
+      "arch": "x86_64",
+      "name": "nuc_4",
+      "coordinates": [
+        65.45084971874736,
+        2.447174185242318
+      ],
+      "capacity": {
+        "cpu_milis": 14800,
+        "memory": 68719476736
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sffc",
+        "ether.edgerun.io/model": "nuci5"
+      }
+    },
+    "rpi5_6G_2": {
+      "id": 218377138632357,
+      "arch": "arm32v7",
+      "name": "rpi5_6G_2",
+      "coordinates": [
+        83.45653031794289,
+        12.84275872613027
+      ],
+      "capacity": {
+        "cpu_milis": 9600,
+        "memory": 6442450944
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sbc",
+        "ether.edgerun.io/model": "rpi5_6G"
+      }
+    },
+    "rpi4_2": {
+      "id": 359881983587519,
+      "arch": "arm32v7",
+      "name": "rpi4_2",
+      "coordinates": [
+        95.67727288213003,
+        29.663167846209955
+      ],
+      "capacity": {
+        "cpu_milis": 7200,
+        "memory": 6442450944
+      },
+      "labels": {
+        "ether.edgerun.io/type": "sbc",
+        "ether.edgerun.io/model": "rpi4"
+      }
+    }
+  },
+  "links": {
+    "neighbours": {
+      "222963100442296": [
+        190234151972882,
+        359881983587519
+      ],
+      "190234151972882": [
+        222963100442296,
+        569532966562732
+      ],
+      "569532966562732": [
+        190234151972882,
+        976360921848761
+      ],
+      "976360921848761": [
+        569532966562732,
+        923932732506620
+      ],
+      "923932732506620": [
+        976360921848761,
+        911648020237709
+      ],
+      "911648020237709": [
+        923932732506620,
+        4483451712968
+      ],
+      "4483451712968": [
+        911648020237709,
+        872536984413165
+      ],
+      "872536984413165": [
+        4483451712968,
+        202133372642556
+      ],
+      "202133372642556": [
+        872536984413165,
+        381239261197252
+      ],
+      "381239261197252": [
+        202133372642556,
+        924925180403442
+      ],
+      "924925180403442": [
+        381239261197252,
+        559581158069735
+      ],
+      "559581158069735": [
+        924925180403442,
+        9032937080338
+      ],
+      "9032937080338": [
+        559581158069735,
+        218377138632357
+      ],
+      "218377138632357": [
+        9032937080338,
+        359881983587519
+      ],
+      "359881983587519": [
+        218377138632357,
+        222963100442296
+      ]
+    },
+    "path_info": [
+      {
+        "id": "222963100442296->190234151972882",
+        "source": 222963100442296,
+        "target": 190234151972882,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "190234151972882->569532966562732",
+        "source": 190234151972882,
+        "target": 569532966562732,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "569532966562732->976360921848761",
+        "source": 569532966562732,
+        "target": 976360921848761,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "976360921848761->923932732506620",
+        "source": 976360921848761,
+        "target": 923932732506620,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "923932732506620->911648020237709",
+        "source": 923932732506620,
+        "target": 911648020237709,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "911648020237709->4483451712968",
+        "source": 911648020237709,
+        "target": 4483451712968,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "4483451712968->872536984413165",
+        "source": 4483451712968,
+        "target": 872536984413165,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "872536984413165->202133372642556",
+        "source": 872536984413165,
+        "target": 202133372642556,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "202133372642556->381239261197252",
+        "source": 202133372642556,
+        "target": 381239261197252,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "381239261197252->924925180403442",
+        "source": 381239261197252,
+        "target": 924925180403442,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "924925180403442->559581158069735",
+        "source": 924925180403442,
+        "target": 559581158069735,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "559581158069735->9032937080338",
+        "source": 559581158069735,
+        "target": 9032937080338,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "9032937080338->218377138632357",
+        "source": 9032937080338,
+        "target": 218377138632357,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "218377138632357->359881983587519",
+        "source": 218377138632357,
+        "target": 359881983587519,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      },
+      {
+        "id": "359881983587519->222963100442296",
+        "source": 359881983587519,
+        "target": 222963100442296,
+        "path_bandwidths": [
+          100
+        ],
+        "min_bandwidth": 100,
+        "expected_rtt": 0
+      }
+    ]
+  }
+}

@@ -306,7 +306,9 @@ public abstract class AbstractController implements Controller {
                 this.computeDistancesToNeighbours(),
                 props.getBANDWIDTH(),
                 l,
-                (this.workerInfo == null || this.workerInfo.isEmpty())? 0 : this.workerInfo.size()
+                (this.workerInfo == null || this.workerInfo.isEmpty())? 0 : this.workerInfo.size(),
+                this.correspondingWorker.getNextTaskInfo(),
+                this.correspondingWorker.getAllTaskInfo()
         );
     }
 

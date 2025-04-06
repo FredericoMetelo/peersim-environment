@@ -5,9 +5,10 @@ from random import randint
 from typing import Callable, Any
 
 import gymnasium
+import numpy as np
 import requests
 from gymnasium import Space
-from gymnasium.spaces import MultiDiscrete, Dict, Discrete, Box
+from gymnasium.spaces import MultiDiscrete, Dict, Discrete, Box, Sequence
 from pettingzoo import ParallelEnv
 
 import json
@@ -40,7 +41,14 @@ STATE_G_TOTAL_RECEIVED_PER_NODE = "totalTasksReceived"
 STATE_G_TOTAL_FINISHED_PER_NODE = "totalTasksProcessedPerNode"
 STATE_G_OFFLOADED_TASKS_FROM_NODE = "totalTasksOffloadedFromNode"
 STATE_G_OFFLOADED_TASKS_TO_NODE = "totalTasksOffloadedToNode"
-
+STATE_NEXT_TASK = "nextTask"
+STATE_TASKS_IN_QUEUE = "tasks"
+STATE_TASK_PARAM_PROGRESS = "progress"
+STATE_TASK_PARAM_TOTAL_INSTR = "totalInstructions"
+STATE_TASK_PARAM_OUTPUT_SIZE = "outputSizeBytes"
+STATE_TASK_PARAM_INPUT_SIZE = "inputSizeBytes"
+STATE_TASK_PARAM_PROCESSED_LOCALLY = "processedLocally"
+STATE_TASK_PARAM_ID = "id"
 
 AGENT_PREFIX = "worker_"
 
@@ -87,6 +95,10 @@ STATE_Q_FIELD = "Q"
 STATE_QSIZE_FIELD = "queueSize"
 STATE_PROCESSING_POWER_FIELD = "processingPower"
 STATE_FREE_SPACES_FIELD = "freeSpaces"
+STATE_TASKQ_AGGR_TOTAL_INSTR = "totalInstructions"
+STATE_TASKQ_AGGR_TOTAL_LOCAL = "totalLocallyProcessed"
+
+
 
 
 # def can_launch_simulation():
@@ -120,7 +132,7 @@ class PeersimEnv(ParallelEnv):
         self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed, phy_rs_term=phy_rs_term)
 
     def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False, preferred_port=8080,
-                 phy_rs_term: Callable[[Space], float] = None, fl_update_size: Callable[[Any], int] = None):
+                 phy_rs_term: Callable[[Space], float] = None, fl_update_size: Callable[[Any], int] = None, state_info="none"):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
@@ -183,18 +195,47 @@ class PeersimEnv(ParallelEnv):
         else:
             self.q_list = [self.max_Q_size for _ in range(self.number_nodes)]
 
-        self._observation_spaces = {
-            agent: Dict(
-                {
-                    STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
-                    STATE_Q_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
-                    STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
-                    STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
-                }
-            ) for agent in self.possible_agents
-        }
+        # Options are: none, next, queue, queue_next
+        # Eventually, convert this to a wrapper.
 
-        # ---- Action Space
+        task_space = Dict({
+            STATE_TASK_PARAM_PROCESSED_LOCALLY: Discrete(2),
+            STATE_TASK_PARAM_ID: Discrete(self.number_nodes),
+            STATE_TASK_PARAM_PROGRESS: Box(low=0, high=np.inf, dtype=float),
+            STATE_TASK_PARAM_TOTAL_INSTR: Box(low=0, high=np.inf, dtype=float),
+            STATE_TASK_PARAM_INPUT_SIZE: Box(low=0, high=np.inf, dtype=float),
+            STATE_TASK_PARAM_OUTPUT_SIZE: Box(low=0, high=np.inf, dtype=float)
+        })
+
+        self._observation_spaces = {}
+        for agent in self.possible_agents:
+            base_space = {
+                STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
+                STATE_Q_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
+                STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
+                STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
+            }
+
+            if state_info == "queue_next":
+                base_space[STATE_NEXT_TASK] = task_space
+                base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
+            elif state_info == "next":
+                base_space[STATE_NEXT_TASK] = task_space
+            elif state_info == "queue":
+                base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
+            elif state_info == "qaggr":
+                base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
+                base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
+            elif state_info == "qaggr_next":
+                base_space[STATE_NEXT_TASK] = task_space
+                base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
+                base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
+            # 'none' means only base_space is used
+
+            self._observation_spaces[agent] = Dict(base_space)
+
+
+    # ---- Action Space
         self._action_spaces = {
             agent: Dict(
                 {
@@ -211,6 +252,7 @@ class PeersimEnv(ParallelEnv):
 
         # with subprocess as s:
         self.simulator = None
+        self.state_info = state_info
         # self.simulator = PeersimThread(name='Run0', configs=self.config_path)
         # self.simulator.run()
         self.UTILITY_REWARD = self.config_archive["utility_reward"]
@@ -242,14 +284,39 @@ class PeersimEnv(ParallelEnv):
             self.vis = PeersimVis(self.has_cloud, int(self.config_archive["CYCLES"]), self.config_archive["SCALE"])
 
     def observation_space(self, agent):
-        return Dict(
-            {
-                STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
-                STATE_Q_FIELD: MultiDiscrete(self.q_list),
-                STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list),
-                STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
-            }
-        )
+        base_space = {
+            STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
+            STATE_Q_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
+            STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
+            STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
+        }
+
+        task_space = Dict({
+            STATE_TASK_PARAM_PROCESSED_LOCALLY: Discrete(2),
+            STATE_TASK_PARAM_ID: Discrete(self.number_nodes),
+            STATE_TASK_PARAM_PROGRESS: Box(low=0, high=np.inf, dtype=float),
+            STATE_TASK_PARAM_TOTAL_INSTR: Box(low=0, high=np.inf,dtype=float),
+            STATE_TASK_PARAM_INPUT_SIZE: Box(low=0, high=np.inf,dtype=float),
+            STATE_TASK_PARAM_OUTPUT_SIZE: Box(low=0, high=np.inf,dtype=float)
+        })
+
+        if self.state_info == "queue_next":
+            base_space[STATE_NEXT_TASK] = task_space
+            base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
+        elif self.state_info == "next":
+            base_space[STATE_NEXT_TASK] = task_space
+        elif self.state_info == "queue":
+            base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
+        elif self.state_info == "qaggr":
+            base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
+            base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
+        elif self.state_info == "qaggr_next":
+            # Iterate over tasks for each agent. Prepare the aggregate metrics
+            base_space[STATE_NEXT_TASK] = task_space
+            base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
+            base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
+        return Dict(base_space)
+
 
     def action_space(self, agent):
         return Dict(
@@ -468,8 +535,9 @@ class PeersimEnv(ParallelEnv):
             self._observation = partial_obs
             self._global_obs = global_obs
             self._done = done
-
-            observations = {self.agents[i]: partial_obs[i] for i in range(len(self.agents))}
+            # TODO: Add a modification of the partial observations here, to filter out the information the users does not
+            #  want
+            observations = {self.agents[i]: self.extract_local_data(partial_obs[i]) for i in range(len(self.agents))}
             self.state = observations
             extracted_data = self.extract_global_data(global_obs)
             dbg_info = {
@@ -781,6 +849,56 @@ class PeersimEnv(ParallelEnv):
             q_list.append(1e6) # Add cloud to basically have infinite Q size.
         return q_list
 
+    def extract_local_data(self, agent_state):
+        # Extract the local observation of the agent based on the observation space and the flag setting the variables
+        # on the observation space
+        observations = {}
+
+
+
+        obs = {
+            STATE_NODE_ID_FIELD: agent_state[STATE_NODE_ID_FIELD],
+            STATE_Q_FIELD: agent_state[STATE_Q_FIELD],
+            STATE_FREE_SPACES_FIELD: agent_state[STATE_FREE_SPACES_FIELD],
+            STATE_PROCESSING_POWER_FIELD: float(agent_state[STATE_PROCESSING_POWER_FIELD]),
+            STATE_QSIZE_FIELD: agent_state[STATE_QSIZE_FIELD],
+            STATE_NO_NEIGHBOURS: agent_state[STATE_NO_NEIGHBOURS],
+
+        }
+
+        # Conditionally include based on state_queue_info
+        if self.state_info in {"next", "queue_next", "qaggr_next"} and STATE_NEXT_TASK in agent_state:
+            obs[STATE_NEXT_TASK] = {
+                STATE_TASK_PARAM_PROCESSED_LOCALLY: int(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_PROCESSED_LOCALLY]),
+                STATE_TASK_PARAM_PROGRESS: float(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_PROGRESS]),
+                STATE_TASK_PARAM_TOTAL_INSTR: float(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_TOTAL_INSTR]),
+                STATE_TASK_PARAM_INPUT_SIZE: float(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_INPUT_SIZE]),
+                STATE_TASK_PARAM_OUTPUT_SIZE: float(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_OUTPUT_SIZE]),
+            }
+
+        if self.state_info in {"queue", "queue_next"} and "tasks" in agent_state:
+            obs[STATE_TASKS_IN_QUEUE] = [
+                {
+                    STATE_TASK_PARAM_PROCESSED_LOCALLY: int(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_PROCESSED_LOCALLY]),
+                    STATE_TASK_PARAM_PROGRESS: float(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_PROGRESS]),
+                    STATE_TASK_PARAM_TOTAL_INSTR: float(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_TOTAL_INSTR]),
+                    STATE_TASK_PARAM_INPUT_SIZE: float(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_INPUT_SIZE]),
+                    STATE_TASK_PARAM_OUTPUT_SIZE: float(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_OUTPUT_SIZE]),
+                }
+                for task in agent_state[STATE_TASKS_IN_QUEUE]
+            ]
+
+        if self.state_info in {"qaggr", "qaggr_next"} and "tasks" in agent_state:
+            instr_acc = 0
+            local_acc = 0
+            for task in agent_state[STATE_TASKS_IN_QUEUE]:
+                instr_acc += task[STATE_TASK_PARAM_TOTAL_INSTR]
+                local_acc += task[STATE_TASK_PARAM_PROCESSED_LOCALLY] * task[STATE_TASK_PARAM_TOTAL_INSTR]
+            obs[STATE_TASKQ_AGGR_TOTAL_INSTR] = instr_acc
+            obs[STATE_TASKQ_AGGR_TOTAL_LOCAL] = local_acc
+        return obs
+
+
     def extract_global_data(self, global_obs):
         Q = global_obs[STATE_Q_FIELD]
         layers = global_obs[STATE_G_LAYERS]
@@ -865,6 +983,35 @@ class PeersimEnv(ParallelEnv):
             normalized_free_spaces += [-1 for _ in range(len(Q), self.number_nodes)]
         normalized_obs[STATE_Q_FIELD] = normalized_Q
         normalized_obs[STATE_FREE_SPACES_FIELD] = normalized_free_spaces
+
+        if self.state_info in {"next", "queue_next", "qaggr_next"} and STATE_NEXT_TASK in obs:
+            normalized_obs[STATE_NEXT_TASK] = {
+                STATE_TASK_PARAM_PROCESSED_LOCALLY: int(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_PROCESSED_LOCALLY]),
+                STATE_TASK_PARAM_PROGRESS: float(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_PROGRESS]),
+                STATE_TASK_PARAM_TOTAL_INSTR: float(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_TOTAL_INSTR])/processingPower,
+                STATE_TASK_PARAM_INPUT_SIZE: float(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_INPUT_SIZE]),
+                STATE_TASK_PARAM_OUTPUT_SIZE: float(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_OUTPUT_SIZE]),
+            }
+        if self.state_info in {"queue", "queue_next"} and STATE_TASKS_IN_QUEUE in obs:
+            normalized_obs[STATE_TASKS_IN_QUEUE] = [
+                {
+                    STATE_TASK_PARAM_PROCESSED_LOCALLY: int(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_PROCESSED_LOCALLY]),
+                    STATE_TASK_PARAM_PROGRESS: float(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_PROGRESS]),
+                    STATE_TASK_PARAM_TOTAL_INSTR: float(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_TOTAL_INSTR])/processingPower,
+                    STATE_TASK_PARAM_INPUT_SIZE: float(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_INPUT_SIZE]),
+                    STATE_TASK_PARAM_OUTPUT_SIZE: float(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_OUTPUT_SIZE]),
+                }
+                for task in obs[STATE_TASKS_IN_QUEUE]
+            ]
+        if self.state_info in {"qaggr", "qaggr_next"} and STATE_TASKS_IN_QUEUE in obs:
+            instr_acc = 0
+            local_acc = 0
+            for task in obs[STATE_TASKS_IN_QUEUE]:
+                instr_acc += task[STATE_TASK_PARAM_TOTAL_INSTR]
+                local_acc += task[STATE_TASK_PARAM_PROCESSED_LOCALLY] * task[STATE_TASK_PARAM_TOTAL_INSTR]
+            normalized_obs[STATE_TASKQ_AGGR_TOTAL_INSTR] = instr_acc/processingPower
+            normalized_obs[STATE_TASKQ_AGGR_TOTAL_LOCAL] = local_acc/processingPower
+
         return normalized_obs
 
     def _compute_clients_per_node(self) -> list[int]:

@@ -15,7 +15,9 @@ public record PartialState(
         double bandwidth,
         List<Double> transmissionPower,
 
-        int numberOfNeighbours
+        int numberOfNeighbours,
+        TaskInfo nextTask,
+        List<TaskInfo> tasks
 ) {
 
 }

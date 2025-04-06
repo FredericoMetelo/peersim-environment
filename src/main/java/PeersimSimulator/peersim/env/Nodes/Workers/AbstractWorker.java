@@ -11,9 +11,7 @@ import PeersimSimulator.peersim.env.Nodes.Clients.Client;
 import PeersimSimulator.peersim.env.Nodes.Cloud.Cloud;
 import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
 import PeersimSimulator.peersim.env.Nodes.Events.*;
-import PeersimSimulator.peersim.env.Records.DependentTaskComparator;
-import PeersimSimulator.peersim.env.Records.FLUpdate;
-import PeersimSimulator.peersim.env.Records.LoseTaskInfo;
+import PeersimSimulator.peersim.env.Records.*;
 import PeersimSimulator.peersim.env.Tasks.Application;
 import PeersimSimulator.peersim.env.Tasks.ITask;
 import PeersimSimulator.peersim.env.Tasks.TaskHistory;
@@ -853,6 +851,28 @@ public abstract class AbstractWorker implements Worker {
         return aux;
     }
 
+    @Override
+    public TaskInfo getNextTaskInfo() {
+        for (ITask t : queue) {
+            if (!this.tasksToBeLocallyProcessed.contains(t.getId())) {
+                return new TaskInfo(t, false);
+            }
+        }
+        return new DummyTaskInfo();
+    }
+
+    @Override
+    public List<TaskInfo> getAllTaskInfo() {
+        List<TaskInfo> taskInfos = new ArrayList<>();
+        for (ITask task : queue) {
+            taskInfos.add(new TaskInfo(task, this.tasksToBeLocallyProcessed.contains(task.getId())));
+        }
+
+        for (int i=taskInfos.size(); i<this.qMAX; i++){
+            taskInfos.add(new DummyTaskInfo());
+        }
+        return taskInfos;
+    }
     @Override
     public void wrkDbgLog(String msg) {
         Log.logDbg("WRK", this.id, "DEBUG", msg);

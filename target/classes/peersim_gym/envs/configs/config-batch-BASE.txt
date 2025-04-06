@@ -1,0 +1,105 @@
+
+#=============Define Simulation Globals
+STEP 1
+network.size SIZE+CLOUD_EXISTS
+simulation.endtime CYCLES*SCALE
+simulation.logtime CYCLE
+
+
+#=============Define Protocols
+#--------Define Node Protocols
+
+protocol.mng PeersimSimulator.peersim.env.SimulationManagers.DiscreteTimeStepManager
+protocol.mng.linkable lnk
+protocol.mng.name mng
+protocol.mng.step STEP
+protocol.mng.transport trs
+
+
+# NEW + the initialization stuff
+protocol.cld PeersimSimulator.peersim.env.Nodes.Cloud.Cloud
+protocol.cld.linkable lnk
+protocol.cld.name cld
+protocol.cld.step STEP
+protocol.cld.transport trs
+
+
+protocol.clt PeersimSimulator.peersim.env.Nodes.Clients.BasicClient
+protocol.clt.linkable lnk
+protocol.clt.name clt
+protocol.clt.step STEP
+protocol.clt.transport trs
+
+
+protocol.ctrl PeersimSimulator.peersim.env.Nodes.Controllers.BatchController
+protocol.ctrl.linkable lnk
+protocol.ctrl.name ctrl
+protocol.ctrl.step STEP
+protocol.ctrl.transport trs
+
+
+protocol.wrk PeersimSimulator.peersim.env.Nodes.Workers.BatchWorker
+protocol.wrk.linkable lnk
+protocol.wrk.name wrk
+protocol.wrk.step STEP
+protocol.wrk.transport trs
+
+#--------Define Topology Protocols
+protocol.props PeersimSimulator.peersim.env.Links.SDNNodeProperties
+protocol.props.name props
+
+#--------Define Link Protocol
+protocol.lnk PeersimSimulator.peersim.env.Links.TableProtocol
+
+#--------Define Transport Protocol
+
+protocol.trs PeersimSimulator.peersim.env.Transport.ScaleTransportDelay
+protocol.trs.transport urt
+protocol.trs.scale.scale SCALE
+protocol.trs.name trs
+
+protocol.urt PeersimSimulator.peersim.env.Transport.MaxCapacityTransport
+protocol.urt.mindelay (STEP*MINDELAY)/100
+protocol.urt.maxdelay (STEP*MAXDELAY)/100
+protocol.urt.name urt
+
+protocol.tr PeersimSimulator.peersim.transport.UnreliableTransport
+protocol.tr.transport trs
+protocol.tr.drop DROP
+
+
+#=============Define Initialization
+#--------Define Topology Initialization
+
+init.Net1  PeersimSimulator.peersim.env.Links.WireSDNTopology
+init.Net1.protocol lnk
+init.Net1.coord_protocol props
+
+init.Net0 PeersimSimulator.peersim.env.Links.SDNInitializer
+init.Net0.protocol props
+
+#--------Define Node Initialization
+init.InitWrk PeersimSimulator.peersim.env.Nodes.Workers.WorkerInitializer
+init.InitWrk.protocol wrk
+
+init.InitClt PeersimSimulator.peersim.env.Nodes.Clients.ClientInitializer
+init.InitClt.protocol clt
+
+init.InitCld PeersimSimulator.peersim.env.Nodes.Cloud.CloudInitializer
+init.InitCld.protocol cld
+
+init.InitCtrl PeersimSimulator.peersim.env.Nodes.Controllers.ControllerInitializer
+init.InitCtrl.protocol ctrl
+
+init.InitMng PeersimSimulator.peersim.env.SimulationManagers.DiscreteTimeStepManagerInitializer
+init.InitMng.protocol mng
+
+
+#--------Activate Scheduler
+init.sch PeersimSimulator.peersim.edsim.CDScheduler
+init.sch.protocol clt ctrl wrk cld mng
+init.sch.randstart
+
+#--------Activate Initializers
+include.init sch Net0 Net1 InitWrk InitClt InitCtrl InitCld InitMng
+

@@ -7,6 +7,7 @@ import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
 import PeersimSimulator.peersim.env.Nodes.Events.OffloadInstructions;
 import PeersimSimulator.peersim.env.Nodes.Events.WorkerInfo;
 import PeersimSimulator.peersim.env.Records.FLUpdate;
+import PeersimSimulator.peersim.env.Records.TaskInfo;
 import PeersimSimulator.peersim.env.Tasks.ITask;
 
 import java.util.List;
@@ -114,6 +115,8 @@ public interface Worker extends CDProtocol, EDProtocol {
 
     List<ITask> extractCompletedTasks();
 
+    List<TaskInfo> getAllTaskInfo();
+
     void wrkDbgLog(String msg);
 
     void wrkErrLog(String event, String msg);
@@ -141,4 +144,5 @@ public interface Worker extends CDProtocol, EDProtocol {
 
     int getTotalReceivedTasks();
 
+    TaskInfo getNextTaskInfo();
 }

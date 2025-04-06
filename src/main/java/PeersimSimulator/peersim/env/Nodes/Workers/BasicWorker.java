@@ -140,14 +140,34 @@ public class BasicWorker extends AbstractWorker{
         if (this.current != null && !offloading) {
             return this.current;
         }
-        if (!this.queue.isEmpty()) {
-            return this.queue.pollFirst();
+        if(!offloading) {
+            if (!this.queue.isEmpty()) {
+                return this.queue.pollFirst();
+            }
+            if (!this.recievedApplications.isEmpty()) {
+                applicationSerialization();
+                return this.queue.pollFirst();
+            }
+            return null;
+        }else{
+            // In this branch we must be offloading stuff. So we will need to iterate over the options, check wether
+            // they were picked to process locally. If not, send the first task that was not selected for local processing.
+            // If all tasks were flagged for local processing, then we will return null.
+
+            // We look over all the apps.
+            if(!this.recievedApplications.isEmpty()) {
+                applicationSerialization();
+            }
+            for (ITask task : this.queue) {
+                if (!this.tasksToBeLocallyProcessed.contains(task.getId())) {
+                    this.queue.remove(task);
+                    return task;
+                }
+            }
+
+            return null;
         }
-        if(!this.recievedApplications.isEmpty()){
-            applicationSerialization();
-            return this.queue.pollFirst();
-        }
-        return null;
+
     }
 
     private ITask selectNextAvailableTaskNoRemove(boolean offloading) {
