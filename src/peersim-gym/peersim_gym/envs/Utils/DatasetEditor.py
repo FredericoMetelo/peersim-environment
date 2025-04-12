@@ -22,6 +22,20 @@ def getAvailableVars(dataset):
     print("Available variables:", vars_list)
     return vars_list
 
+def getMinAndMaxVARS(dataset, vars):
+    """
+    Returns a dictionary of {var: (min, max)} for a list of variables.
+    """
+    stats = {}
+    for var in vars:
+        values = [features[var] for features in dataset.values() if var in features]
+        if values:
+            min_val = np.min(values)
+            max_val = np.max(values)
+            stats[var] = (min_val, max_val)
+        else:
+            stats[var] = (None, None)
+    return stats
 
 def getMeanAndStdVARS(dataset, vars):
     """
@@ -89,7 +103,7 @@ def saveDataset(dataset, path):
 
 
 
-def createNormalizedDataset(dataset):
+def standerdizedDataset(dataset):
     """
     Creates and returns a new dataset where all numerical variables are normalized
     per variable, across all jobs.
@@ -101,9 +115,9 @@ def createNormalizedDataset(dataset):
     stats = getMeanAndStdVARS(dataset, vars)
 
     # Build normalized dataset
-    normalized_dataset = {}
+    standerdized_dataset = {}
     for job_id, job in dataset.items():
-        normalized_job = {}
+        standerdized_job = {}
         for var in vars:
             if var in job:
                 mean, std = stats[var]
@@ -111,11 +125,30 @@ def createNormalizedDataset(dataset):
                     normalized_value = (job[var] - mean) / std
                 else:
                     normalized_value = 0.0  # Avoid division by zero
+                standerdized_job[var] = normalized_value
+        standerdized_dataset[job_id] = standerdized_job
+
+    return standerdized_dataset
+
+def normalizeDataset(dataset):
+    vars = getAvailableVars(dataset)
+
+    # Compute mean and std for each variable
+    stats = getMinAndMaxVARS(dataset, vars)
+    # Build normalized dataset
+    normalized_dataset = {}
+    for job_id, job in dataset.items():
+        normalized_job = {}
+        for var in vars:
+            if var in job:
+                min_val, max_val = stats[var]
+                if max_val and min_val != 0:
+                    normalized_value = (job[var] - min_val) / (max_val - min_val)
+                else:
+                    normalized_value = 0.0  # Avoid division by zero
                 normalized_job[var] = normalized_value
         normalized_dataset[job_id] = normalized_job
-
     return normalized_dataset
-
 
 def rescaleDatasetWithMeansAndStds(dataset, aggregate_metrics):
     """
@@ -140,10 +173,12 @@ def rescaleDatasetWithMeansAndStds(dataset, aggregate_metrics):
     return rescaled_dataset
 
 
+import numpy as np
+from scipy import stats
 
 def getAggregateInstructionAndMemoryMetrics(dataset, defaultCPUWorkload, defaultMemoryWorkload):
     """
-    Computes aggregate metrics (mean, std, min, max) for:
+    Computes aggregate metrics (mean, std, min, max, median, mode) for:
     - estimated_instructions
     - estimated_memory
     using the formulas provided and constant workloads.
@@ -165,14 +200,36 @@ def getAggregateInstructionAndMemoryMetrics(dataset, defaultCPUWorkload, default
         memory_list.append(est_memory)
 
     def compute_metrics(values):
+        values_array = np.array(values)
+        mode_result = stats.mode(values_array, nan_policy='omit')
         return {
-            "mean": np.mean(values),
-            "std": np.std(values),
-            "min": np.min(values),
-            "max": np.max(values)
+            "mean": np.mean(values_array),
+            "std": np.std(values_array),
+            "min": np.min(values_array),
+            "max": np.max(values_array),
+            "median": np.median(values_array),
+            "mode": mode_result.mode if mode_result.count > 0 else None
         }
 
     return {
         "estimated_instructions": compute_metrics(instruction_list),
         "estimated_memory": compute_metrics(memory_list)
     }
+
+
+def rescale(dataset, scale, rescale_vars=None):
+    """
+    Rescales the dataset by a given scale factor.
+    """
+    if rescale_vars is None:
+        rescale_vars = getAvailableVars(dataset)
+    rescaled_dataset = {}
+    for job_id, job in dataset.items():
+        rescaled_job = {}
+        for var, value in job.items():
+                if var in rescale_vars:
+                    rescaled_job[var] = value * scale
+                else:
+                    rescaled_job[var] = value
+        rescaled_dataset[job_id] = rescaled_job
+    return rescaled_dataset
