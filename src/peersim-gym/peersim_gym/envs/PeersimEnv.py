@@ -511,7 +511,10 @@ class PeersimEnv(ParallelEnv):
         if not (self.__log_dir is None):
             log_file = self.__log_dir + f'log_run_{self.__run_counter}.txt'
             if os.path.exists(log_file):
-                os.remove(log_file)
+                try:
+                    os.remove(log_file)
+                except OSError as e:
+                    print(f"Error: {e.strerror}")
         self.simulator.run(port=self.port, output_file=log_file)
 
     def __get_obs(self):
