@@ -339,6 +339,8 @@ class PeersimEnv(ParallelEnv):
             self.simulator = PeersimThread(name=f'Run{self.__run_counter}', configs=self.config_path)
         # self.__gen_config(self.config_archive, regen_seed=True)
         self.__run_peersim()
+
+        time.sleep(10)
         up = self.__is_up()
         stopped = self.__is_stopped()
         tries = 0
