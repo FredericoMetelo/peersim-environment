@@ -33,11 +33,8 @@ We provide some agent implementations to act as examples of agents that work on 
 3. [Bibtex](###Bibtex)<br>
 
 ## Changelog
-- Revamped the Cloud to be more logical to use.
-- Fixed a bug regarding the usage of the cloud, when some nodes knew all the other nodes in the network, and others didn't.
-- Added a simple visualization of the Cloud whenever the cloud is active.
-- Added a new configuration to the simulation that allows for the setting of the Cloud Position.
-- Tweaked the definition of the cloud properties so that the number of VMs and the default power of the VMs have separate parameters (For now all VMs will have the same processing power).
+- Added a new mechanism to extend the state to have more information available about the agent's node queue to the respective agent.
+- Added a tracking of an average response time for each of the nodes.
 
 <a name="HowTheSimulationWorks"></a>
 ## How the Simulation Works
