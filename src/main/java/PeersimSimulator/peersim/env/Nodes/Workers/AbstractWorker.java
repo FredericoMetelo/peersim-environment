@@ -921,4 +921,6 @@ public abstract class AbstractWorker implements Worker {
     public double getAverageResponseTime(){
         return this.averageResponseTime;
     }
+
+
 }

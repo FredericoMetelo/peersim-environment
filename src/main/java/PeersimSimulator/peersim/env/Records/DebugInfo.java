@@ -5,6 +5,7 @@ import java.util.List;
 public record DebugInfo(int selectedNode,
 
                         long currentCycle,
+                        List<Integer> ids,
                         List<Integer> droppedTotal,
                         List<Integer> droppedThisCycle,
                         List<Integer> totalTasksRecieved,

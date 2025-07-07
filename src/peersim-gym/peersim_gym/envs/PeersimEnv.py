@@ -30,6 +30,7 @@ STATE_G_OVERLOADED_NODES_SIM = "timesOverloaded"
 STATE_G_OCCUPANCY = "occupancy"
 
 STATE_G_AVERAGE_COMPLETION_TIMES = "averageCompletionTimes"
+STATE_G_IDS = "ids"
 STATE_G_Q = "true_Q"
 STATE_G_DROPPED_TASKS = "droppedTasks"
 STATE_G_FINISHED_TASKS = "finishedTasks"
@@ -41,6 +42,10 @@ STATE_G_TOTAL_RECEIVED_PER_NODE = "totalTasksReceived"
 STATE_G_TOTAL_FINISHED_PER_NODE = "totalTasksProcessedPerNode"
 STATE_G_OFFLOADED_TASKS_FROM_NODE = "totalTasksOffloadedFromNode"
 STATE_G_OFFLOADED_TASKS_TO_NODE = "totalTasksOffloadedToNode"
+STATE_G_AVERAGE_RT = "averageResponseTime"
+STATE_G_TASK_RCV_SINCE_LAST_CYCLE = "tasksRecievedSinceLastCycle"
+STATE_G_TASKS_DRP_SINCE_LAST_CYCLE = "droppedThisCycle"
+
 STATE_NEXT_TASK = "nextTask"
 STATE_TASKS_IN_QUEUE = "tasks"
 STATE_TASK_PARAM_PROGRESS = "progress"
@@ -48,6 +53,7 @@ STATE_TASK_PARAM_TOTAL_INSTR = "totalInstructions"
 STATE_TASK_PARAM_OUTPUT_SIZE = "outputSizeBytes"
 STATE_TASK_PARAM_INPUT_SIZE = "inputSizeBytes"
 STATE_TASK_PARAM_PROCESSED_LOCALLY = "processedLocally"
+
 STATE_TASK_PARAM_ID = "id"
 
 AGENT_PREFIX = "worker_"
@@ -132,12 +138,16 @@ class PeersimEnv(ParallelEnv):
         self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed, phy_rs_term=phy_rs_term)
 
     def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False, preferred_port=8080,
-                 phy_rs_term: Callable[[Space], float] = None, fl_update_size: Callable[[Any], int] = None, state_info="none"):
+                 phy_rs_term: Callable[[Space], float] = None, fl_update_size: Callable[[Any], int] = None, state_info="none", reward_type="dense"):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
         # (aka if number_nodes is 10 there is a total of 11 nodes (1 controller + 10 workers))
 
+        if reward_type not in ["sparse", "dense"]:
+            raise ValueError("Invalid reward type. Use 'sparse' or 'dense'.")
+
+        self.reward_type = reward_type
         self.phy_rs_term = phy_rs_term
         validate_simulation_type(simtype)
         self.render_mode = render_mode
@@ -541,11 +551,13 @@ class PeersimEnv(ParallelEnv):
             self._observation = partial_obs
             self._global_obs = global_obs
             self._done = done
+
+            self._dbg_info = s.get("DebugInfo", {})
             # TODO: Add a modification of the partial observations here, to filter out the information the users does not
             #  want
             observations = {self.agents[i]: self.extract_local_data(partial_obs[i]) for i in range(len(self.agents))}
             self.state = observations
-            extracted_data = self.extract_global_data(global_obs)
+            extracted_data = self.extract_global_data(global_obs, self._dbg_info)
             dbg_info = {
                 STATE_G_Q: global_obs[STATE_Q_FIELD],
                 STATE_G_OVERLOADED_NODES: extracted_data[0],
@@ -562,6 +574,11 @@ class PeersimEnv(ParallelEnv):
                 STATE_G_OFFLOADED_TASKS_FROM_NODE: extracted_data[11],
                 STATE_G_TOTAL_FINISHED_PER_NODE: extracted_data[12],
                 STATE_G_OFFLOADED_TASKS_TO_NODE: extracted_data[13],
+                STATE_G_TASK_RCV_SINCE_LAST_CYCLE: extracted_data[14],
+                STATE_G_TASKS_DRP_SINCE_LAST_CYCLE: extracted_data[15],
+                STATE_G_AVERAGE_RT: extracted_data[16]
+
+                # TODO Add the new information here!!! Confirm the order is correct, bcs added ids!!! Could hv borked (did fr
             }
 
             self._info = dbg_info
@@ -645,13 +662,22 @@ class PeersimEnv(ParallelEnv):
         rewards = {}
         for agent in self.agents:  # Refer to r/Arkham for the correct thing to ask about whomever (Man) left this here...
             if agent in actions and not mask[agent]:
-                p = self._compute_agent_reward(
-                    agent_og_obs=original_obs[agent],
-                    agent_obs=obs[agent],
-                    action=actions[agent],
-                    agent_result=result[agent],
-                    agent_idx=self.agent_name_mapping[agent]
-                )
+                if self.reward_type is "dense":
+                    p = self._compute_dense_reward(
+                        agent_og_obs=original_obs[agent],
+                        agent_obs=obs[agent],
+                        action=actions[agent],
+                        agent_result=result[agent],
+                        agent_idx=self.agent_name_mapping[agent]
+                    )
+                else:
+                    p = self._compute_sparse_reward(
+                        agent_og_obs=original_obs[agent],
+                        agent_obs=obs[agent],
+                        action=actions[agent],
+                        agent_result=result[agent],
+                        agent_idx=self.agent_name_mapping[agent]
+                    )
                 rewards[agent], self.last_reward_components[agent] = p
                 #print(f"Agent {agent} got reward {rewards[agent]}")
             elif agent in actions and mask[agent]:
@@ -680,7 +706,7 @@ class PeersimEnv(ParallelEnv):
             t_c = w_o * T / C
         return t_c
 
-    def _compute_agent_reward(self, agent_og_obs, agent_obs, action, agent_result, agent_idx):
+    def _compute_dense_reward(self, agent_og_obs, agent_obs, action, agent_result, agent_idx):
         # Long story short... having a large range of rewards is making it so that the agent is not learning. Q-values
         # are exploding. The kind people in stack exchange have recommended that I keep the rewards in a small range [-1, 1]
         # https://datascience.stackexchange.com/questions/20098/should-i-normalize-rewards-in-reinforcement-learning
@@ -905,7 +931,7 @@ class PeersimEnv(ParallelEnv):
         return obs
 
 
-    def extract_global_data(self, global_obs):
+    def extract_global_data(self, global_obs, dbg_info):
         Q = global_obs[STATE_Q_FIELD]
         layers = global_obs[STATE_G_LAYERS]
         # Check number of overloaded nodes.
@@ -916,7 +942,6 @@ class PeersimEnv(ParallelEnv):
         response_time = global_obs[STATE_G_AVERAGE_COMPLETION_TIMES]
 
         dropped_tasks = global_obs[STATE_G_DROPPED_TASKS]
-
         finished_tasks = global_obs[STATE_G_FINISHED_TASKS]
         total_tasks = global_obs[STATE_G_TOTAL_TASKS]
         energy_consumed = global_obs[STATE_G_CONSUMED_ENERGY]
@@ -930,7 +955,14 @@ class PeersimEnv(ParallelEnv):
         offloaded_tasks_from_node = global_obs[STATE_G_OFFLOADED_TASKS_FROM_NODE]
         tasks_offloaded_to_node = global_obs[STATE_G_OFFLOADED_TASKS_TO_NODE]
 
-        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node, tasks_offloaded_to_node
+        # TODO Need to extract the correct entries!
+        ids = dbg_info[STATE_G_IDS]
+        task_received_since_last_cycle = dbg_info[STATE_G_TASK_RCV_SINCE_LAST_CYCLE]
+        tasks_dropped_since_last_cycle = dbg_info[STATE_G_TASKS_DRP_SINCE_LAST_CYCLE]
+        average_rt = dbg_info[STATE_G_AVERAGE_COMPLETION_TIMES]
+
+        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node, tasks_offloaded_to_node, task_received_since_last_cycle, tasks_dropped_since_last_cycle, average_rt
+
 
 
     def set_random_seed(self):
@@ -1041,3 +1073,11 @@ class PeersimEnv(ParallelEnv):
         except requests.exceptions.Timeout:
             print("Failed  to send action, could not connect to the environment. Returning old result.")
             return self._result
+
+    def _compute_sparse_reward(self, agent_og_obs, agent_obs, action, agent_result, agent_idx):
+        # TODO add the necessary information to the result being read.
+        # no_fin = agent_result[]
+
+        # Then check for number of completed tasks for each node, add that as reward. Check for number of tasks dropped, add that as a penalty.
+
+        pass

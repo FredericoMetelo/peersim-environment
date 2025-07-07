@@ -264,6 +264,13 @@ public abstract class AbstractController implements Controller {
         List<Integer> q = new ArrayList<>(this.workerInfo.stream().map(WorkerInfo::getFreeTaskSlots).toList());
         return q;
     }
+
+    protected double getAverageResponseTime() {
+        if (this.correspondingWorker == null) {
+            return 0;
+        }
+        return this.correspondingWorker.getAverageResponseTime();
+    }
     /**
      * This method moves the current node to the first position of the list. This is allows the agent to always find the node in the correct position and avoids mistakes
      */
@@ -315,6 +322,7 @@ public abstract class AbstractController implements Controller {
 
     @Override
     public DebugInfo getDebugInfo() {
+        List<Integer> ids = new LinkedList<>();
         List<Integer> droppedFromLastCycle = new LinkedList<Integer>();
         List<Integer> droppedTotal = new LinkedList<Integer>();
         List<Integer> totalTasksRecieved = new LinkedList<Integer>();
@@ -326,6 +334,8 @@ public abstract class AbstractController implements Controller {
 
         for (int i = 0; i < Network.size(); ++i) {
             Worker w = ((Worker) Network.get(i).getProtocol(Worker.getPid()));
+
+            ids.add(w.getId());
             droppedTotal.add(w.getTotalDropped());
             droppedFromLastCycle.add(w.getDroppedLastCycle());
             totalTasksRecieved.add(w.getTotalTasksRecieved());
@@ -339,6 +349,7 @@ public abstract class AbstractController implements Controller {
         }
         return new DebugInfo(this.selectedNode,
                 CommonState.getTime(),
+                ids,
                 droppedTotal,
                 droppedFromLastCycle,
                 totalTasksRecieved,
@@ -408,4 +419,6 @@ public abstract class AbstractController implements Controller {
     public void ctrErrLog(String msg) {
         Log.logErr("CTR", this.id, "ERROR", msg);
     }
+
+
 }

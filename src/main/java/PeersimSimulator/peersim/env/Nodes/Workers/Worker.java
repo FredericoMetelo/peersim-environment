@@ -148,4 +148,5 @@ public interface Worker extends CDProtocol, EDProtocol {
 
     TaskInfo getNextTaskInfo();
     double getAverageResponseTime();
+
 }

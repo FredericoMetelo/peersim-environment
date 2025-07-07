@@ -87,8 +87,10 @@ public class BasicController extends AbstractController {
         SDNNodeProperties propsTarget = (SDNNodeProperties) srcLinkable.getNeighbor(neighbourIndex).getProtocol(SDNNodeProperties.getPid());
 
         double d_i_j = Math.sqrt(Math.pow(propsNode.getY() - propsTarget.getY(), 2) + Math.pow(propsNode.getX() - propsTarget.getX(), 2));
+
         return new BasicSimulationData(sourceID, d_i_j, this.getWorkerInfo().get(neighbourIndex), this.extractCompletedTasks(), success);
     }
+
 
     //=== Logging and Debugging
     /*

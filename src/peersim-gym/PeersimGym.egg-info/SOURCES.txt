@@ -11,6 +11,7 @@ peersim_gym/ConfigHelper/EtherTopologyReader.py
 peersim_gym/ConfigHelper/TopologyGeneration.py
 peersim_gym/envs/PeersimEnv.py
 peersim_gym/envs/__init__.py
+peersim_gym/envs/Utils/DatasetEditor.py
 peersim_gym/envs/Utils/FLUpdateStoreManager.py
 peersim_gym/envs/Utils/PeersimConfigGenerator.py
 peersim_gym/envs/Utils/PeersimThread.py
