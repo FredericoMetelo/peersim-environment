@@ -94,6 +94,8 @@ public interface Worker extends CDProtocol, EDProtocol {
 
     int getDroppedLastCycle();
 
+    int getTotalCompletedLastCycle();
+
     int getTotalDropped();
 
     int getTotalTasksRecieved();
@@ -141,4 +143,5 @@ public interface Worker extends CDProtocol, EDProtocol {
 
     int getTotalReceivedTasks();
 
+    double getAverageResponseTime();
 }

@@ -109,6 +109,7 @@ public abstract class AbstractWorker implements Worker {
     protected int timesOverloaded;
     protected int timesOffloadedFromNode;
     protected int tasksOffloadedToNode;
+    private double averageResponseTime;
 
 
     public AbstractWorker(String prefix) {
@@ -124,6 +125,7 @@ public abstract class AbstractWorker implements Worker {
         failedOnArrivalToNode = 0;
         expiredTasksInNode = 0;
         timesOverloaded = 0;
+        averageResponseTime = 0;
 
         current = null;
         correspondingController = null;
@@ -303,6 +305,9 @@ public abstract class AbstractWorker implements Worker {
         app.addProgress(finishedTask.getId());
         finishedTask.addEvent(TaskHistory.TaskEvenType.COMPLETED, this.id, CommonState.getTime());
         tasksCompletedSinceLastCycle.add(finishedTask);
+
+        this.averageResponseTime += (CommonState.getTime() - app.getArrivalTime() + this.getTotalTasksProcessed()*this.getAverageResponseTime())/ (this.getTotalTasksProcessed() + 1) ;
+
         if (app.isFinished()) {
             this.handleApplicationFinish(node, protocolID, app);
         }
@@ -425,7 +430,7 @@ public abstract class AbstractWorker implements Worker {
             Application a = managedApplications.get(t.getAppID());
             if (a != null && a.getDeadline() + timeAfterDeadline <= CommonState.getTime()) {
                 t.addEvent(TaskHistory.TaskEvenType.DROPPED, this.id, CommonState.getTime());
-                tasksCompletedSinceLastCycle.add(t);
+//                tasksCompletedSinceLastCycle.add(t);
 
                 droppedLastCycle++;
                 totalDropped++;
@@ -780,6 +785,12 @@ public abstract class AbstractWorker implements Worker {
         return aux_droppedLastCycle;
     }
 
+    @Override
+    public int getTotalCompletedLastCycle(){
+        int aux = tasksCompletedSinceLastCycle.size();
+        return aux;
+    }
+
     /**
      * @return all the tasks dropped in this node since the beginning of the simulation.
      */
@@ -874,5 +885,9 @@ public abstract class AbstractWorker implements Worker {
         double managedAvgWaitTime = this.recievedApplications.stream().mapToDouble(Application::getTotalTaskSize).average().orElse(0);
         double queueAvgWaitTime = this.queue.stream().mapToDouble(ITask::getTotalInstructions).average().orElse(0);
         return (managedAvgWaitTime + queueAvgWaitTime) / processingPower;
+    }
+
+    public double getAverageResponseTime(){
+        return this.averageResponseTime;
     }
 }

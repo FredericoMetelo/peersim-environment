@@ -57,6 +57,7 @@ public abstract class AbstractController implements Controller {
 
 
 
+
     public AbstractController() {
         active = false;
         selectedNode = this.getId(); // Ignores the controller.
@@ -319,6 +320,7 @@ public abstract class AbstractController implements Controller {
         List<Integer> totalTasksProcessed = new LinkedList<Integer>();
         List<Integer> totalTasksOffloaded = new LinkedList<Integer>();
         List<Boolean> workerInvariant = new LinkedList<Boolean>();
+        List<Double> averageResponseTime = new LinkedList<Double>();
 
         for (int i = 0; i < Network.size(); ++i) {
             Worker w = ((Worker) Network.get(i).getProtocol(Worker.getPid()));
@@ -328,6 +330,7 @@ public abstract class AbstractController implements Controller {
             tasksRecievedSinceLastCycle.add(w.getTasksRecievedSinceLastCycle());
             totalTasksProcessed.add(w.getTotalTasksProcessed());
             totalTasksOffloaded.add(w.getTotalTasksOffloadedFromNode());
+            averageResponseTime.add(w.getAverageResponseTime());
             workerInvariant.add(
                     w.getTotalTasksRecieved() == w.getTotalDropped() + w.getTotalTasksProcessed() + w.getTotalTasksOffloadedFromNode() + w.getTotalNumberOfTasksInNode()
             );
@@ -340,7 +343,8 @@ public abstract class AbstractController implements Controller {
                 tasksRecievedSinceLastCycle,
                 totalTasksProcessed,
                 totalTasksOffloaded,
-                workerInvariant);
+                workerInvariant,
+                averageResponseTime);
     }
 
     @Override
