@@ -164,4 +164,10 @@ public abstract class ITask {
                 ", progress=" + progress +
                 '}';
     }
+    @Override
+    public boolean equals(Object o){
+        if (this == o) return true;
+        if (!(o instanceof ITask task)) return false;
+        return this.id.equals(task.getId());
+    }
 }

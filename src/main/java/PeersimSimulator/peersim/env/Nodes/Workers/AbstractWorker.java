@@ -11,9 +11,7 @@ import PeersimSimulator.peersim.env.Nodes.Clients.Client;
 import PeersimSimulator.peersim.env.Nodes.Cloud.Cloud;
 import PeersimSimulator.peersim.env.Nodes.Controllers.Controller;
 import PeersimSimulator.peersim.env.Nodes.Events.*;
-import PeersimSimulator.peersim.env.Records.DependentTaskComparator;
-import PeersimSimulator.peersim.env.Records.FLUpdate;
-import PeersimSimulator.peersim.env.Records.LoseTaskInfo;
+import PeersimSimulator.peersim.env.Records.*;
 import PeersimSimulator.peersim.env.Tasks.Application;
 import PeersimSimulator.peersim.env.Tasks.ITask;
 import PeersimSimulator.peersim.env.Tasks.TaskHistory;
@@ -531,6 +529,17 @@ public abstract class AbstractWorker implements Worker {
             lti = this.loseTaskInformation.remove(task.getId());
         } else {
             wrkErrLog("ERROR", "Something went terribly wrong. A task that should not be in this node is being offloaded. Node: " + node.getID() + " Timestep: " + CommonState.getIntTime());
+            wrkErrLog("ERROR", "Dumping worker state: ");
+            wrkErrLog("ERROR", "ID: " + this.id);
+            wrkErrLog("ERROR", "Recieved Apps: " + this.recievedApplications);
+            wrkErrLog("ERROR", "Managed Apps: " + this.managedApplications);
+            wrkErrLog("ERROR", "Queue: " + this.queue);
+            wrkErrLog("ERROR", "LoseTaskInfo: " + this.loseTaskInformation);
+            wrkErrLog("ERROR", "Current: " + this.current);
+            wrkErrLog("ERROR", "TasksCompletedSinceLastCycle: " + this.tasksCompletedSinceLastCycle);
+            wrkErrLog("ERROR", "TasksToBeLocallyProcessed: " + this.tasksToBeLocallyProcessed);
+            wrkErrLog("ERROR", "Task: " + task.getId() + " AppID: " + task.getAppID() + " ClientID: " + task.getClientID());
+
             return null;
         }
         return lti;
@@ -864,6 +873,28 @@ public abstract class AbstractWorker implements Worker {
         return aux;
     }
 
+    @Override
+    public TaskInfo getNextTaskInfo() {
+        for (ITask t : queue) {
+            if (!this.tasksToBeLocallyProcessed.contains(t.getId())) {
+                return new TaskInfo(t, false);
+            }
+        }
+        return new DummyTaskInfo();
+    }
+
+    @Override
+    public List<TaskInfo> getAllTaskInfo() {
+        List<TaskInfo> taskInfos = new ArrayList<>();
+        for (ITask task : queue) {
+            taskInfos.add(new TaskInfo(task, this.tasksToBeLocallyProcessed.contains(task.getId())));
+        }
+
+        for (int i=taskInfos.size(); i<this.qMAX; i++){
+            taskInfos.add(new DummyTaskInfo());
+        }
+        return taskInfos;
+    }
     @Override
     public void wrkDbgLog(String msg) {
         Log.logDbg("WRK", this.id, "DEBUG", msg);
