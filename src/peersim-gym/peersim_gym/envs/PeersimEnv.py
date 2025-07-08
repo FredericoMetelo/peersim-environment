@@ -138,7 +138,7 @@ class PeersimEnv(ParallelEnv):
         self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed, phy_rs_term=phy_rs_term)
 
     def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False, preferred_port=8080,
-                 phy_rs_term: Callable[[Space], float] = None, fl_update_size: Callable[[Any], int] = None, state_info="none", reward_type="sparse"):
+                 phy_rs_term: Callable[[Space, dict], float] = None, fl_update_size: Callable[[Any], int] = None, state_info="none", reward_type="sparse"):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
@@ -835,7 +835,7 @@ class PeersimEnv(ParallelEnv):
         reward = U - (D + O)
         F = 0
         if self.phy_rs_term is not None:
-            F = self.phy_rs_term(agent_obs) - self.phy_rs_term(agent_og_obs)
+            F = self.phy_rs_term(agent_obs, agent_info) - self.phy_rs_term(agent_og_obs, agent_info)
         reward += F
         print(f"Action:{source_of_task_global_index}->{target_of_task_global_index}      Reward:{reward}  Composed of - U:{U} | D:{D} [t_C {t_c} ; t_w {t_w} ; t_e {t_e}] | O:{O}) | F:{F}")
         return (reward, {"U": U, "D": D, "O": O, "F": F})
@@ -903,7 +903,7 @@ class PeersimEnv(ParallelEnv):
         F = 0
         if self.phy_rs_term is not None:
             F = self.phy_rs_term(agent_obs) - self.phy_rs_term(agent_og_obs)
-
+        r += F
         return r, {"U": no_fin*self.UTILITY_REWARD, "D": no_fail*self.UTILITY_REWARD, "O": 0, "F": F}
     def poolNetStats(self):
         iter = 0
