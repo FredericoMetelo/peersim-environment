@@ -320,45 +320,45 @@ public abstract class AbstractController implements Controller {
         );
     }
 
-    @Override
-    public DebugInfo getDebugInfo() {
-        List<Integer> ids = new LinkedList<>();
-        List<Integer> droppedFromLastCycle = new LinkedList<Integer>();
-        List<Integer> droppedTotal = new LinkedList<Integer>();
-        List<Integer> totalTasksRecieved = new LinkedList<Integer>();
-        List<Integer> tasksRecievedSinceLastCycle = new LinkedList<Integer>();
-        List<Integer> totalTasksProcessed = new LinkedList<Integer>();
-        List<Integer> totalTasksOffloaded = new LinkedList<Integer>();
-        List<Boolean> workerInvariant = new LinkedList<Boolean>();
-        List<Double> averageResponseTime = new LinkedList<Double>();
-
-        for (int i = 0; i < Network.size(); ++i) {
-            Worker w = ((Worker) Network.get(i).getProtocol(Worker.getPid()));
-
-            ids.add(w.getId());
-            droppedTotal.add(w.getTotalDropped());
-            droppedFromLastCycle.add(w.getDroppedLastCycle());
-            totalTasksRecieved.add(w.getTotalTasksRecieved());
-            tasksRecievedSinceLastCycle.add(w.getTasksRecievedSinceLastCycle());
-            totalTasksProcessed.add(w.getTotalTasksProcessed());
-            totalTasksOffloaded.add(w.getTotalTasksOffloadedFromNode());
-            averageResponseTime.add(w.getAverageResponseTime());
-            workerInvariant.add(
-                    w.getTotalTasksRecieved() == w.getTotalDropped() + w.getTotalTasksProcessed() + w.getTotalTasksOffloadedFromNode() + w.getTotalNumberOfTasksInNode()
-            );
-        }
-        return new DebugInfo(this.selectedNode,
-                CommonState.getTime(),
-                ids,
-                droppedTotal,
-                droppedFromLastCycle,
-                totalTasksRecieved,
-                tasksRecievedSinceLastCycle,
-                totalTasksProcessed,
-                totalTasksOffloaded,
-                workerInvariant,
-                averageResponseTime);
-    }
+//    @Override
+//    public DebugInfo getDebugInfo() {
+//        List<Integer> ids = new LinkedList<>();
+//        List<Integer> droppedFromLastCycle = new LinkedList<Integer>();
+//        List<Integer> droppedTotal = new LinkedList<Integer>();
+//        List<Integer> totalTasksRecieved = new LinkedList<Integer>();
+//        List<Integer> tasksRecievedSinceLastCycle = new LinkedList<Integer>();
+//        List<Integer> totalTasksProcessed = new LinkedList<Integer>();
+//        List<Integer> totalTasksOffloaded = new LinkedList<Integer>();
+//        List<Boolean> workerInvariant = new LinkedList<Boolean>();
+//        List<Double> averageResponseTime = new LinkedList<Double>();
+//
+//        for (int i = 0; i < Network.size(); ++i) {
+//            Worker w = ((Worker) Network.get(i).getProtocol(Worker.getPid()));
+//
+//            ids.add(w.getId());
+//            droppedTotal.add(w.getTotalDropped());
+//            droppedFromLastCycle.add(w.getDroppedLastCycle());
+//            totalTasksRecieved.add(w.getTotalTasksRecieved());
+//            tasksRecievedSinceLastCycle.add(w.getTasksRecievedSinceLastCycle());
+//            totalTasksProcessed.add(w.getTotalTasksProcessed());
+//            totalTasksOffloaded.add(w.getTotalTasksOffloadedFromNode());
+//            averageResponseTime.add(w.getAverageResponseTime());
+//            workerInvariant.add(
+//                    w.getTotalTasksRecieved() == w.getTotalDropped() + w.getTotalTasksProcessed() + w.getTotalTasksOffloadedFromNode() + w.getTotalNumberOfTasksInNode()
+//            );
+//        }
+//        return new DebugInfo(
+//                CommonState.getTime(),
+//                ids,
+//                droppedTotal,
+//                droppedFromLastCycle,
+//                totalTasksRecieved,
+//                tasksRecievedSinceLastCycle,
+//                totalTasksProcessed,
+//                totalTasksOffloaded,
+//                workerInvariant,
+//                averageResponseTime);
+//    }
 
     @Override
     public boolean sendFLUpdate(FLUpdate update) {

@@ -2,7 +2,7 @@ package PeersimSimulator.peersim.env.Records;
 
 import java.util.List;
 
-public record DebugInfo(int selectedNode,
+public record DebugInfo(
 
                         long currentCycle,
                         List<Integer> ids,

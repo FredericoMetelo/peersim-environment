@@ -138,7 +138,7 @@ class PeersimEnv(ParallelEnv):
         self.__init__(render_mode, configs, log_dir=log_dir, randomize_seed=randomize_seed, phy_rs_term=phy_rs_term)
 
     def __init__(self, render_mode=None, simtype="basic", configs=None, log_dir=None, randomize_seed=False, preferred_port=8080,
-                 phy_rs_term: Callable[[Space], float] = None, fl_update_size: Callable[[Any], int] = None, state_info="none", reward_type="dense"):
+                 phy_rs_term: Callable[[Space], float] = None, fl_update_size: Callable[[Any], int] = None, state_info="none", reward_type="sparse"):
         # ==== Variables to configure the PeerSim
         # This value does not include the controller, SIZE represents the total number of nodes which includes
         # the controller.
@@ -368,7 +368,8 @@ class PeersimEnv(ParallelEnv):
         self.fl_update_store.passNeighbourMatrix(self.neighbourMatrix)
         observations = self.normalize_observations(observations)
 
-        infos = {agent: {} for agent in self.agents}
+
+        infos = {agent: self.build_agent_info(info, agent) for agent in self.agents}
 
         return observations, infos
 
@@ -388,8 +389,10 @@ class PeersimEnv(ParallelEnv):
             time.sleep(0.05)
 
         observations, done, info = self.__get_obs()
+        agent_info = {agent: self.build_agent_info(info, agent) for agent in self.agents}
 
-        rewards = self._compute_rewards(original_obs, observations, actions, result, mask)
+        rewards = self._compute_rewards(original_obs, observations, actions, result, mask, agent_info)
+        # print(f"\033[31m DEBUG:   {rewards} \033[0m")
 
         observations = self.normalize_observations(observations)
 
@@ -552,7 +555,7 @@ class PeersimEnv(ParallelEnv):
             self._global_obs = global_obs
             self._done = done
 
-            self._dbg_info = s.get("DebugInfo", {})
+            self._dbg_info = s.get("info", {})
             # TODO: Add a modification of the partial observations here, to filter out the information the users does not
             #  want
             observations = {self.agents[i]: self.extract_local_data(partial_obs[i]) for i in range(len(self.agents))}
@@ -574,9 +577,10 @@ class PeersimEnv(ParallelEnv):
                 STATE_G_OFFLOADED_TASKS_FROM_NODE: extracted_data[11],
                 STATE_G_TOTAL_FINISHED_PER_NODE: extracted_data[12],
                 STATE_G_OFFLOADED_TASKS_TO_NODE: extracted_data[13],
-                STATE_G_TASK_RCV_SINCE_LAST_CYCLE: extracted_data[14],
-                STATE_G_TASKS_DRP_SINCE_LAST_CYCLE: extracted_data[15],
-                STATE_G_AVERAGE_RT: extracted_data[16]
+                STATE_G_IDS:extracted_data[14],
+                STATE_G_TASK_RCV_SINCE_LAST_CYCLE: extracted_data[15],
+                STATE_G_TASKS_DRP_SINCE_LAST_CYCLE: extracted_data[16],
+                STATE_G_AVERAGE_RT: extracted_data[17]
 
                 # TODO Add the new information here!!! Confirm the order is correct, bcs added ids!!! Could hv borked (did fr
             }
@@ -654,11 +658,47 @@ class PeersimEnv(ParallelEnv):
 
         return status
 
+
+
+    def build_agent_info(self, info, agent):
+        agent_id = self.agent_name_mapping[agent]
+        i = 0
+
+        for n in info[STATE_G_IDS]:
+            if n == agent_id:
+                agent_id = i
+                break
+            i+=1
+
+        agent_info = {
+            STATE_G_Q: info[STATE_G_Q][agent_id],
+            STATE_G_OVERLOADED_NODES: info[STATE_G_OVERLOADED_NODES][agent_id],
+            STATE_G_OCCUPANCY: info[STATE_G_OCCUPANCY][agent_id],
+            # These are all client metrics, so not aligned with workers... And make no sense for inclusion in the agent info.
+            # STATE_G_AVERAGE_COMPLETION_TIMES: info[STATE_G_AVERAGE_COMPLETION_TIMES][agent_id],
+            # STATE_G_DROPPED_TASKS: info[STATE_G_DROPPED_TASKS][agent_id],
+            # STATE_G_FINISHED_TASKS: info[STATE_G_FINISHED_TASKS][agent_id],
+            # STATE_G_TOTAL_TASKS: info[STATE_G_TOTAL_TASKS][agent_id],
+            STATE_G_CONSUMED_ENERGY: info[STATE_G_CONSUMED_ENERGY][agent_id],
+            STATE_G_OVERLOADED_NODES_SIM: info[STATE_G_OVERLOADED_NODES_SIM][agent_id],
+            STATE_G_DROPPED_BY_EXPIRED: info[STATE_G_DROPPED_BY_EXPIRED][agent_id],
+            STATE_G_DROPPED_ON_ARRIVAL: info[STATE_G_DROPPED_ON_ARRIVAL][agent_id],
+            STATE_G_TOTAL_RECEIVED_PER_NODE: info[STATE_G_TOTAL_RECEIVED_PER_NODE][agent_id],
+            STATE_G_OFFLOADED_TASKS_FROM_NODE: info[STATE_G_OFFLOADED_TASKS_FROM_NODE][agent_id],
+            STATE_G_TOTAL_FINISHED_PER_NODE: info[STATE_G_TOTAL_FINISHED_PER_NODE][agent_id],
+            STATE_G_OFFLOADED_TASKS_TO_NODE: info[STATE_G_OFFLOADED_TASKS_TO_NODE][agent_id],
+            STATE_G_IDS: info[STATE_G_IDS][agent_id],
+            STATE_G_TASK_RCV_SINCE_LAST_CYCLE: info[STATE_G_TASK_RCV_SINCE_LAST_CYCLE][agent_id],
+            STATE_G_TASKS_DRP_SINCE_LAST_CYCLE: info[STATE_G_TASKS_DRP_SINCE_LAST_CYCLE][agent_id],
+            STATE_G_AVERAGE_RT: info[STATE_G_AVERAGE_RT][agent_id],
+        }
+        return agent_info
+
     def __gen_seed(self):
         n = randint(1000000000, 9999999999)
         return str(n)
 
-    def _compute_rewards(self, original_obs, obs, actions, result, mask) -> dict[float]:
+    def _compute_rewards(self, original_obs, obs, actions, result, mask, info) -> dict[float]:
         rewards = {}
         for agent in self.agents:  # Refer to r/Arkham for the correct thing to ask about whomever (Man) left this here...
             if agent in actions and not mask[agent]:
@@ -668,17 +708,20 @@ class PeersimEnv(ParallelEnv):
                         agent_obs=obs[agent],
                         action=actions[agent],
                         agent_result=result[agent],
-                        agent_idx=self.agent_name_mapping[agent]
+                        agent_idx=self.agent_name_mapping[agent],
+                        agent_info= info[agent]
                     )
-                else:
+                else: # Where is sane, and why is everyone going in?
                     p = self._compute_sparse_reward(
                         agent_og_obs=original_obs[agent],
                         agent_obs=obs[agent],
                         action=actions[agent],
                         agent_result=result[agent],
-                        agent_idx=self.agent_name_mapping[agent]
+                        agent_idx=self.agent_name_mapping[agent],
+                        agent_info= info[agent]
                     )
                 rewards[agent], self.last_reward_components[agent] = p
+
                 #print(f"Agent {agent} got reward {rewards[agent]}")
             elif agent in actions and mask[agent]:
                 rewards[agent] = -self.UTILITY_REWARD
@@ -688,25 +731,7 @@ class PeersimEnv(ParallelEnv):
             #     print(f"Action of agent {agent} was not found in the actions sent.")
         return rewards
 
-    def _compute_delay(self, d_i_j, w_o):
-        if d_i_j == 0:
-            t_c = 0
-        else:
-            T = self.AVERAGE_TASK_SIZE * 8e6;
-            W = self.BANDWIDTH * 1e6;
-            lambda_wavelength = 3e8 / 2.4e9
-            P_t = self.TRANSMISSION_POWER
-            N_0 = self.NORMALIZED_THERMAL_NOISE_POWER + 10 * math.log10(W)
-            h = 10 * math.log10((lambda_wavelength ** 2) / (16 * math.pi ** 2)) - 20 * math.log10(d_i_j)
-
-            SNR_db = P_t + h - N_0
-            SNR_linear = 10 ** (SNR_db / 10)
-            C = W * math.log2(1 + SNR_linear)
-
-            t_c = w_o * T / C
-        return t_c
-
-    def _compute_dense_reward(self, agent_og_obs, agent_obs, action, agent_result, agent_idx):
+    def _compute_dense_reward(self, agent_og_obs, agent_obs, action, agent_result, agent_idx, agent_info):
         # Long story short... having a large range of rewards is making it so that the agent is not learning. Q-values
         # are exploding. The kind people in stack exchange have recommended that I keep the rewards in a small range [-1, 1]
         # https://datascience.stackexchange.com/questions/20098/should-i-normalize-rewards-in-reinforcement-learning
@@ -776,7 +801,7 @@ class PeersimEnv(ParallelEnv):
         t_w = not_zero(w_l) * (q_l * self.AVERAGE_TASK_INSTR / miu_l) + not_zero(w_o) * ((q_l * self.AVERAGE_TASK_INSTR/ miu_l) + (
                     q_o / miu_o))  # q_l/miu_l on the second term represents the time spent waiting in queue before being selected for offloading
         t_c = self._compute_delay(d_i_j, w_o)
-    
+
         # og: t_e = self.AVERAGE_TASK_INSTR * (w_l / source_processing_power + w_o / target_processing_power)
         t_e = self.AVERAGE_TASK_INSTR / target_processing_power - self.AVERAGE_TASK_INSTR / source_processing_power
 
@@ -815,6 +840,24 @@ class PeersimEnv(ParallelEnv):
         print(f"Action:{source_of_task_global_index}->{target_of_task_global_index}      Reward:{reward}  Composed of - U:{U} | D:{D} [t_C {t_c} ; t_w {t_w} ; t_e {t_e}] | O:{O}) | F:{F}")
         return (reward, {"U": U, "D": D, "O": O, "F": F})
 
+    def _compute_delay(self, d_i_j, w_o):
+        if d_i_j == 0:
+            t_c = 0
+        else:
+            T = self.AVERAGE_TASK_SIZE * 8e6;
+            W = self.BANDWIDTH * 1e6;
+            lambda_wavelength = 3e8 / 2.4e9
+            P_t = self.TRANSMISSION_POWER
+            N_0 = self.NORMALIZED_THERMAL_NOISE_POWER + 10 * math.log10(W)
+            h = 10 * math.log10((lambda_wavelength ** 2) / (16 * math.pi ** 2)) - 20 * math.log10(d_i_j)
+
+            SNR_db = P_t + h - N_0
+            SNR_linear = 10 ** (SNR_db / 10)
+            C = W * math.log2(1 + SNR_linear)
+
+            t_c = w_o * T / C
+        return t_c
+
     def _compute_avg_task_data(self):
         """
         This will be updated to include to mecanisms. If MANUAL_CONFIG is true. Use the MANUAL_CORES and MANUAL_FREQS instead.
@@ -848,6 +891,20 @@ class PeersimEnv(ParallelEnv):
         average_max_Q = average_of_ints_in_string(self.config_archive["Q_MAX"])
         return float(average_no_cores) * float(average_frequency), int(average_max_Q), processing_power
 
+
+    def _compute_sparse_reward(self, agent_og_obs, agent_obs, action, agent_result, agent_idx, agent_info):
+        # TODO add the necessary information to the result being read.
+        no_fin = len(agent_result['tasksCompleted'])
+        no_fail = agent_info[STATE_G_TASKS_DRP_SINCE_LAST_CYCLE]
+
+        # Then check for number of completed tasks for each node, add that as reward. Check for number of tasks dropped, add that as a penalty.
+
+        r =no_fin*self.UTILITY_REWARD - no_fail*self.UTILITY_REWARD
+        F = 0
+        if self.phy_rs_term is not None:
+            F = self.phy_rs_term(agent_obs) - self.phy_rs_term(agent_og_obs)
+
+        return r, {"U": no_fin*self.UTILITY_REWARD, "D": no_fail*self.UTILITY_REWARD, "O": 0, "F": F}
     def poolNetStats(self):
         iter = 0
         while self.neighbourMatrix is None or len(self.neighbourMatrix) == 0:
@@ -955,13 +1012,12 @@ class PeersimEnv(ParallelEnv):
         offloaded_tasks_from_node = global_obs[STATE_G_OFFLOADED_TASKS_FROM_NODE]
         tasks_offloaded_to_node = global_obs[STATE_G_OFFLOADED_TASKS_TO_NODE]
 
-        # TODO Need to extract the correct entries!
         ids = dbg_info[STATE_G_IDS]
         task_received_since_last_cycle = dbg_info[STATE_G_TASK_RCV_SINCE_LAST_CYCLE]
         tasks_dropped_since_last_cycle = dbg_info[STATE_G_TASKS_DRP_SINCE_LAST_CYCLE]
-        average_rt = dbg_info[STATE_G_AVERAGE_COMPLETION_TIMES]
+        average_rt = dbg_info[STATE_G_AVERAGE_RT]
 
-        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node, tasks_offloaded_to_node, task_received_since_last_cycle, tasks_dropped_since_last_cycle, average_rt
+        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node, tasks_offloaded_to_node, ids, task_received_since_last_cycle, tasks_dropped_since_last_cycle, average_rt
 
 
 
@@ -1074,10 +1130,6 @@ class PeersimEnv(ParallelEnv):
             print("Failed  to send action, could not connect to the environment. Returning old result.")
             return self._result
 
-    def _compute_sparse_reward(self, agent_og_obs, agent_obs, action, agent_result, agent_idx):
-        # TODO add the necessary information to the result being read.
-        # no_fin = agent_result[]
 
-        # Then check for number of completed tasks for each node, add that as reward. Check for number of tasks dropped, add that as a penalty.
 
-        pass
+

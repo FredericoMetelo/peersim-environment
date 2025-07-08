@@ -59,7 +59,6 @@ public interface Controller extends CDProtocol, EDProtocol {
 
     PartialState getState();
 
-    DebugInfo getDebugInfo();
 
     @Override
     String toString();
