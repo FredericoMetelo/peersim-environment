@@ -45,6 +45,8 @@ STATE_G_OFFLOADED_TASKS_TO_NODE = "totalTasksOffloadedToNode"
 STATE_G_AVERAGE_RT = "averageResponseTime"
 STATE_G_TASK_RCV_SINCE_LAST_CYCLE = "tasksRecievedSinceLastCycle"
 STATE_G_TASKS_DRP_SINCE_LAST_CYCLE = "droppedThisCycle"
+STATE_G_KNOWN_AVG_PROC_TIMES = "knownAverageProcessingTimes"
+STATE_G_NEIGHBOURHOODS = "neighbourhoods"
 
 STATE_NEXT_TASK = "nextTask"
 STATE_TASKS_IN_QUEUE = "tasks"
@@ -670,6 +672,8 @@ class PeersimEnv(ParallelEnv):
                 break
             i+=1
 
+        known_avg_proc_times = self.__build_known_proc_speed_by_agent(info, agent_id)
+
         agent_info = {
             STATE_G_Q: info[STATE_G_Q][agent_id],
             STATE_G_OVERLOADED_NODES: info[STATE_G_OVERLOADED_NODES][agent_id],
@@ -691,6 +695,9 @@ class PeersimEnv(ParallelEnv):
             STATE_G_TASK_RCV_SINCE_LAST_CYCLE: info[STATE_G_TASK_RCV_SINCE_LAST_CYCLE][agent_id],
             STATE_G_TASKS_DRP_SINCE_LAST_CYCLE: info[STATE_G_TASKS_DRP_SINCE_LAST_CYCLE][agent_id],
             STATE_G_AVERAGE_RT: info[STATE_G_AVERAGE_RT][agent_id],
+            STATE_G_KNOWN_AVG_PROC_TIMES: known_avg_proc_times,
+            STATE_G_NEIGHBOURHOODS: self.neighbourMatrix[agent_id], # Note: Should hv all agents and so id should link to proper agent but conf.
+
         }
         return agent_info
 
@@ -902,7 +909,7 @@ class PeersimEnv(ParallelEnv):
         r =no_fin*self.UTILITY_REWARD - no_fail*self.UTILITY_REWARD
         F = 0
         if self.phy_rs_term is not None:
-            F = self.phy_rs_term(agent_obs) - self.phy_rs_term(agent_og_obs)
+            F = self.phy_rs_term(agent_obs, agent_info) - self.phy_rs_term(agent_og_obs, agent_info)
         r += F
         return r, {"U": no_fin*self.UTILITY_REWARD, "D": no_fail*self.UTILITY_REWARD, "O": 0, "F": F}
     def poolNetStats(self):
@@ -1130,6 +1137,14 @@ class PeersimEnv(ParallelEnv):
             print("Failed  to send action, could not connect to the environment. Returning old result.")
             return self._result
 
+    def __build_known_proc_speed_by_agent(self, info, agent_id):
+        agents_neighbour = self.neighbourMatrix[agent_id]
+        known_avg_proc_times = []
+        for n in agents_neighbour:
+            for g in info[STATE_G_IDS]:
+                if g == n:
+                    known_avg_proc_times.append(info[STATE_G_AVERAGE_RT][g])
+                    break
 
-
+        return known_avg_proc_times
 
