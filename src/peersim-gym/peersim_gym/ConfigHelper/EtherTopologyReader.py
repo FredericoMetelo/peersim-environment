@@ -103,6 +103,8 @@ def get_topology_data(filename="SimpleNetwork_data.json", project_coordinates=Fa
     controllers = []
     global_controller = None
 
+    node_types = []
+
     coord_dict = {}  # Laughs in 32 gb of ram and yet another datastructure
     for idx, key in enumerate(node_dict.keys()):
         node = node_dict[key]
@@ -138,6 +140,7 @@ def get_topology_data(filename="SimpleNetwork_data.json", project_coordinates=Fa
             global_controller = idx
             cloudlet_id = node["id"]
 
+        node_types.append(key)
 
     node_positions = node_positions[:-1]  # Clip the last ";"
     node_processing_powers = node_processing_powers[:-1]
@@ -202,5 +205,6 @@ def get_topology_data(filename="SimpleNetwork_data.json", project_coordinates=Fa
         "controllers": controllers,
         "channel_types_per_layer": [[0]*layer_number]*layer_number,
         "global_controller": global_controller,
+        "node_types": node_types
     }
     return result_dict

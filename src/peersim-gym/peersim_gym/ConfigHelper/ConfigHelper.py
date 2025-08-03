@@ -444,6 +444,8 @@ def generate_config_dict(controllers="[0]",
                          snr="45",
                          energyCostComm="10",
                          energyCostComp="1",
+
+                         clientClasses=None,
                          ):
     """
     This function generates a configuration dictionary for the PeersimGym environment based on the parameters given. The
@@ -508,7 +510,6 @@ def generate_config_dict(controllers="[0]",
     if size != sum(nodes_per_layer):
         raise Exception("Size and sum of nodes per layer must be equal")
     # Press the green button in the gutter to run the script.
-    total_cpu_cycles = [a * b for a, b in zip(task_CPI, task_instr)]
     avg_neighbours = average_points_in_circle(radius, nodes_per_layer[0])
     if isinstance(channelTypesBetweenLayers, list):
         channelTypesBetweenLayers = make_channel_types_between_layers(channelTypesBetweenLayers)
@@ -556,7 +557,8 @@ def generate_config_dict(controllers="[0]",
 
         # Uniform probability for all tasks
         task_probs = [1 for _ in task_sizes] # Converting implicitly to task weights not probs
-
+    else:
+        workloadPath="null"
     # Scale deadlines - scaled in the env for consistency
     # task_deadlines = [deadline * scale for deadline in task_deadlines]
 
@@ -635,6 +637,9 @@ def generate_config_dict(controllers="[0]",
         "protocol.wrk.energyCostComm": energyCostComm,
         "protocol.wrk.energyCostComp": energyCostComp,
     }
+
+    if clientClasses is not None:
+        configs["protocol.clt.clientClasses"] = to_string_array(clientClasses, ";", print_as_int=False)
 
     sanityCheckConfig(configs)
     return configs

@@ -87,7 +87,7 @@ def average_of_floats_in_string(s):
 
 
 def validate_simulation_type(simtype):
-    if simtype not in ['basic', 'batch', 'dag', 'basic-workload']:
+    if simtype not in ['basic', 'batch', 'dag', 'basic-workload', 'basic-classes']:
         raise ValueError("Invalid argument: %s (NOTE: capitalization matters)" % simtype)
     if simtype == "dag":
         raise ValueError("dag is not yet supported")
@@ -297,6 +297,7 @@ class PeersimEnv(ParallelEnv):
 
     def observation_space(self, agent):
 
+        # The base space has information on the node, the Q size of the node and the neighbours (information obtained in the information exchanges), the free spaces (also obtained in the inforation exchanges from the capacity of the queue and the current q size) and the processing power of the node.
         base_space = {
             STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
             STATE_Q_FIELD: MultiDiscrete(self.q_list),
@@ -321,6 +322,7 @@ class PeersimEnv(ParallelEnv):
         elif self.state_info == "queue":
             base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
         elif self.state_info == "qaggr":
+            # has the information on the summed number of instructions and the number of tasks assigned to be processed locally.
             base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
             base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
         elif self.state_info == "qaggr_next":
@@ -579,7 +581,7 @@ class PeersimEnv(ParallelEnv):
                 STATE_G_OFFLOADED_TASKS_FROM_NODE: extracted_data[11],
                 STATE_G_TOTAL_FINISHED_PER_NODE: extracted_data[12],
                 STATE_G_OFFLOADED_TASKS_TO_NODE: extracted_data[13],
-                STATE_G_IDS:extracted_data[14],
+                STATE_G_IDS: extracted_data[14],
                 STATE_G_TASK_RCV_SINCE_LAST_CYCLE: extracted_data[15],
                 STATE_G_TASKS_DRP_SINCE_LAST_CYCLE: extracted_data[16],
                 STATE_G_AVERAGE_RT: extracted_data[17]
@@ -660,8 +662,6 @@ class PeersimEnv(ParallelEnv):
 
         return status
 
-
-
     def build_agent_info(self, info, agent):
         agent_id = self.agent_name_mapping[agent]
         i = 0
@@ -697,11 +697,13 @@ class PeersimEnv(ParallelEnv):
             STATE_G_AVERAGE_RT: info[STATE_G_AVERAGE_RT][agent_id],
             STATE_G_KNOWN_AVG_PROC_TIMES: known_avg_proc_times,
             STATE_G_NEIGHBOURHOODS: self.neighbourMatrix[agent_id], # Note: Should hv all agents and so id should link to proper agent but conf.
+            # STATE_G_Q: info[STATE_G_Q][agent_id],
 
         }
         return agent_info
 
-    def __gen_seed(self):
+    @staticmethod
+    def __gen_seed():
         n = randint(1000000000, 9999999999)
         return str(n)
 
@@ -898,7 +900,6 @@ class PeersimEnv(ParallelEnv):
         average_max_Q = average_of_ints_in_string(self.config_archive["Q_MAX"])
         return float(average_no_cores) * float(average_frequency), int(average_max_Q), processing_power
 
-
     def _compute_sparse_reward(self, agent_og_obs, agent_obs, action, agent_result, agent_idx, agent_info):
         # TODO add the necessary information to the result being read.
         no_fin = len(agent_result['tasksCompleted'])
@@ -912,6 +913,7 @@ class PeersimEnv(ParallelEnv):
             F = self.phy_rs_term(agent_obs, agent_info) - self.phy_rs_term(agent_og_obs, agent_info)
         r += F
         return r, {"U": no_fin*self.UTILITY_REWARD, "D": no_fail*self.UTILITY_REWARD, "O": 0, "F": F}
+
     def poolNetStats(self):
         iter = 0
         while self.neighbourMatrix is None or len(self.neighbourMatrix) == 0:
@@ -1025,8 +1027,6 @@ class PeersimEnv(ParallelEnv):
         average_rt = dbg_info[STATE_G_AVERAGE_RT]
 
         return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node, tasks_offloaded_to_node, ids, task_received_since_last_cycle, tasks_dropped_since_last_cycle, average_rt
-
-
 
     def set_random_seed(self):
         seed = cg.randomize_seed(self.config_path)
