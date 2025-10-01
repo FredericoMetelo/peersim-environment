@@ -304,7 +304,7 @@ public abstract class AbstractWorker implements Worker {
         finishedTask.addEvent(TaskHistory.TaskEvenType.COMPLETED, this.id, CommonState.getTime());
         tasksCompletedSinceLastCycle.add(finishedTask);
 
-        this.averageResponseTime += (CommonState.getTime() - app.getArrivalTime() + this.getTotalTasksProcessed()*this.getAverageResponseTime())/ (this.getTotalTasksProcessed() + 1) ;
+        this.averageResponseTime = (CommonState.getTime() - app.getArrivalTime() + this.getTotalTasksProcessed()*this.getAverageResponseTime())/ (this.getTotalTasksProcessed() + 1) ;
 
         if (app.isFinished()) {
             this.handleApplicationFinish(node, protocolID, app);
