@@ -209,7 +209,6 @@ class PeersimEnv(ParallelEnv):
 
         # Options are: none, next, queue, queue_next
         # Eventually, convert this to a wrapper.
-
         task_space = Dict({
             STATE_TASK_PARAM_PROCESSED_LOCALLY: Discrete(2),
             STATE_TASK_PARAM_ID: Discrete(self.number_nodes),
@@ -218,7 +217,6 @@ class PeersimEnv(ParallelEnv):
             STATE_TASK_PARAM_INPUT_SIZE: Box(low=0, high=np.inf, dtype=float),
             STATE_TASK_PARAM_OUTPUT_SIZE: Box(low=0, high=np.inf, dtype=float)
         })
-
         self._observation_spaces = {}
         for agent in self.possible_agents:
             base_space = {
@@ -227,7 +225,6 @@ class PeersimEnv(ParallelEnv):
                 STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
                 STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
             }
-
             if state_info == "queue_next":
                 base_space[STATE_NEXT_TASK] = task_space
                 base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
@@ -243,7 +240,6 @@ class PeersimEnv(ParallelEnv):
                 base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
                 base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
             # 'none' means only base_space is used
-
             self._observation_spaces[agent] = Dict(base_space)
 
 
