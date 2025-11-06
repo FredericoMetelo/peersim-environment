@@ -46,6 +46,7 @@ STATE_G_AVERAGE_RT = "averageResponseTime"
 STATE_G_TASK_RCV_SINCE_LAST_CYCLE = "tasksRecievedSinceLastCycle"
 STATE_G_TASKS_DRP_SINCE_LAST_CYCLE = "droppedThisCycle"
 
+
 STATE_NEXT_TASK = "nextTask"
 STATE_TASKS_IN_QUEUE = "tasks"
 STATE_TASK_PARAM_PROGRESS = "progress"
@@ -53,6 +54,9 @@ STATE_TASK_PARAM_TOTAL_INSTR = "totalInstructions"
 STATE_TASK_PARAM_OUTPUT_SIZE = "outputSizeBytes"
 STATE_TASK_PARAM_INPUT_SIZE = "inputSizeBytes"
 STATE_TASK_PARAM_PROCESSED_LOCALLY = "processedLocally"
+
+STATE_EXTRA_PARAM_NODE_PROCESSING_POWER = "processingPower"
+STATE_EXTRA_PARAM_NODE_MAX_Q_SIZE = "queueSizeAgent"
 
 STATE_TASK_PARAM_ID = "id"
 
@@ -225,6 +229,9 @@ class PeersimEnv(ParallelEnv):
                 STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
                 STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
             }
+            if "extra" in state_info:
+                base_space[STATE_EXTRA_PARAM_NODE_MAX_Q_SIZE] = Box(low=0, high=np.inf, dtype=float)
+                base_space[STATE_EXTRA_PARAM_NODE_PROCESSING_POWER] = Box(low=0, high=np.inf, dtype=float)
 
             if state_info == "queue_next":
                 base_space[STATE_NEXT_TASK] = task_space
@@ -310,6 +317,10 @@ class PeersimEnv(ParallelEnv):
             STATE_TASK_PARAM_INPUT_SIZE: Box(low=0, high=np.inf,dtype=float),
             STATE_TASK_PARAM_OUTPUT_SIZE: Box(low=0, high=np.inf,dtype=float)
         })
+
+        if "extra" in self.state_info:
+            base_space[STATE_EXTRA_PARAM_NODE_MAX_Q_SIZE] = Box(low=0, high=np.inf, dtype=float)
+            base_space[STATE_EXTRA_PARAM_NODE_PROCESSING_POWER] = Box(low=0, high=np.inf, dtype=float)
 
         if self.state_info == "queue_next":
             base_space[STATE_NEXT_TASK] = task_space
@@ -949,14 +960,21 @@ class PeersimEnv(ParallelEnv):
             STATE_NODE_ID_FIELD: agent_state[STATE_NODE_ID_FIELD],
             STATE_Q_FIELD: agent_state[STATE_Q_FIELD],
             STATE_FREE_SPACES_FIELD: agent_state[STATE_FREE_SPACES_FIELD],
-            STATE_PROCESSING_POWER_FIELD: float(agent_state[STATE_PROCESSING_POWER_FIELD]),
+            STATE_PROCESSING_POWER_FIELD: float(agent_state[STATE_PROCESSING_POWER_FIELD])/10**3,
             STATE_QSIZE_FIELD: agent_state[STATE_QSIZE_FIELD],
             STATE_NO_NEIGHBOURS: agent_state[STATE_NO_NEIGHBOURS],
 
         }
 
+
+        if "extra" in self.state_info:
+            q_size = agent_state[STATE_Q_FIELD][0] + agent_state[STATE_FREE_SPACES_FIELD][0]
+            obs[STATE_EXTRA_PARAM_NODE_MAX_Q_SIZE] = float(q_size)
+            # obs[STATE_EXTRA_PARAM_NODE_PROCESSING_POWER] = float(agent_state[STATE_EXTRA_PARAM_NODE_PROCESSING_POWER])/10^3 # in GHz
+
+
         # Conditionally include based on state_queue_info
-        if self.state_info in {"next", "queue_next", "qaggr_next"} and STATE_NEXT_TASK in agent_state:
+        if "next" in self.state_info and STATE_NEXT_TASK in agent_state:
             obs[STATE_NEXT_TASK] = {
                 STATE_TASK_PARAM_PROCESSED_LOCALLY: int(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_PROCESSED_LOCALLY]),
                 STATE_TASK_PARAM_PROGRESS: float(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_PROGRESS]),
@@ -965,7 +983,7 @@ class PeersimEnv(ParallelEnv):
                 STATE_TASK_PARAM_OUTPUT_SIZE: float(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_OUTPUT_SIZE]),
             }
 
-        if self.state_info in {"queue", "queue_next"} and "tasks" in agent_state:
+        if "queue" in self.state_info and "tasks" in agent_state:
             obs[STATE_TASKS_IN_QUEUE] = [
                 {
                     STATE_TASK_PARAM_PROCESSED_LOCALLY: int(agent_state[STATE_NEXT_TASK][STATE_TASK_PARAM_PROCESSED_LOCALLY]),
@@ -977,7 +995,7 @@ class PeersimEnv(ParallelEnv):
                 for task in agent_state[STATE_TASKS_IN_QUEUE]
             ]
 
-        if self.state_info in {"qaggr", "qaggr_next"} and "tasks" in agent_state:
+        if "qaggr" in self.state_info and "tasks" in agent_state:
             instr_acc = 0
             local_acc = 0
             for task in agent_state[STATE_TASKS_IN_QUEUE]:
@@ -995,6 +1013,9 @@ class PeersimEnv(ParallelEnv):
         overloaded_nodes = [1 if q >= self.max_Q_size[mq] else 0 for q, mq in zip(Q, layers)]
         # Check percentage of occupancy of the nodes.
         occupancy = [q / self.max_Q_size[mq] for q, mq in zip(Q, layers)]
+
+
+
         # Get the average response time.
         response_time = global_obs[STATE_G_AVERAGE_COMPLETION_TIMES]
 
