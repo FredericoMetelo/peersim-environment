@@ -1,5 +1,6 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: PeersimGym
-Version: 0.0.1
+Version: 0.0.2
 Requires-Dist: gymnasium>=0.26.3
 Requires-Dist: requests>=2.28.1
+Dynamic: requires-dist

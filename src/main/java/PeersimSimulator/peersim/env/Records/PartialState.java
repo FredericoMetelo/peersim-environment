@@ -1,5 +1,7 @@
 package PeersimSimulator.peersim.env.Records;
 
+import PeersimSimulator.peersim.env.Nodes.Events.WorkerInfo;
+
 import java.util.List;
 
 public record PartialState(
@@ -17,7 +19,8 @@ public record PartialState(
 
         int numberOfNeighbours,
         TaskInfo nextTask,
-        List<TaskInfo> tasks
+        List<TaskInfo> tasks,
+        List<WorkerInfo> neighInfos
 ) {
 
 }

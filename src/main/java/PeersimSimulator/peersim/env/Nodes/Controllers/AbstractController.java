@@ -316,7 +316,8 @@ public abstract class AbstractController implements Controller {
                 l,
                 (this.workerInfo == null || this.workerInfo.isEmpty())? 0 : this.workerInfo.size(),
                 this.correspondingWorker.getNextTaskInfo(),
-                this.correspondingWorker.getAllTaskInfo()
+                this.correspondingWorker.getAllTaskInfo(),
+                this.workerInfo
         );
     }
 

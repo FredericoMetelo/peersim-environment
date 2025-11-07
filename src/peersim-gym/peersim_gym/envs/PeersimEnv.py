@@ -8,7 +8,7 @@ import gymnasium
 import numpy as np
 import requests
 from gymnasium import Space
-from gymnasium.spaces import MultiDiscrete, Dict, Discrete, Box, Sequence
+from gymnasium.spaces import MultiDiscrete, Dict, Discrete, Box, Sequence, Tuple
 from pettingzoo import ParallelEnv
 
 import json
@@ -57,12 +57,26 @@ STATE_TASK_PARAM_INPUT_SIZE = "inputSizeBytes"
 STATE_TASK_PARAM_PROCESSED_LOCALLY = "processedLocally"
 
 STATE_EXTRA_PARAM_NODE_PROCESSING_POWER = "processingPower"
-STATE_EXTRA_PARAM_NODE_MAX_Q_SIZE = "queueSizeAgent"
+STATE_NODE_MAX_Q_SIZE = "queueSizeAgent"
 
 STATE_TASK_PARAM_ID = "id"
 
 AGENT_PREFIX = "worker_"
 
+STATE_EXTRA_NEIGHINFO = "neighInfos"
+STATE_EXTRA_NEIGHINFO_ID = "id"
+STATE_EXTRA_NEIGHINFO_QUEUESIZE = "queueSize"
+STATE_EXTRA_NEIGHINFO_UNPROCESSEDAPPS = "unprocessedApplications"
+STATE_EXTRA_NEIGHINFO_AVERAGETASKSIZE = "averageTaskSize"
+STATE_EXTRA_NEIGHINFO_NODEPROCESSINGPOWER = "nodeProcessingPower"
+STATE_EXTRA_NEIGHINFO_FREETASKSLOTS = "freeTaskSlots"
+STATE_EXTRA_NEIGHINFO_LAYER = "layer"
+STATE_EXTRA_NEIGHINFO_lastKnownPosition_X = "lastKnownPosition.X"
+STATE_EXTRA_NEIGHINFO_lastKnownPosition_Y = "lastKnownPosition.Y"
+STATE_EXTRA_NEIGHINFO_SIZE = "size"
+STATE_EXTRA_NEIGHINFO_TOTALTASKS = "totalTasks"
+STATE_EXTRA_NEIGHINFO_W = "w"
+STATE_EXTRA_NEIGHINFO_MAXQSIZE = "maxQSize"
 
 
 def not_zero(num):
@@ -228,11 +242,26 @@ class PeersimEnv(ParallelEnv):
                 STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
                 STATE_Q_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
                 STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list[self.agent_name_mapping[agent]]),
-                STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
+                STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float),
+                STATE_NODE_MAX_Q_SIZE: Box(low=0, high=np.inf, dtype=float)
             }
+            neigh_info_space = Dict({
+                STATE_EXTRA_NEIGHINFO_ID: Discrete(self.number_nodes),
+                # STATE_EXTRA_NEIGHINFO_QUEUESIZE: Box(low=0, high=np.inf, dtype=float),
+                # STATE_EXTRA_NEIGHINFO_UNPROCESSEDAPPS: Box(low=0, high=np.inf, dtype=float),
+                # STATE_EXTRA_NEIGHINFO_AVERAGETASKSIZE: Box(low=0, high=np.inf, dtype=float),
+                STATE_EXTRA_NEIGHINFO_NODEPROCESSINGPOWER: Box(low=0, high=np.inf, dtype=float),
+                # STATE_EXTRA_NEIGHINFO_FREETASKSLOTS: Box(low=0, high=np.inf, dtype=float),
+                # STATE_EXTRA_NEIGHINFO_LAYER: Discrete(10),  # adjust max layer as needed
+                # STATE_EXTRA_NEIGHINFO_lastKnownPosition_X: Box(low=-np.inf, high=np.inf, dtype=float),
+                # STATE_EXTRA_NEIGHINFO_lastKnownPosition_Y: Box(low=-np.inf, high=np.inf, dtype=float),
+                # STATE_EXTRA_NEIGHINFO_SIZE: Box(low=0, high=np.inf, dtype=float),
+                # STATE_EXTRA_NEIGHINFO_TOTALTASKS: Box(low=0, high=np.inf, dtype=float),
+                # STATE_EXTRA_NEIGHINFO_W: Box(low=-np.inf, high=np.inf, dtype=float),
+                STATE_EXTRA_NEIGHINFO_MAXQSIZE: Box(low=0, high=np.inf, dtype=float)
+            })
             if "extra" in state_info:
-                base_space[STATE_EXTRA_PARAM_NODE_MAX_Q_SIZE] = Box(low=0, high=np.inf, dtype=float)
-                base_space[STATE_EXTRA_PARAM_NODE_PROCESSING_POWER] = Box(low=0, high=np.inf, dtype=float)
+                base_space[STATE_EXTRA_NEIGHINFO] = Tuple([neigh_info_space for _ in range(self.number_nodes)])
 
             if state_info == "queue_next":
                 base_space[STATE_NEXT_TASK] = task_space
@@ -308,7 +337,8 @@ class PeersimEnv(ParallelEnv):
             STATE_NODE_ID_FIELD: Discrete(self.number_nodes, start=1),  # Ignores the controller
             STATE_Q_FIELD: MultiDiscrete(self.q_list),
             STATE_FREE_SPACES_FIELD: MultiDiscrete(self.q_list),
-            STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float)
+            STATE_PROCESSING_POWER_FIELD: Box(high=self.max_w, low=0, dtype=float),
+            STATE_NODE_MAX_Q_SIZE: Box(low=0, high=np.inf, dtype=float)
         }
 
         task_space = Dict({
@@ -320,9 +350,29 @@ class PeersimEnv(ParallelEnv):
             STATE_TASK_PARAM_OUTPUT_SIZE: Box(low=0, high=np.inf,dtype=float)
         })
 
+        neigh_info_space = Dict({
+            STATE_EXTRA_NEIGHINFO_ID: Discrete(self.number_nodes),
+            # STATE_EXTRA_NEIGHINFO_QUEUESIZE: Box(low=0, high=np.inf, dtype=float),
+            # STATE_EXTRA_NEIGHINFO_UNPROCESSEDAPPS: Box(low=0, high=np.inf, dtype=float),
+            # STATE_EXTRA_NEIGHINFO_AVERAGETASKSIZE: Box(low=0, high=np.inf, dtype=float),
+            STATE_EXTRA_NEIGHINFO_NODEPROCESSINGPOWER: Box(low=0, high=np.inf, dtype=float),
+            # STATE_EXTRA_NEIGHINFO_FREETASKSLOTS: Box(low=0, high=np.inf, dtype=float),
+            # STATE_EXTRA_NEIGHINFO_LAYER: Discrete(10),  # adjust max layer as needed
+            # STATE_EXTRA_NEIGHINFO_lastKnownPosition_X: Box(low=-np.inf, high=np.inf, dtype=float),
+            # STATE_EXTRA_NEIGHINFO_lastKnownPosition_Y: Box(low=-np.inf, high=np.inf, dtype=float),
+            # STATE_EXTRA_NEIGHINFO_SIZE: Box(low=0, high=np.inf, dtype=float),
+            # STATE_EXTRA_NEIGHINFO_TOTALTASKS: Box(low=0, high=np.inf, dtype=float),
+            # STATE_EXTRA_NEIGHINFO_W: Box(low=-np.inf, high=np.inf, dtype=float),
+            STATE_EXTRA_NEIGHINFO_MAXQSIZE: Box(low=0, high=np.inf, dtype=float)
+        })
+
+
+
+
         if "extra" in self.state_info:
-            base_space[STATE_EXTRA_PARAM_NODE_MAX_Q_SIZE] = Box(low=0, high=np.inf, dtype=float)
-           
+            base_space[STATE_EXTRA_NEIGHINFO] = Tuple([neigh_info_space for _ in range(self.number_nodes)])
+
+
 
         if self.state_info == "queue_next":
             base_space[STATE_NEXT_TASK] = task_space
@@ -964,8 +1014,7 @@ class PeersimEnv(ParallelEnv):
         # on the observation space
         observations = {}
 
-
-
+        q_size = agent_state[STATE_Q_FIELD][0] + agent_state[STATE_FREE_SPACES_FIELD][0]
         obs = {
             STATE_NODE_ID_FIELD: agent_state[STATE_NODE_ID_FIELD],
             STATE_Q_FIELD: agent_state[STATE_Q_FIELD],
@@ -973,14 +1022,22 @@ class PeersimEnv(ParallelEnv):
             STATE_PROCESSING_POWER_FIELD: float(agent_state[STATE_PROCESSING_POWER_FIELD])/10**3,
             STATE_QSIZE_FIELD: agent_state[STATE_QSIZE_FIELD],
             STATE_NO_NEIGHBOURS: agent_state[STATE_NO_NEIGHBOURS],
-
         }
 
+        obs[STATE_NODE_MAX_Q_SIZE] = float(q_size)
 
         if "extra" in self.state_info:
-            q_size = agent_state[STATE_Q_FIELD][0] + agent_state[STATE_FREE_SPACES_FIELD][0]
-            obs[STATE_EXTRA_PARAM_NODE_MAX_Q_SIZE] = float(q_size)
-            # obs[STATE_EXTRA_PARAM_NODE_PROCESSING_POWER] = float(agent_state[STATE_EXTRA_PARAM_NODE_PROCESSING_POWER])/10^3 # in GHz
+            neigh_infos = agent_state[STATE_EXTRA_NEIGHINFO]
+
+            obs[STATE_EXTRA_NEIGHINFO] = [
+                {
+                    STATE_EXTRA_NEIGHINFO_ID: neigh_info[STATE_EXTRA_NEIGHINFO_ID],
+                    STATE_EXTRA_NEIGHINFO_MAXQSIZE: float(neigh_info[STATE_EXTRA_NEIGHINFO_QUEUESIZE] + neigh_info[STATE_EXTRA_NEIGHINFO_FREETASKSLOTS]),
+                    STATE_EXTRA_NEIGHINFO_NODEPROCESSINGPOWER: float(neigh_info[STATE_EXTRA_NEIGHINFO_NODEPROCESSINGPOWER]) / 10 ** 3,
+                }
+                for neigh_info in neigh_infos
+            ]
+
 
 
         # Conditionally include based on state_queue_info
@@ -1104,12 +1161,22 @@ class PeersimEnv(ParallelEnv):
             assert ((n_max_Q - Q[i]) / n_max_Q == FS[i] / n_max_Q,
                     f"Mismatch: Neighbor {neighbor_id} has Q: {Q[i]} and FS: {FS[i]}")
         if padding:
+
             normalized_Q += [-1 for _ in range(len(Q), self.number_nodes)]
             normalized_free_spaces += [-1 for _ in range(len(Q), self.number_nodes)]
+            if "extra" in self.state_info and STATE_EXTRA_NEIGHINFO in obs:
+                extra_neigh_infos = obs[STATE_EXTRA_NEIGHINFO]
+                neigh_info_dummy = {
+                    STATE_EXTRA_NEIGHINFO_ID: -1,
+                    STATE_EXTRA_NEIGHINFO_MAXQSIZE: -1,
+                    STATE_EXTRA_NEIGHINFO_NODEPROCESSINGPOWER: -1,
+                }
+                for _ in range(len(extra_neigh_infos), self.number_nodes):
+                    obs[STATE_EXTRA_NEIGHINFO].append(neigh_info_dummy)
         normalized_obs[STATE_Q_FIELD] = normalized_Q
         normalized_obs[STATE_FREE_SPACES_FIELD] = normalized_free_spaces
 
-        if self.state_info in {"next", "queue_next", "qaggr_next"} and STATE_NEXT_TASK in obs:
+        if "next" in self.state_info and STATE_NEXT_TASK in obs:
             normalized_obs[STATE_NEXT_TASK] = {
                 STATE_TASK_PARAM_PROCESSED_LOCALLY: int(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_PROCESSED_LOCALLY]),
                 STATE_TASK_PARAM_PROGRESS: float(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_PROGRESS]),
@@ -1117,7 +1184,7 @@ class PeersimEnv(ParallelEnv):
                 STATE_TASK_PARAM_INPUT_SIZE: float(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_INPUT_SIZE]),
                 STATE_TASK_PARAM_OUTPUT_SIZE: float(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_OUTPUT_SIZE]),
             }
-        if self.state_info in {"queue", "queue_next"} and STATE_TASKS_IN_QUEUE in obs:
+        if "queue" in self.state_info and STATE_TASKS_IN_QUEUE in obs:
             normalized_obs[STATE_TASKS_IN_QUEUE] = [
                 {
                     STATE_TASK_PARAM_PROCESSED_LOCALLY: int(obs[STATE_NEXT_TASK][STATE_TASK_PARAM_PROCESSED_LOCALLY]),
@@ -1128,10 +1195,24 @@ class PeersimEnv(ParallelEnv):
                 }
                 for task in obs[STATE_TASKS_IN_QUEUE]
             ]
-        if self.state_info in {"qaggr", "qaggr_next"} and STATE_TASKQ_AGGR_TOTAL_INSTR and STATE_TASKQ_AGGR_TOTAL_LOCAL in obs:
+        if "qaggr" in self.state_info and STATE_TASKQ_AGGR_TOTAL_INSTR and STATE_TASKQ_AGGR_TOTAL_LOCAL in obs:
             normalized_obs[STATE_TASKQ_AGGR_TOTAL_INSTR] = obs[STATE_TASKQ_AGGR_TOTAL_INSTR]/processingPower
             normalized_obs[STATE_TASKQ_AGGR_TOTAL_LOCAL] = obs[STATE_TASKQ_AGGR_TOTAL_LOCAL]/processingPower
 
+        if "extra" in self.state_info and STATE_EXTRA_NEIGHINFO in obs:
+            acc_neigh_q = 0
+            for neigh_info in obs[STATE_EXTRA_NEIGHINFO]:
+                neigh_q_size = neigh_info[STATE_EXTRA_NEIGHINFO_MAXQSIZE]
+                acc_neigh_q += neigh_q_size
+            standardt_neigh_Q = float(acc_neigh_q) / len(obs[STATE_EXTRA_NEIGHINFO]) if len(obs[STATE_EXTRA_NEIGHINFO]) > 0 else 1
+            normalized_obs[STATE_EXTRA_NEIGHINFO] = [
+                {
+                    STATE_EXTRA_NEIGHINFO_ID: neigh_info[STATE_EXTRA_NEIGHINFO_ID],
+                    STATE_EXTRA_NEIGHINFO_MAXQSIZE: neigh_info[STATE_EXTRA_NEIGHINFO_MAXQSIZE] / standardt_neigh_Q if neigh_info[STATE_EXTRA_NEIGHINFO_ID] != -1 else -1,
+                    STATE_EXTRA_NEIGHINFO_NODEPROCESSINGPOWER: neigh_info[STATE_EXTRA_NEIGHINFO_NODEPROCESSINGPOWER] / (self.AVERAGE_PROCESSING_POWER / 10**3) if neigh_info[STATE_EXTRA_NEIGHINFO_ID] != -1 else -1,
+                }
+                for neigh_info in obs[STATE_EXTRA_NEIGHINFO]
+            ]
         return normalized_obs
 
     def _compute_clients_per_node(self) -> list[int]:

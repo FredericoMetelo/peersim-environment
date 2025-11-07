@@ -11,6 +11,8 @@ peersim_gym/ConfigHelper/EtherTopologyReader.py
 peersim_gym/ConfigHelper/TopologyGeneration.py
 peersim_gym/envs/PeersimEnv.py
 peersim_gym/envs/__init__.py
+peersim_gym/envs/Environment/peersim-srv-0.0.1-SNAPSHOT.jar
+peersim_gym/envs/Environment/peersim-srv-0.0.1-SNAPSHOT.jar.original
 peersim_gym/envs/Utils/DatasetEditor.py
 peersim_gym/envs/Utils/FLUpdateStoreManager.py
 peersim_gym/envs/Utils/PeersimConfigGenerator.py
@@ -19,3 +21,14 @@ peersim_gym/envs/Utils/PeersimVis.py
 peersim_gym/envs/Utils/__init__.py
 peersim_gym/envs/Wrappers/BatchWrapper.py
 peersim_gym/envs/Wrappers/__init__.py
+peersim_gym/envs/configs/config-basic-BASE.txt
+peersim_gym/envs/configs/config-basic-classes-BASE.txt
+peersim_gym/envs/configs/config-basic-workload-BASE.txt
+peersim_gym/envs/configs/config-batch-BASE.txt
+peersim_gym/envs/configs/config-dag-BASE.txt
+peersim_gym/envs/configs/config_8080.txt
+peersim_gym/envs/configs/config_8081.txt
+peersim_gym/envs/configs/config_8083.txt
+peersim_gym/envs/configs/config_8084.txt
+peersim_gym/envs/configs/config_8086.txt
+peersim_gym/envs/configs/config_test.txt

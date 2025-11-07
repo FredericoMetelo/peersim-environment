@@ -1,4 +1,4 @@
-random.seed 65547690074
+random.seed 39549190711
 SCALE 10
 SIZE 10
 CYCLE 1
@@ -37,6 +37,7 @@ protocol.clt.vertices 1
 protocol.clt.defaultCPUWorkload 2.4e+9
 protocol.clt.defaultMemoryWorkload 100
 protocol.clt.workloadPath /home/fm/PycharmProjects/FAuNO/Datasets/alibaba_trace_rescaled0.1.json
+protocol.clt.clientClasses [0]
 protocol.props.B 2
 protocol.props.Beta1 0.001
 protocol.props.Beta2 4
