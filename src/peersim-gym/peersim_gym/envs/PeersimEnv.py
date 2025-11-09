@@ -776,7 +776,7 @@ class PeersimEnv(ParallelEnv):
         rewards = {}
         for agent in self.agents:  # Refer to r/Arkham for the correct thing to ask about whomever (Man) left this here...
             if agent in actions and not mask[agent]:
-                if self.reward_type in "dense":
+                if "dense" == self.reward_type:
                     p = self._compute_dense_reward(
                         agent_og_obs=original_obs[agent],
                         agent_obs=obs[agent],
