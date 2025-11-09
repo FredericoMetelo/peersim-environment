@@ -263,20 +263,23 @@ class PeersimEnv(ParallelEnv):
             if "extra" in state_info:
                 base_space[STATE_EXTRA_NEIGHINFO] = Tuple([neigh_info_space for _ in range(self.number_nodes)])
 
-            if state_info == "queue_next":
+            # if state_info == "queue_next":
+            #     base_space[STATE_NEXT_TASK] = task_space
+            #     base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
+            if "next" in state_info :
                 base_space[STATE_NEXT_TASK] = task_space
+
+            if "queue" in state_info :
                 base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
-            elif state_info == "next":
-                base_space[STATE_NEXT_TASK] = task_space
-            elif state_info == "queue":
-                base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
-            elif state_info == "qaggr":
+
+            if "qaggr" in state_info :
                 base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
                 base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
-            elif state_info == "qaggr_next":
-                base_space[STATE_NEXT_TASK] = task_space
-                base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
-                base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
+
+            # elif state_info == "qaggr_next":
+            #     base_space[STATE_NEXT_TASK] = task_space
+            #     base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
+            #     base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
             # 'none' means only base_space is used
 
             self._observation_spaces[agent] = Dict(base_space)
@@ -372,23 +375,24 @@ class PeersimEnv(ParallelEnv):
         if "extra" in self.state_info:
             base_space[STATE_EXTRA_NEIGHINFO] = Tuple([neigh_info_space for _ in range(self.number_nodes)])
 
-
-
-        if self.state_info == "queue_next":
+            # if state_info == "queue_next":
+            #     base_space[STATE_NEXT_TASK] = task_space
+            #     base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
+        if "next" in self.state_info :
             base_space[STATE_NEXT_TASK] = task_space
+
+        if "queue" in self.state_info :
             base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
-        elif self.state_info == "next":
-            base_space[STATE_NEXT_TASK] = task_space
-        elif self.state_info == "queue":
-            base_space[STATE_TASKS_IN_QUEUE] = Sequence(task_space)
-        elif self.state_info == "qaggr":
+
+        if "qaggr" in self.state_info :
             base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
             base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
-        elif self.state_info == "qaggr_next":
-            # Iterate over tasks for each agent. Prepare the aggregate metrics
-            base_space[STATE_NEXT_TASK] = task_space
-            base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
-            base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
+
+        # elif state_info == "qaggr_next":
+        #     base_space[STATE_NEXT_TASK] = task_space
+        #     base_space[STATE_TASKQ_AGGR_TOTAL_INSTR] = Box(low=0, high=np.inf, dtype=float)
+        #     base_space[STATE_TASKQ_AGGR_TOTAL_LOCAL] = Box(low=0, high=np.inf, dtype=float)
+        # 'none' means only base_space is used
         return Dict(base_space)
 
 
@@ -772,7 +776,7 @@ class PeersimEnv(ParallelEnv):
         rewards = {}
         for agent in self.agents:  # Refer to r/Arkham for the correct thing to ask about whomever (Man) left this here...
             if agent in actions and not mask[agent]:
-                if self.reward_type is "dense":
+                if self.reward_type in "dense":
                     p = self._compute_dense_reward(
                         agent_og_obs=original_obs[agent],
                         agent_obs=obs[agent],
@@ -906,6 +910,7 @@ class PeersimEnv(ParallelEnv):
         F = 0
         if self.phy_rs_term is not None:
             F = self.phy_rs_term(agent_obs, agent_info) - self.phy_rs_term(agent_og_obs, agent_info)
+
         reward += F
         print(f"Action:{source_of_task_global_index}->{target_of_task_global_index}      Reward:{reward}  Composed of - U:{U} | D:{D} [t_C {t_c} ; t_w {t_w} ; t_e {t_e}] | O:{O}) | F:{F}")
         return (reward, {"U": U, "D": D, "O": O, "F": F})
