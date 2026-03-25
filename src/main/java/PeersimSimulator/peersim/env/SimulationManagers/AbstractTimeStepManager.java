@@ -18,10 +18,7 @@ import PeersimSimulator.peersim.env.Records.Actions.Action;
 import PeersimSimulator.peersim.env.Records.SimulationData.SimulationData;
 import PeersimSimulator.peersim.env.Util.Log;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public abstract class AbstractTimeStepManager implements CDProtocol  {
     /**
@@ -161,6 +158,7 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
         List<Integer> totalTasks = new ArrayList<>(Network.size());
         List<Integer> isWorking = new ArrayList<>(Network.size());
         List<Double> energyConsumed = new ArrayList<>(Network.size());
+        List<Map<String, Integer>> droppedHistogram = new ArrayList<>(Network.size());
 
         CloudInfo cinfo = null;
         if(hasCloud == 1) {
@@ -202,11 +200,13 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
                 droppedTasks.add(client.getDroppedTasks());
                 finishedTasks.add(client.getTasksCompleted());
                 totalTasks.add(client.getTotalTasks());
+                droppedHistogram.add(client.getDroppedTaskHistogram(10));
+
             }
         }
         return new GlobalState(nodeIds, queues, processingPowers, noCores, layers, bandwidths,
                 transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking, energyConsumed,
-                overloadedTimes, droppedOnArrivalOnNode, droppedByExpirationOnNode, totalReceivedByNode, completedOnNode, totalOffloadedTasksFromNode, tasksOffloadedToNode, positions,  cinfo);
+                overloadedTimes, droppedOnArrivalOnNode, droppedByExpirationOnNode, totalReceivedByNode, completedOnNode, totalOffloadedTasksFromNode, tasksOffloadedToNode, positions,  cinfo, droppedHistogram);
     }
 
 

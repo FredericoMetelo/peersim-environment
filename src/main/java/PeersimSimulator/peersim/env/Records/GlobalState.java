@@ -3,6 +3,7 @@ package PeersimSimulator.peersim.env.Records;
 import PeersimSimulator.peersim.env.Nodes.Events.CloudInfo;
 
 import java.util.List;
+import java.util.Map;
 
 public record GlobalState(
         List<Integer> nodeIds,
@@ -26,7 +27,8 @@ public record GlobalState(
         List<Integer> totalTasksOffloadedFromNode,
         List<Integer> totalTasksOffloadedToNode,
         List<Coordinates> positions,
-        CloudInfo cloudInfo
+        CloudInfo cloudInfo,
+        List<Map<String, Integer>> dropTaskHist
 ) {
 //    public boolean validState(){
 //        int totalDroped_arrival = 0;

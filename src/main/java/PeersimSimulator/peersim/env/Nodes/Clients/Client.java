@@ -6,6 +6,7 @@ import PeersimSimulator.peersim.edsim.EDProtocol;
 import PeersimSimulator.peersim.env.Tasks.Application;
 
 import java.util.List;
+import java.util.Map;
 
 public interface Client extends CDProtocol, EDProtocol {
 
@@ -69,6 +70,8 @@ public interface Client extends CDProtocol, EDProtocol {
     int getId();
 
     void setId(int id);
+
+    Map<String, Integer> getDroppedTaskHistogram(int bins);
 
     double getAverageByteSize();
 

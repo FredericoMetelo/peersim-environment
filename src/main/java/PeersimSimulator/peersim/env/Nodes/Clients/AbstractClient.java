@@ -1,6 +1,5 @@
 package PeersimSimulator.peersim.env.Nodes.Clients;
 
-import PeersimSimulator.peersim.Simulator;
 import PeersimSimulator.peersim.config.Configuration;
 import PeersimSimulator.peersim.config.FastConfig;
 import PeersimSimulator.peersim.core.CommonState;
@@ -69,7 +68,8 @@ public abstract class AbstractClient implements Client {
     private int tasksCompleted;
     private int totalTasks;
     private int droppedTasks;
-    
+    private List<AppInfo> dropped_registry;
+
     public AbstractClient(String prefix) {
         pid = Configuration.getPid(prefix + "."+PAR_NAME ); //
 
@@ -92,6 +92,8 @@ public abstract class AbstractClient implements Client {
         tasksCompleted = 0;
         droppedTasks = 0;
         totalTasks = 0;
+
+        this.dropped_registry = new LinkedList<>();
 
         getTaskMetadata(prefix);
     }
@@ -179,7 +181,7 @@ public abstract class AbstractClient implements Client {
         Worker wi = ((Worker) target.getProtocol(Worker.getPid()));
         while(this.amountToGenerate.get(i) > 0){
             Application app = generateApplication((int) target.getID());
-            tasksAwaiting.add(new AppInfo(app.getAppID(), CommonState.getTime(), app.getDeadline()));
+            tasksAwaiting.add(new AppInfo(app.getAppID(), CommonState.getTime(), app.getDeadline(), app.getTotalTaskSize()));
             totalTasks++;
             cltInfoLog(EVENT_TASK_SENT, "target=" + wi.getId());
             ((Transport) node.getProtocol(FastConfig.getTransport(Worker.getPid()))).
@@ -205,6 +207,7 @@ public abstract class AbstractClient implements Client {
             if (t.timeSent + t.deadline < now) {
                 it.remove();
                 dropped++;
+                this.dropped_registry.add(t);
             }
         }
         return dropped;
@@ -312,6 +315,11 @@ public abstract class AbstractClient implements Client {
         this.id = id;
     }
 
+    @Override
+    public Map<String, Integer> getDroppedTaskHistogram(int bins) {
+        return HistogramUtil.buildTotalInstrHistogram(this.dropped_registry, bins);
+    }
+
     protected void printParams() {
         //if(active)
         cltDbgLog("Client Params: CPI<" + Arrays.toString(this.CPI) + "> T<" + Arrays.toString(this.BYTE_SIZE) + "> I<" + Arrays.toString(this.NO_INSTR) + ">");
@@ -379,13 +387,21 @@ public abstract class AbstractClient implements Client {
         protected String id;
         protected long timeSent;
         protected double deadline;
-
-        public AppInfo(String id, long timeSent, double deadline) {
+        protected double totalInstr;
+        public AppInfo(String id, long timeSent, double deadline, double totalInstr) {
             this.id = id;
             this.timeSent = timeSent;
             this.deadline = deadline;
+            this.totalInstr = totalInstr;
         }
 
+        public String getId() { return id; }
+        public long getTimeSent() { return timeSent; }
+        public double getDeadline() { return deadline; }
+
+        public double getTotalInstr() {
+            return totalInstr;
+        }
     }
 
     @Override
@@ -474,6 +490,61 @@ public abstract class AbstractClient implements Client {
                     "taskArrivalRate=" + taskArrivalRate +
                     ", time=" + time +
                     '}';
+        }
+    }
+
+
+    private class HistogramUtil {
+
+        public static Map<String, Integer> buildTotalInstrHistogram(List<AppInfo> apps, int bins) {
+            if (apps == null || apps.isEmpty() || bins <= 0) {
+                return Collections.emptyMap();
+            }
+
+            double min = apps.stream().mapToDouble(AppInfo::getTotalInstr).min().orElse(0);
+            double max = apps.stream().mapToDouble(AppInfo::getTotalInstr).max().orElse(0);
+
+            // Avoid division by zero if all values are equal
+            if (min == max) {
+                Map<String, Integer> singleBin = new LinkedHashMap<>();
+                singleBin.put(String.format("[%.2f]", min), apps.size());
+                return singleBin;
+            }
+
+            double binSize = (max - min) / bins;
+
+            Map<String, Integer> histogram = new LinkedHashMap<>();
+            List<String> keys = new ArrayList<>();
+
+            // Create bins
+            for (int i = 0; i < bins; i++) {
+                double start = min + i * binSize;
+                double end = (i == bins - 1) ? max : start + binSize;
+
+                String key = String.format("[%.2f - %.2f%s",
+                        start,
+                        end,
+                        (i == bins - 1 ? "]" : ")"));
+
+                histogram.put(key, 0);
+                keys.add(key);
+            }
+
+            // Fill bins
+            for (AppInfo app : apps) {
+                double value = app.getTotalInstr();
+                int binIndex = (int) ((value - min) / binSize);
+
+                // Handle edge case where value == max
+                if (binIndex >= bins) {
+                    binIndex = bins - 1;
+                }
+
+                String key = keys.get(binIndex);
+                histogram.put(key, histogram.get(key) + 1);
+            }
+
+            return histogram;
         }
     }
 }

@@ -47,6 +47,7 @@ STATE_G_TASK_RCV_SINCE_LAST_CYCLE = "tasksRecievedSinceLastCycle"
 STATE_G_TASKS_DRP_SINCE_LAST_CYCLE = "droppedThisCycle"
 STATE_G_KNOWN_AVG_PROC_TIMES = "knownAverageProcessingTimes"
 STATE_G_NEIGHBOURHOODS = "neighbourhoods"
+STATE_G_DROPPED_HISTS = "dropTaskHist"
 
 STATE_NEXT_TASK = "nextTask"
 STATE_TASKS_IN_QUEUE = "tasks"
@@ -647,7 +648,8 @@ class PeersimEnv(ParallelEnv):
                 STATE_G_IDS:extracted_data[14],
                 STATE_G_TASK_RCV_SINCE_LAST_CYCLE: extracted_data[15],
                 STATE_G_TASKS_DRP_SINCE_LAST_CYCLE: extracted_data[16],
-                STATE_G_AVERAGE_RT: extracted_data[17]
+                STATE_G_AVERAGE_RT: extracted_data[17],
+                STATE_G_DROPPED_HISTS: extracted_data[18]
 
                 # TODO Add the new information here!!! Confirm the order is correct, bcs added ids!!! Could hv borked (did fr
             }
@@ -1109,8 +1111,8 @@ class PeersimEnv(ParallelEnv):
         task_received_since_last_cycle = dbg_info[STATE_G_TASK_RCV_SINCE_LAST_CYCLE]
         tasks_dropped_since_last_cycle = dbg_info[STATE_G_TASKS_DRP_SINCE_LAST_CYCLE]
         average_rt = dbg_info[STATE_G_AVERAGE_RT]
-
-        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node, tasks_offloaded_to_node, ids, task_received_since_last_cycle, tasks_dropped_since_last_cycle, average_rt
+        dropped_hists = global_obs[STATE_G_DROPPED_HISTS]
+        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node, tasks_offloaded_to_node, ids, task_received_since_last_cycle, tasks_dropped_since_last_cycle, average_rt, dropped_hists
 
 
 

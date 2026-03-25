@@ -85,6 +85,7 @@ PeersimSimulator/peersim/core/IdleProtocol.class
 PeersimSimulator/peersim/env/Nodes/Clients/AbstractClient.class
 PeersimSimulator/peersim/env/Links/SDNObserver.class
 PeersimSimulator/peersim/core/Cleanable.class
+PeersimSimulator/peersim/env/Nodes/Clients/AbstractClient$HistogramUtil.class
 PeersimSimulator/peersim/env/Records/GlobalState.class
 PeersimSimulator/peersim/vector/VectCopy.class
 PeersimSimulator/peersim/dynamics/NodeInitializer.class
