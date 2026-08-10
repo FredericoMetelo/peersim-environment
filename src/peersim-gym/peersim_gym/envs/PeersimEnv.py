@@ -30,7 +30,7 @@ STATE_G_OVERLOADED_NODES_SIM = "timesOverloaded"
 STATE_G_OCCUPANCY = "occupancy"
 
 STATE_G_AVERAGE_COMPLETION_TIMES = "averageCompletionTimes"
-STATE_G_AVERAGE_FINISH_TIMES = "averageFinishTimes"
+STATE_G_AVERAGE_FINISH_TIMES = "averageFinTime"
 STATE_G_IDS = "ids"
 STATE_G_Q = "true_Q"
 STATE_G_DROPPED_TASKS = "droppedTasks"
