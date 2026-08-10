@@ -30,6 +30,7 @@ STATE_G_OVERLOADED_NODES_SIM = "timesOverloaded"
 STATE_G_OCCUPANCY = "occupancy"
 
 STATE_G_AVERAGE_COMPLETION_TIMES = "averageCompletionTimes"
+STATE_G_AVERAGE_FINISH_TIMES = "averageFinishTimes"
 STATE_G_IDS = "ids"
 STATE_G_Q = "true_Q"
 STATE_G_DROPPED_TASKS = "droppedTasks"
@@ -649,9 +650,10 @@ class PeersimEnv(ParallelEnv):
                 STATE_G_TASK_RCV_SINCE_LAST_CYCLE: extracted_data[15],
                 STATE_G_TASKS_DRP_SINCE_LAST_CYCLE: extracted_data[16],
                 STATE_G_AVERAGE_RT: extracted_data[17],
-                STATE_G_DROPPED_HISTS: extracted_data[18]
+                STATE_G_DROPPED_HISTS: extracted_data[18],
+                STATE_G_AVERAGE_FINISH_TIMES: extracted_data[19]
 
-                # TODO Add the new information here!!! Confirm the order is correct, bcs added ids!!! Could hv borked (did fr
+                # TODO Add the new information here!!! Confirm the order is correct, bcs added ids!!! Could hv borked
             }
 
             self._info = dbg_info
@@ -1092,6 +1094,7 @@ class PeersimEnv(ParallelEnv):
 
         # Get the average response time.
         response_time = global_obs[STATE_G_AVERAGE_COMPLETION_TIMES]
+        response_time_with_fail = global_obs[STATE_G_AVERAGE_FINISH_TIMES]
 
         dropped_tasks = global_obs[STATE_G_DROPPED_TASKS]
         finished_tasks = global_obs[STATE_G_FINISHED_TASKS]
@@ -1112,7 +1115,7 @@ class PeersimEnv(ParallelEnv):
         tasks_dropped_since_last_cycle = dbg_info[STATE_G_TASKS_DRP_SINCE_LAST_CYCLE]
         average_rt = dbg_info[STATE_G_AVERAGE_RT]
         dropped_hists = global_obs[STATE_G_DROPPED_HISTS]
-        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node, tasks_offloaded_to_node, ids, task_received_since_last_cycle, tasks_dropped_since_last_cycle, average_rt, dropped_hists
+        return overloaded_nodes, occupancy, response_time, dropped_tasks, finished_tasks, total_tasks, energy_consumed, overloaded_nodes_sim, dropped_by_expired, dropped_on_arrival, total_tasks_received, offloaded_tasks_from_node, finished_per_node, tasks_offloaded_to_node, ids, task_received_since_last_cycle, tasks_dropped_since_last_cycle, average_rt, dropped_hists, response_time_with_fail
 
 
 
