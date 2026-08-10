@@ -34,6 +34,7 @@ public abstract class AbstractClient implements Client {
      */
     protected boolean active;
     protected float averageLatency;
+    protected float averageLatencyAll;
     protected int noResults;
     protected List<Long> nextArrival;
     protected List<Integer> amountToGenerate;
@@ -208,6 +209,8 @@ public abstract class AbstractClient implements Client {
                 it.remove();
                 dropped++;
                 this.dropped_registry.add(t);
+                float timeTaken = (float) t.deadline; // now - t.timeSent; // Should not be unsafe as deadlines are relatively small numbers compared to float max.
+                averageLatencyAll = (averageLatencyAll * noResults + timeTaken) / (++noResults);
             }
         }
         return dropped;
@@ -247,6 +250,8 @@ public abstract class AbstractClient implements Client {
                     AppInfo t = tasksAwaiting.remove(i);
                     long timeTaken = endTick - t.timeSent;
                     averageLatency = (averageLatency * noResults + timeTaken) / (++noResults);
+                    averageLatencyAll = (averageLatencyAll * noResults + timeTaken) / (++noResults);
+
                     tasksCompleted++;
                     cltInfoLog(EVENT_TASK_CONCLUDED, "taskId=" + ev.getTaskId() + " finTime=" + ev.getTickConcluded() + "handlerId=" + ev.getHandlerId());
                     return;
@@ -333,6 +338,10 @@ public abstract class AbstractClient implements Client {
 
     public double getAverageTaskCompletionTime() {
         return averageLatency;
+    }
+
+    public double getAverageTaskFinTime() {
+        return averageLatencyAll;
     }
 
     private boolean canGetTasks(int layer) {

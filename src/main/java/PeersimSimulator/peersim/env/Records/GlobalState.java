@@ -28,7 +28,8 @@ public record GlobalState(
         List<Integer> totalTasksOffloadedToNode,
         List<Coordinates> positions,
         CloudInfo cloudInfo,
-        List<Map<String, Integer>> dropTaskHist
+        List<Map<String, Integer>> dropTaskHist,
+        List<Double> averageFinTime
 ) {
 //    public boolean validState(){
 //        int totalDroped_arrival = 0;

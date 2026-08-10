@@ -160,6 +160,8 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
         List<Double> energyConsumed = new ArrayList<>(Network.size());
         List<Map<String, Integer>> droppedHistogram = new ArrayList<>(Network.size());
 
+        List<Double> averageFinTime = new ArrayList<>(Network.size());
+
         CloudInfo cinfo = null;
         if(hasCloud == 1) {
             Node cloud = Network.get(Network.size() - 1);
@@ -197,6 +199,7 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
                     continue;
                 }
                 taskCompletionTimes.add(client.getAverageTaskCompletionTime());
+                averageFinTime.add(client.getAverageTaskFinTime());
                 droppedTasks.add(client.getDroppedTasks());
                 finishedTasks.add(client.getTasksCompleted());
                 totalTasks.add(client.getTotalTasks());
@@ -206,7 +209,7 @@ public abstract class AbstractTimeStepManager implements CDProtocol  {
         }
         return new GlobalState(nodeIds, queues, processingPowers, noCores, layers, bandwidths,
                 transmissionPowers, taskCompletionTimes, droppedTasks, finishedTasks, totalTasks, isWorking, energyConsumed,
-                overloadedTimes, droppedOnArrivalOnNode, droppedByExpirationOnNode, totalReceivedByNode, completedOnNode, totalOffloadedTasksFromNode, tasksOffloadedToNode, positions,  cinfo, droppedHistogram);
+                overloadedTimes, droppedOnArrivalOnNode, droppedByExpirationOnNode, totalReceivedByNode, completedOnNode, totalOffloadedTasksFromNode, tasksOffloadedToNode, positions,  cinfo, droppedHistogram, averageFinTime);
     }
 
 
